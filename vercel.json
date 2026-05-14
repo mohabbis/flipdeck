@@ -7,6 +7,10 @@
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "/main.go" }
+    {
+      "src": "/(.*)",
+      "methods": ["GET"],
+      "dest": "main.go"
+    }
   ]
 }
