@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-// Inspirational quotes for Muhammad
 var quotes = []string{
 	"Code is like humor. When you have to explain it, it's bad. - Cory House",
 	"The best error message is the one that never shows up. - Thomas Fuchs",
@@ -87,16 +86,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, data)
 }
 
-func init() {
-	fmt.Println("MuHome initializing on Vercel...")
-}
-
 func main() {
-	http.HandleFunc("/", Handler)
-	port := "8080"
-	if p := os.Getenv("PORT"); p != "" {
-		port = p
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
+	http.HandleFunc("/", Handler)
 	fmt.Println("Server starting on port", port)
 	http.ListenAndServe(":"+port, nil)
 }
