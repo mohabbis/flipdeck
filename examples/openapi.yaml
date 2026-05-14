@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: moswagger Demo API
+  version: 1.0.0
+  description: Example API used for testing and showcasing moswagger.
+servers:
+  - url: https://api.moswagger.dev
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns service status.
+      responses:
+        '200':
+          description: Successful health response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /users:
+    get:
+      summary: List users
+      description: Returns a paginated list of users.
+      responses:
+        '200':
+          description: Successful user response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    email:
+                      type: string
