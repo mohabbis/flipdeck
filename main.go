@@ -49,11 +49,18 @@ muharafiq.com | muhome.vercel.app`,
 
 	root.Flags().StringVarP(&name, "name", "n", "", "name to greet")
 	root.Flags().BoolVarP(&serve, "serve", "s", false, "start web dashboard server")
-	root.Flags().IntVarP(&port, "port", "p", 8080, "port for web server")
+	root.Flags().IntVarP(&port, "port", "p", 8080, "port for web server (overrides PORT env)")
 
 	root.AddCommand(newInspireCmd())
 	root.AddCommand(newStatsCmd())
 	root.AddCommand(newFlipperCmd())
+
+	// Use PORT environment variable if available (for Vercel deployment)
+	if port == 8080 {
+		if envPort := os.Getenv("PORT"); envPort != "" {
+			fmt.Sscanf(envPort, "%d", &port)
+		}
+	}
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
