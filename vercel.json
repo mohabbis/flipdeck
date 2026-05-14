@@ -2,8 +2,11 @@
   "version": 2,
   "builds": [
     {
-      "src": "server.go",
+      "src": "main.go",
       "use": "@vercel/go"
     }
+  ],
+  "routes": [
+    { "handle": "filesystem" }
   ]
 }
