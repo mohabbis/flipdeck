@@ -25,6 +25,8 @@ var quotes = []string{
 	"Simplicity is the soul of efficiency. - Austin Freeman",
 	"Muhammad Rafiq: Making waves in the digital ocean!",
 	"Every great developer was once a beginner. Keep building!",
+	"Hack the planet! - Flipper Zero",
+	"Signals everywhere, decode them all! - Flipper",
 }
 
 func main() {
@@ -158,14 +160,19 @@ func newFlipperCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			green := color.New(color.FgGreen).SprintFunc()
 			cyan := color.New(color.FgCyan).SprintFunc()
+			yellow := color.New(color.FgYellow).SprintFunc()
 
 			fmt.Println()
 			fmt.Println(cyan("  ╔═══════════════════════════════╗"))
+			fmt.Println(cyan("  ║") + green("   ╔╗╔╗╔╗╔══╗╔══╗╔══╗╔═╗╔═╗   ") + cyan("║"))
+			fmt.Println(cyan("  ║") + green("   ║║║║║║╚╗╔╝╚╗╔╝║╔═╣╚═╗╚═╗   ") + cyan("║"))
+			fmt.Println(cyan("  ║") + green("   ╩╩╩╩╩╝ ╚╝  ╚╝ ╚══╝╚═╝╚═╝   ") + cyan("║"))
 			fmt.Println(cyan("  ║") + green("   FLIPPER ZERO ACTIVATED   ") + cyan("║"))
 			fmt.Println(cyan("  ╚═══════════════════════════════╝"))
 			fmt.Println()
-			fmt.Printf("  %s Flipper says: %s\n", green(">"), "Hello from the digital underground!")
-			fmt.Printf("  %s Ready to %s\n", green(">"), "explore the signals!")
+			fmt.Printf("  %s %s%s%s\n", green(">"), "Welcome to the ", yellow("digital underground"), green("!"))
+			fmt.Printf("  %s %s\n", green(">"), "Signals detected: 433MHz, 868MHz, 2.4GHz")
+			fmt.Printf("  %s %s\n", green(">"), "Ready to explore... 🕵️‍♂️")
 			fmt.Println()
 		},
 	}
@@ -213,20 +220,22 @@ func startWebServer(port int) {
 	<title>{{.Title}}</title>
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
-		body { font-family: 'Fira Code', monospace; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #eee; min-height: 100vh; margin: 0; padding: 40px; }
+		body { font-family: 'Fira Code', monospace; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%); color: #00ff00; min-height: 100vh; margin: 0; padding: 40px; }
 		.container { max-width: 800px; margin: 0 auto; }
-		h1 { color: #00d9ff; text-shadow: 0 0 10px rgba(0,217,255,0.5); }
-		.quote { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #00d9ff; }
+		h1 { color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); font-weight: 600; }
+		.quote { background: rgba(0,255,0,0.1); padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #00ff00; }
 		.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 20px; }
-		.stat { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; }
+		.stat { background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; border: 1px solid rgba(0,255,0,0.3); }
 		.label { color: #888; font-size: 0.9em; }
-		.value { color: #00d9ff; font-size: 1.2em; font-weight: bold; }
+		.value { color: #00ff00; font-size: 1.2em; font-weight: bold; }
 		.footer { margin-top: 40px; text-align: center; color: #666; }
+		.glitch { animation: glitch 2s infinite; }
+		@keyframes glitch { 0%, 100% { text-shadow: 0 0 5px #00ff00; } 50% { text-shadow: -2px 0 #ff00ff, 2px 0 #00ffff; } }
 	</style>
 </head>
 <body>
 	<div class="container">
-		<h1>MuHome Dashboard</h1>
+		<h1 class="glitch">MuHome Dashboard</h1>
 		<div class="quote">{{.Quote}}</div>
 		<div class="stats">
 			<div class="stat"><div class="label">Platform</div><div class="value">{{.Platform}}</div></div>
@@ -234,7 +243,7 @@ func startWebServer(port int) {
 			<div class="stat"><div class="label">CPUs</div><div class="value">{{.CPUs}}</div></div>
 			<div class="stat"><div class="label">Memory (Alloc)</div><div class="value">{{.Alloc}} MB</div></div>
 		</div>
-		<div class="footer">muharafiq.com | muhome.vercel.app</div>
+		<div class="footer">muharafiq.com | muhome.vercel.app | Flipper Zero Style 🐬</div>
 	</div>
 </body>
 </html>`
