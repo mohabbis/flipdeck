@@ -32,6 +32,9 @@ func main() {
 	var serve bool
 	var port int
 
+	// Check if running on Vercel (serve mode by default)
+	isVercel := os.Getenv("VERCEL") == "1" || os.Getenv("AWS_LAMBDA_RUNTIME_API") != ""
+
 	root := &cobra.Command{
 		Use:   "muhome",
 		Short: "Personal Dashboard CLI + Web Server",
@@ -39,7 +42,7 @@ func main() {
 A CLI with personality + web dashboard.
 muharafiq.com | muhome.vercel.app`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if serve {
+			if serve || isVercel {
 				startWebServer(port)
 				return
 			}
@@ -143,6 +146,26 @@ func newStatsCmd() *cobra.Command {
 			fmt.Printf("  %s %s\n", cyan("Go:"), runtime.Version())
 			fmt.Printf("  %s %d MB\n", cyan("Alloc:"), m.Alloc/1024/1024)
 			fmt.Printf("  %s %d MB\n", cyan("Sys:"), m.Sys/1024/1024)
+			fmt.Println()
+		},
+	}
+}
+
+func newFlipperCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "flipper",
+		Short: "Flipper Zero themed greeting 🎮",
+		Run: func(cmd *cobra.Command, args []string) {
+			green := color.New(color.FgGreen).SprintFunc()
+			cyan := color.New(color.FgCyan).SprintFunc()
+
+			fmt.Println()
+			fmt.Println(cyan("  ╔═══════════════════════════════╗"))
+			fmt.Println(cyan("  ║") + green("   FLIPPER ZERO ACTIVATED   ") + cyan("║"))
+			fmt.Println(cyan("  ╚═══════════════════════════════╝"))
+			fmt.Println()
+			fmt.Printf("  %s Flipper says: %s\n", green(">"), "Hello from the digital underground!")
+			fmt.Printf("  %s Ready to %s\n", green(">"), "explore the signals!")
 			fmt.Println()
 		},
 	}

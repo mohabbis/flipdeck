@@ -3,13 +3,10 @@
   "builds": [
     {
       "src": "main.go",
-      "use": "@vercel/go"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/main.go"
+      "use": "@vercel/go",
+      "config": {
+        "maxLambdaSize": 50000000
+      }
     }
   ]
 }
