@@ -2,7 +2,7 @@
 
 **A USB Command Deck for Flipper Zero** — Turn your Flipper into a safe, configurable USB keyboard and touchpad for developers and power users.
 
-[![License](https://img.shields.io/github/license/mohabbis/flipdeck)](LICENSE)
+[![License](https://img.shields.io/github/license/mohabbis/moswagger)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-blue)](https://flipperzero.one)
 [![Project History](https://img.shields.io/badge/history-moswagger%20→%20FlipDeck-blue)](ARCHITECTURE.md)
 
@@ -184,8 +184,8 @@ flipDeck uses the uFBT build system. To compile:
 
 ```bash
 # Clone the repository
-git clone https://github.com/mohabbis/flipdeck.git
-cd flipdeck
+git clone https://github.com/mohabbis/moswagger.git
+cd moswagger
 
 # Build using fbt (Flipper Build Tool)
 fbt
@@ -194,7 +194,7 @@ fbt
 ### Project Structure
 
 ```
-flipdeck/
+moswagger/  (FlipDeck)
 ├── CMakeLists.txt           # uFBT build configuration
 ├── assets/                  # Icons and resources
 ├── desktop_helper/          # Companion desktop app
