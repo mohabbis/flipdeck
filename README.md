@@ -4,6 +4,7 @@
 
 [![License](https://img.shields.io/github/license/mohabbis/flipdeck)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-blue)](https://flipperzero.one)
+[![Project History](https://img.shields.io/badge/history-moswagger%20→%20FlipDeck-blue)](ARCHITECTURE.md)
 
 ## Why FlipDeck?
 
@@ -263,6 +264,12 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for planned features.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
+
+## Project History
+
+This repository was originally **moswagger** - a Swagger/OpenAPI tooling project with Vercel deployment. It has been completely pivoted to **FlipDeck**, a Flipper Zero USB command deck application.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for details on the original moswagger-vercel.app and the migration to FlipDeck.
 
 ## License
 
