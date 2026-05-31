@@ -1,0 +1,17 @@
+// React component template
+import React from 'react';
+import PropTypes from 'prop-types';
+
+const ComponentName = ({ children }) => {
+    return (
+        <div className="component-name">
+            {children}
+        </div>
+    );
+};
+
+ComponentName.propTypes = {
+    children: PropTypes.node,
+};
+
+export default ComponentName;

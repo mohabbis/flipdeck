@@ -1,0 +1,4 @@
+// Debug logging snippet
+console.log('[DEBUG]', 'Variable name:', variableName);
+console.error('[ERROR]', errorMessage);
+debugger;

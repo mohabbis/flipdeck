@@ -1,0 +1,31 @@
+{
+  "name": "Python",
+  "id": "python",
+  "description": "Python development commands",
+  "actions": [
+    {
+      "label": "Run Python",
+      "type": "text",
+      "value": "python\n",
+      "confirm": true
+    },
+    {
+      "label": "Run script",
+      "type": "text",
+      "value": "python ",
+      "confirm": true
+    },
+    {
+      "label": "Pip Install",
+      "type": "text",
+      "value": "pip install ",
+      "confirm": true
+    },
+    {
+      "label": "Pip List",
+      "type": "text",
+      "value": "pip list\n",
+      "confirm": true
+    }
+  ]
+}

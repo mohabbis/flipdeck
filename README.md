@@ -1,69 +1,278 @@
-# moswagger
+# FlipDeck
 
-A cleaner OpenAPI playground for people who need to understand, share, and improve API specs without fighting a wall of YAML.
+**A USB Command Deck for Flipper Zero** — Turn your Flipper into a safe, configurable USB keyboard and touchpad for developers and power users.
 
-moswagger is being shaped as a lightweight developer tool for reviewing Swagger/OpenAPI files, turning endpoints into human-readable summaries, and giving API projects a sharper documentation workflow.
+[![License](https://img.shields.io/github/license/mohabbis/flipdeck)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-blue)](https://flipperzero.one)
 
-## Why this exists
+## Why FlipDeck?
 
-Swagger tooling is powerful, but most workflows still feel split across generators, validators, static docs, mock servers, and screenshots pasted into chats. moswagger should become the thin control panel that makes an API spec easier to inspect, explain, and ship.
+FlipDeck transforms your Flipper Zero into a programmable command deck. Store frequently-used commands, snippets, and shortcuts on your SD card, then send them to any connected computer over USB — no custom firmware or development boards required.
 
-## Product direction
+**Perfect for:**
+- Git workflow automation
+- Dev environment shortcuts
+- Terminal snippet library
+- Presentation remote control
+- VSCode/Vim command palette
 
-The project should focus on five jobs:
+## Features
 
-1. **Preview** an OpenAPI spec quickly.
-2. **Explain** endpoints in plain English.
-3. **Validate** specs before they break downstream tools.
-4. **Share** API documentation with non-engineers.
-5. **Generate** useful starter assets such as example requests, mock responses, and README sections.
+- ✅ **Profile Storage** — Save unlimited command profiles on SD card
+- ✅ **USB HID Keyboard** — Send text, key presses, and shortcuts
+- ✅ **Profile Types** — Commands, snippets, shortcuts, and scripts
+- ✅ **No WiFi Required** — Works on stock Flipper Zero
+- ✅ **Safe Mode** — Confirmation before sending commands
+- ✅ **Settings** — Configurable delays and preferences
 
-## Near-term feature set
+## Installation
 
-- OpenAPI/Swagger file upload or paste-in editor
-- Endpoint list grouped by tag and method
-- Request/response schema viewer
-- Plain-English endpoint summaries
-- Example curl and fetch snippets
-- Spec validation with actionable errors
-- Exportable markdown documentation
-- Example API spec for demos and tests
+1. **Download the latest release** from the [releases page](https://github.com/mohabbis/flipdeck/releases)
+2. **Copy to SD card**: Extract and copy the `flipdeck` folder to:
+   ```
+   /apps_data/flipdeck/
+   ```
+   (or browse to Apps → Install in the Flipper menu)
+3. **Launch**: From your Flipper, go to `Apps → FlipDeck`
 
-## Differentiation
+## Getting Started
 
-Most Swagger tools are either visually stale or overly technical. moswagger should feel like a small design-forward API studio: readable, fast, useful, and polished enough to include in a portfolio.
+### Creating Profiles
 
-## Example workflow
+Profiles are stored as JSON files in `/stor0800/flipdeck/profiles/` on the SD card. Default profiles include:
+
+| Category | Location |
+|----------|----------|
+| Git | `profiles/git.json` |
+| Node.js | `profiles/node.json` |
+| Python | `profiles/python.json` |
+| Docker | `profiles/docker.json` (NEW!) |
+| System | `profiles/system.json` (NEW!) |
+| Snippets | `profiles/snippets.json` (NEW!) |
+| AWS | `profiles/aws.json` (NEW!) |
+| VSCode | `profiles/vscode.json` |
+| Presentation | `profiles/presentation.json` |
+
+### Profile JSON Format
+
+Profiles now use an **actions** array with explicit action types:
+
+```json
+{
+  "name": "Node",
+  "id": "node",
+  "description": "Node.js development commands",
+  "actions": [
+    {
+      "label": "Run dev server",
+      "type": "text",
+      "value": "npm run dev\n",
+      "confirm": true
+    },
+    {
+      "label": "Run tests",
+      "type": "text",
+      "value": "npm test\n",
+      "confirm": true
+    }
+  ]
+}
+```
+
+#### Action Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `text` | Sends text string | `"npm run dev\n"` |
+| `key` | Presses a single key | `"RIGHT"`, `"ENTER"`, `"ESCAPE"` |
+| `key_combo` | Modifier + key combination | `"CTRL+C"`, `"SHIFT+F5"` |
+
+#### Example Profiles
+
+**Git Profile:**
+```json
+{
+  "name": "Git",
+  "id": "git",
+  "actions": [
+    {"label": "Git Status", "type": "text", "value": "git status\n"},
+    {"label": "Git Push", "type": "text", "value": "git push origin\n"}
+  ]
+}
+```
+
+**VSCode Shortcuts:**
+```json
+{
+  "name": "VSCode",
+  "id": "vscode",
+  "actions": [
+    {"label": "Command Palette", "type": "key_combo", "value": "CTRL+SHIFT+P"},
+    {"label": "Terminal", "type": "key_combo", "value": "CTRL+`"}
+  ]
+}
+```
+
+### Using FlipDeck
+
+1. **Browse** categories with UP/DOWN buttons
+2. **Select** a category (e.g., Git, Node, Python)
+3. **Browse** actions within the category
+4. **Press OK** to send (or confirm if required)
+5. **Press MENU** for Settings
+
+### SD Card Layout
+
+```
+/sd/card/apps_data/flipdeck/
+├── profiles/
+│   ├── git.json         # Git commands
+│   ├── node.json        # Node.js commands
+│   ├── python.json      # Python commands
+│   ├── docker.json      # Docker commands (NEW!)
+│   ├── system.json      # System utilities (NEW!)
+│   ├── snippets.json    # Code templates (NEW!)
+│   ├── aws.json         # AWS CLI commands (NEW!)
+│   ├── vscode.json      # VSCode shortcuts
+│   └── presentation.json # Presentation remote
+├── snippets/            # Text snippet templates
+│   ├── typescript.txt   # TS code templates
+│   └── go.txt           # Go code templates
+├── logs/                # Session logs
+└── settings.json        # User preferences
+```
+
+### Action Format
+
+Each action supports three types:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `label` | string | Display name on Flipper |
+| `type` | enum | `text`, `key`, or `key_combo` |
+| `value` | string | The command/data to send |
+| `confirm` | bool | Require confirmation before sending |
+
+## Safety
+
+FlipDeck is designed with safety as a priority:
+
+- ⚠️ **No stealth payloads** — All commands are visible before sending
+- ⚠️ **No automatic execution** — Requires explicit confirmation by default
+- ⚠️ **No credential storage** — The Flipper never stores GitHub tokens or passwords
+- ⚠️ **No destructive defaults** — Example commands are safe
+- ⚠️ **Blocked dangerous commands** — System rejects `rm -rf`, `sudo`, `curl | sh`, and credential patterns
+
+**Blocked Command Patterns:**
+- `rm -rf`, `sudo`, `curl | sh`, `mkfs`, `dd if=`, fork bombs
+- Any command containing: `PASSWORD`, `TOKEN`, `API_KEY`, `SECRET`, `PRIVATE_KEY`
+
+**Always review your profiles in a text editor before storing them in FlipDeck.**
+
+## Development
+
+### Prerequisites
+
+- Flipper Zero device
+- SD card (8GB or larger)
+- Computer with USB keyboard support
+
+### Building
+
+flipDeck uses the uFBT build system. To compile:
 
 ```bash
-# validate the sample spec
-npx @redocly/cli lint examples/openapi.yaml
+# Clone the repository
+git clone https://github.com/mohabbis/flipdeck.git
+cd flipdeck
+
+# Build using fbt (Flipper Build Tool)
+fbt
 ```
+
+### Project Structure
+
+```
+flipdeck/
+├── CMakeLists.txt           # uFBT build configuration
+├── assets/                  # Icons and resources
+├── desktop_helper/          # Companion desktop app
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── src/
+│       └── index.ts         # CLI tool for profile management
+├── sd_card/                 # SD card content (mounted on device)
+│   └── apps_data/flipdeck/
+│       ├── profiles/        # JSON command profiles
+│       │   ├── git.json
+│       │   ├── node.json
+│       │   ├── python.json
+│       │   ├── docker.json   # NEW!
+│       │   ├── system.json   # NEW!
+│       │   ├── snippets.json # NEW!
+│       │   ├── aws.json      # NEW!
+│       │   ├── vscode.json
+│       │   └── presentation.json
+│       ├── snippets/        # Text snippet templates
+│       ├── logs/            # Session logs
+│       └── settings.json    # User preferences
+├── src/                     # Flipper app source
+│   ├── flipdeck_app.c       # Main application logic
+│   ├── flipdeck_app.h
+│   ├── flipdeck_ui.c        # User interface
+│   ├── flipdeck_ui.h
+│   ├── profile_manager.c    # SD card profile system
+│   ├── profile_manager.h
+│   ├── usb_hid.c            # USB HID communication
+│   ├── usb_hid.h
+│   └── settings.c           # Settings management
+├── docs/
+│   ├── flight_manual.md     # Safety and usage guide
+│   └── ROADMAP.md           # Development roadmap
+└── README.md
+```
+
+## Desktop Helper
+
+The `desktop_helper/` directory contains a companion Node.js/TypeScript application for:
+- GitHub authentication
+- Profile sync from GitHub/Gist
+- Profile import/export
+- GitHub Actions triggers
+- Issue creation from profiles
 
 ```bash
-# generate static docs from the sample spec
-npx @redocly/cli build-docs examples/openapi.yaml --output docs/api-reference.html
+cd desktop_helper
+npm install
+npm start
 ```
-
-## Suggested architecture
-
-```text
-moswagger/
-├── examples/              # Demo OpenAPI specs
-├── docs/                  # Product roadmap and generated docs
-├── src/                   # App or package source code
-├── tests/                 # Spec parsing and validation tests
-└── README.md              # Product positioning and quickstart
-```
-
-## Portfolio framing
-
-**moswagger** is a design-forward OpenAPI workflow tool that turns raw API specs into readable documentation, validation feedback, and shareable endpoint summaries.
 
 ## Roadmap
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+See [docs/ROADMAP.md](docs/ROADMAP.md) for planned features.
+
+### Planned Features
+
+- [ ] Custom profile creation from Flipper UI
+- [ ] Profile import/export via SD card
+- [ ] Key combination support (Ctrl+C, Alt+Tab, etc.)
+- [ ] Presentation remote mode
+- [ ] Desktop companion app for profile sync
+- [ ] Momentum firmware integration (optional)
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
+
+## License
+
+This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
+
+## Disclaimer
+
+FlipDeck is an open-source project for educational and productivity purposes. The developers are not responsible for any misuse of this software. Always use caution when sending commands to connected computers.
+
+---
+
+Made with ❤️ for the Flipper Zero community.
+**Safely hacking, one keypress at a time.**

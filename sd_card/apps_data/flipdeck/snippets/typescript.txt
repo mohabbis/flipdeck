@@ -1,0 +1,25 @@
+### Console Log
+console.log('DEBUG:', );
+
+### Object Destructuring
+const { } = ;
+
+### Async Function
+async function func() {
+  try {
+    const result = await ;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+### API Route Handler
+app.get('/api/', (req, res) => {
+  res.json({});
+});
+
+### Type Definition (TypeScript)
+interface  {
+  name: string;
+  value: number;
+}

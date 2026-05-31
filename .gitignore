@@ -1,0 +1,16 @@
+# Build outputs
+build/
+*.fap
+*.elf
+
+# Flipper device paths
+stor0800/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log

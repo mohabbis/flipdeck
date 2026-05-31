@@ -1,0 +1,37 @@
+{
+  "name": "System",
+  "id": "system",
+  "description": "System information and utilities",
+  "actions": [
+    {
+      "label": "Disk Usage",
+      "type": "text",
+      "value": "df -h\n",
+      "confirm": true
+    },
+    {
+      "label": "Memory Info",
+      "type": "text",
+      "value": "free -h\n",
+      "confirm": true
+    },
+    {
+      "label": "CPU Info",
+      "type": "text",
+      "value": "lscpu\n",
+      "confirm": true
+    },
+    {
+      "label": "Running Processes",
+      "type": "text",
+      "value": "ps aux --sort=-%cpu | head -20\n",
+      "confirm": true
+    },
+    {
+      "label": "Network Info",
+      "type": "text",
+      "value": "ip addr show\n",
+      "confirm": true
+    }
+  ]
+}

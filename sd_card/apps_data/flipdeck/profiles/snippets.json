@@ -1,0 +1,37 @@
+{
+  "name": "Code Snippets",
+  "id": "snippets",
+  "description": "Common code templates",
+  "actions": [
+    {
+      "label": "Console Log",
+      "type": "text",
+      "value": "console.log('DEBUG:', );\n",
+      "confirm": true
+    },
+    {
+      "label": "For Loop",
+      "type": "text",
+      "value": "for(let i = 0; i < ; i++) {\n  \n}\n",
+      "confirm": true
+    },
+    {
+      "label": "If Statement",
+      "type": "text",
+      "value": "if (condition) {\n  \n}\n",
+      "confirm": true
+    },
+    {
+      "label": "Try Catch",
+      "type": "text",
+      "value": "try {\n  \n} catch (error) {\n  console.error(error);\n}\n",
+      "confirm": true
+    },
+    {
+      "label": "Arrow Function",
+      "type": "text",
+      "value": "const func = () => {\n  \n}\n",
+      "confirm": true
+    }
+  ]
+}

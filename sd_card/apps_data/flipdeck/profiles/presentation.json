@@ -1,0 +1,37 @@
+{
+  "name": "Presentation",
+  "id": "presentation",
+  "description": "Presentation remote control",
+  "actions": [
+    {
+      "label": "Next Slide",
+      "type": "key",
+      "value": "RIGHT",
+      "confirm": false
+    },
+    {
+      "label": "Previous Slide",
+      "type": "key",
+      "value": "LEFT",
+      "confirm": false
+    },
+    {
+      "label": "Start Slideshow",
+      "type": "key",
+      "value": "F5",
+      "confirm": false
+    },
+    {
+      "label": "Exit Presentation",
+      "type": "key",
+      "value": "ESCAPE",
+      "confirm": false
+    },
+    {
+      "label": "Blank Screen",
+      "type": "key",
+      "value": "B",
+      "confirm": false
+    }
+  ]
+}

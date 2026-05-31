@@ -1,37 +1,58 @@
-# moswagger Roadmap
+# FlipDeck Roadmap
 
 ## Phase 1: Foundation
 
-- [ ] OpenAPI spec upload
-- [ ] YAML and JSON parsing
-- [ ] Swagger validation pipeline
-- [ ] Endpoint grouping and search
-- [ ] Responsive documentation layout
-- [ ] GitHub Pages or Vercel deployment
+- [x] Core Flipper Zero app structure (uFBT)
+- [x] Basic UI with profile browser
+- [x] SD card profile storage
+- [x] USB HID communication layer
+- [x] Default profile templates
+- [x] Settings management
+- [ ] Flight manual documentation
 
-## Phase 2: Developer UX
+## Phase 2: Profile Management
 
-- [ ] Live endpoint playground
-- [ ] Request example generation
-- [ ] Copy-ready fetch/axios/curl snippets
-- [ ] Dark mode
-- [ ] API diffing between spec versions
+- [ ] Create new profiles from Flipper UI
+- [ ] Edit existing profiles
+- [ ] Delete profiles
+- [ ] Profile import/export via SD card
+- [ ] Profile categories/tags
+- [ ] Icon selection per profile
 
-## Phase 3: AI Layer
+## Phase 3: USB Enhancements
 
-- [ ] Plain-English endpoint explanations
-- [ ] Error interpretation for invalid specs
-- [ ] Suggested response schemas
-- [ ] Automatic README generation
-- [ ] AI-generated mock payloads
+- [ ] Key combination support (Ctrl, Alt, Shift, Win)
+- [ ] Key press/release timing control
+- [ ] Delay configuration per profile
+- [ ] USB connection auto-detection
+- [ ] Multiple keyboard layouts
 
-## Phase 4: Collaboration
+## Phase 4: Advanced Features
 
-- [ ] Shareable public API previews
-- [ ] Team comments and annotations
-- [ ] Export docs to markdown/PDF
-- [ ] Version snapshots
+- [ ] Presentation remote mode (left/right/up/down keys)
+- [ ] Mouse movement and clicks
+- [ ] Desktop companion app for profile sync
+- [ ] GitHub Gist import for shared profiles
+- [ ] Quick snippet buffer (multiple profiles at once)
 
-## Long-term direction
+## Phase 5: Optional Extensions
 
-moswagger should evolve into a compact API workspace instead of just another Swagger renderer.
+- [ ] Momentum firmware integration
+- [ ] WiFi dev board support for network commands
+- [ ] Bluetooth HID support
+- [ ] QR code profile import
+- [ ] Voice command triggering
+
+## Long-term Vision
+
+FlipDeck should become the ultimate USB command center for Flipper Zero — a safe, extensible tool that bridges the gap between physical button presses and digital workflows.
+
+---
+
+## Safety Requirements
+
+All future features must adhere to the safety principles in `docs/flight_manual.md`:
+- No stealth payloads
+- No automatic execution
+- No credential storage
+- Safe defaults

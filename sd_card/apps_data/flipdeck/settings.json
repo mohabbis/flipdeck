@@ -1,0 +1,8 @@
+{
+  "confirm_before_send": true,
+  "auto_detect_usb": true,
+  "show_icons": true,
+  "show_descriptions": true,
+  "send_delay_ms": 100,
+  "startup_category": ""
+}

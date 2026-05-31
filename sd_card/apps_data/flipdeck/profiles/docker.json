@@ -1,0 +1,37 @@
+{
+  "name": "Docker",
+  "id": "docker",
+  "description": "Docker container and image commands",
+  "actions": [
+    {
+      "label": "Docker Status",
+      "type": "text",
+      "value": "docker ps -a\n",
+      "confirm": true
+    },
+    {
+      "label": "Docker Build",
+      "type": "text",
+      "value": "docker build -t . \n",
+      "confirm": true
+    },
+    {
+      "label": "Docker Run",
+      "type": "text",
+      "value": "docker run -it \n",
+      "confirm": true
+    },
+    {
+      "label": "Docker Compose Up",
+      "type": "text",
+      "value": "docker-compose up -d\n",
+      "confirm": true
+    },
+    {
+      "label": "Docker Clean",
+      "type": "text",
+      "value": "docker system prune -a\n",
+      "confirm": true
+    }
+  ]
+}

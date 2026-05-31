@@ -1,0 +1,23 @@
+### Main Function (Go)
+func main() {
+    fmt.Println("Hello, World!")
+}
+
+### Struct Definition (Go)
+type  struct {
+    Name string
+    Age  int
+}
+
+### Goroutine
+go func() {
+    ()
+}()
+
+### Channel
+ch := make(chan int)
+
+### Error Handling (Go)
+if err != nil {
+    log.Fatal(err)
+}
