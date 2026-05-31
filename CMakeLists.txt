@@ -1,17 +1,14 @@
 # FlipDeck - Flipper Zero USB Command Deck
 # A uFBT-based Flipper Zero application
 
-FlixFile(APP_ICON assets/icon.bmp)
-
-App(
-    NAME "FlipDeck",
-    TITLE "FlipDeck",
-    EDITION "Standard",
-    AUTHOR "Muhammad Rafiq",
-    GROUP "Games",
-    PERMISSIONS "None",
-    SUBCATEGORY "Tools",
-    SORT_ORDER 10
+FlipperApp(
+    ID "flipdeck"
+    NAME "FlipDeck"
+    TITLE "FlipDeck"
+    DESCRIPTION "USB Command Deck for developers"
+    AUTHOR "Muhammad Rafiq"
+    VERSION "1.0.0"
+    SDK "none"
 )
 
 # Include Flipper Zero SDK

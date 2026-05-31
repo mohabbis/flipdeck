@@ -28,7 +28,7 @@ FlipDeck transforms your Flipper Zero into a programmable command deck. Store fr
 
 ## Installation
 
-1. **Download the latest release** from the [releases page](https://github.com/mohabbis/flipdeck/releases)
+1. **Download the latest release** from the [releases page](https://github.com/mohabbis/moswagger/releases)
 2. **Copy to SD card**: Extract and copy the `flipdeck` folder to:
    ```
    /apps_data/flipdeck/
