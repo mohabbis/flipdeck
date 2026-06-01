@@ -11,6 +11,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import * as fsExtra from 'fs-extra';
 import axios from 'axios';
+import { validateProfile } from './validation';
 
 interface FlipDeckAction {
     label: string;
@@ -41,14 +42,14 @@ const SNIPPETS_DIR = join(__dirname, '../sd_card/apps_data/flipdeck/snippets');
 const DEFAULT_PROFILES_DIR = join(__dirname, '../sd_card/apps_data/flipdeck/profiles');
 
 // Ensure directories exist
-function ensureDirectories() {
+export function ensureDirectories() {
     fsExtra.mkdirsSync(PROFILES_DIR);
     fsExtra.mkdirsSync(SNIPPETS_DIR);
     fsExtra.mkdirsSync(dirname(SETTINGS_FILE));
 }
 
 // Load all profiles
-function loadProfiles(): Profile[] {
+export function loadProfiles(): Profile[] {
     const profiles: Profile[] = [];
     
     try {
@@ -68,7 +69,7 @@ function loadProfiles(): Profile[] {
 }
 
 // Load default profiles
-function loadDefaultProfiles(): void {
+export function loadDefaultProfiles(): void {
     const defaults: Profile[] = [
         {
             name: 'Git',
@@ -250,32 +251,12 @@ program
             process.exit(1);
         }
         
-        const dangerousPatterns = [
-            'rm -rf', 'sudo', 'curl | sh', 'wget | sh', 'curl.ssh',
-            'mkfs', 'dd if=', ':(){ :|:& };:', '> /dev/sd', 'chmod 777', 'chown root',
-        ];
-        const credentialPatterns = ['PASSWORD', 'TOKEN', 'API_KEY', 'SECRET', 'PRIVATE_KEY'];
-        
-        let hasErrors = false;
-        for (const action of profile.actions) {
-            if (action.type === 'text') {
-                const upperValue = action.value.toUpperCase();
-                for (const pattern of dangerousPatterns) {
-                    if (action.value.includes(pattern)) {
-                        console.error(`  ✗ Dangerous pattern in "${action.label}": ${pattern}`);
-                        hasErrors = true;
-                    }
-                }
-                for (const pattern of credentialPatterns) {
-                    if (upperValue.includes(pattern)) {
-                        console.error(`  ✗ Credential pattern in "${action.label}": ${pattern}`);
-                        hasErrors = true;
-                    }
-                }
-            }
+        const result = validateProfile(profile);
+        for (const issue of result.issues) {
+            const kindLabel = issue.kind === 'dangerous' ? 'Dangerous pattern' : 'Credential pattern';
+            console.error(`  ✗ ${kindLabel} in "${issue.label}": ${issue.pattern}`);
         }
-        
-        if (hasErrors) {
+        if (!result.safe) {
             console.error('\n⚠ Validation failed - review these actions');
             process.exit(1);
         } else {
@@ -420,7 +401,7 @@ program
                 { headers: { Authorization: `token ${token}` } }
             );
             
-            const files = response.data.files;
+            const files = response.data.files as Record<string, { content: string }>;
             for (const [filename, fileData] of Object.entries(files)) {
                 if (filename.endsWith('.json')) {
                     const filepath = join(PROFILES_DIR, filename);
@@ -465,7 +446,7 @@ program
         }
     });
 
-// Initialize on startup
-initialize();
-
-program.parse();
+if (require.main === module) {
+    initialize();
+    program.parse();
+}

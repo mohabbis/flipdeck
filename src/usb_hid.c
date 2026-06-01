@@ -87,10 +87,11 @@ static uint8_t key_name_to_code(const char* name) {
 static uint8_t modifier_name_to_code(const char* name) {
     // Support both uppercase and lowercase
     char upper[16];
-    for(int i = 0; name[i] && i < 15; i++) {
-        upper[i] = toupper(name[i]);
+    int i;
+    for(i = 0; name[i] && i < 15; i++) {
+        upper[i] = toupper((unsigned char)name[i]);
     }
-    upper[15] = '\0';
+    upper[i] = '\0';  // terminate at actual end of string, not always at [15]
     
     if(strcmp(upper, "CTRL") == 0 || strcmp(upper, "LEFTCTRL") == 0) return 1;
     if(strcmp(upper, "SHIFT") == 0 || strcmp(upper, "LEFTSHIFT") == 0) return 2;
@@ -162,15 +163,14 @@ bool usb_hid_send_key_combo(const char* combo) {
     
     uint8_t modifiers = 0;
     char* key_part = work;
-    char* plus = strchr(work, '+');
-    
+    char* plus = strchr(key_part, '+');
+
     while(plus) {
         *plus = '\0';
-        modifiers |= modifier_name_to_code(work);
-        work = plus + 1;
-        plus = strchr(work, '+');
+        modifiers |= modifier_name_to_code(key_part);
+        key_part = plus + 1;
+        plus = strchr(key_part, '+');
     }
-    key_part = work;
     
     uint8_t key = key_name_to_code(key_part);
     if(key == 0) {
