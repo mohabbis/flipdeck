@@ -1,0 +1,37 @@
+{
+  "name": "AWS CLI",
+  "id": "aws",
+  "description": "AWS command line tools",
+  "actions": [
+    {
+      "label": "EC2 Instances",
+      "type": "text",
+      "value": "aws ec2 describe-instances\n",
+      "confirm": true
+    },
+    {
+      "label": "S3 List Buckets",
+      "type": "text",
+      "value": "aws s3 ls\n",
+      "confirm": true
+    },
+    {
+      "label": "S3 Sync",
+      "type": "text",
+      "value": "aws s3 sync . s3://\n",
+      "confirm": true
+    },
+    {
+      "label": "Lambda List",
+      "type": "text",
+      "value": "aws lambda list-functions\n",
+      "confirm": true
+    },
+    {
+      "label": "STS Get Caller",
+      "type": "text",
+      "value": "aws sts get-caller-identity\n",
+      "confirm": true
+    }
+  ]
+}

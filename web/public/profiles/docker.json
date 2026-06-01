@@ -1,0 +1,37 @@
+{
+  "name": "Docker",
+  "id": "docker",
+  "description": "Docker container and image commands",
+  "actions": [
+    {
+      "label": "Docker PS",
+      "type": "text",
+      "value": "docker ps\n",
+      "confirm": true
+    },
+    {
+      "label": "Docker Images",
+      "type": "text",
+      "value": "docker images\n",
+      "confirm": true
+    },
+    {
+      "label": "Docker Compose PS",
+      "type": "text",
+      "value": "docker-compose ps\n",
+      "confirm": true
+    },
+    {
+      "label": "Docker Compose Up",
+      "type": "text",
+      "value": "docker-compose up -d\n",
+      "confirm": true
+    },
+    {
+      "label": "Docker Compose Down",
+      "type": "text",
+      "value": "docker-compose down\n",
+      "confirm": true
+    }
+  ]
+}

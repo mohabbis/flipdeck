@@ -1,0 +1,25 @@
+{
+  "name": "Node",
+  "id": "node",
+  "description": "Node.js development commands",
+  "actions": [
+    {
+      "label": "Run dev server",
+      "type": "text",
+      "value": "npm run dev\n",
+      "confirm": true
+    },
+    {
+      "label": "Run tests",
+      "type": "text",
+      "value": "npm test\n",
+      "confirm": true
+    },
+    {
+      "label": "Build",
+      "type": "text",
+      "value": "npm run build\n",
+      "confirm": true
+    }
+  ]
+}

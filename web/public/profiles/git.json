@@ -1,0 +1,37 @@
+{
+  "name": "Git",
+  "id": "git",
+  "description": "Git workflow shortcuts",
+  "actions": [
+    {
+      "label": "Git Status",
+      "type": "text",
+      "value": "git status\n",
+      "confirm": true
+    },
+    {
+      "label": "Git Add All",
+      "type": "text",
+      "value": "git add .\n",
+      "confirm": true
+    },
+    {
+      "label": "Git Commit",
+      "type": "text",
+      "value": "git commit -m \"",
+      "confirm": true
+    },
+    {
+      "label": "Git Push",
+      "type": "text",
+      "value": "git push origin\n",
+      "confirm": true
+    },
+    {
+      "label": "Git Pull",
+      "type": "text",
+      "value": "git pull origin\n",
+      "confirm": true
+    }
+  ]
+}
