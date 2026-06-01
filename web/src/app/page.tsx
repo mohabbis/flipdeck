@@ -1,4 +1,4 @@
-import { Profile, FlipDeckAction } from "@/types/flipdeck";
+import { Profile } from "@/types/flipdeck";
 import { getActionTypeColor } from "@/lib/utils";
 
 // Profile data - copied from SD card profiles

@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NextRequest } from 'next/server';
 
 vi.mock('fs', () => ({
     readFileSync: vi.fn(),
@@ -11,6 +10,7 @@ import { GET } from '../app/api/profiles/route';
 
 const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockReadFileSync = vi.mocked(fs.readFileSync);
+const profileFiles = (...files: string[]) => files as ReturnType<typeof fs.readdirSync>;
 
 const gitProfile = {
     id: 'git',
@@ -32,13 +32,12 @@ beforeEach(() => {
 
 describe('GET /api/profiles', () => {
     it('returns 200 and a map of profiles keyed by id', async () => {
-        mockReaddirSync.mockReturnValue(['git.json', 'node.json'] as any);
+        mockReaddirSync.mockReturnValue(profileFiles('git.json', 'node.json'));
         mockReadFileSync
             .mockReturnValueOnce(JSON.stringify(gitProfile))
             .mockReturnValueOnce(JSON.stringify(nodeProfile));
 
-        const req = new NextRequest('http://localhost/api/profiles');
-        const res = await GET(req);
+        const res = await GET();
 
         expect(res.status).toBe(200);
         const data = await res.json();
@@ -49,11 +48,10 @@ describe('GET /api/profiles', () => {
     });
 
     it('only includes .json files', async () => {
-        mockReaddirSync.mockReturnValue(['.DS_Store', 'README.md', 'git.json'] as any);
+        mockReaddirSync.mockReturnValue(profileFiles('.DS_Store', 'README.md', 'git.json'));
         mockReadFileSync.mockReturnValue(JSON.stringify(gitProfile));
 
-        const req = new NextRequest('http://localhost/api/profiles');
-        const res = await GET(req);
+        const res = await GET();
 
         expect(res.status).toBe(200);
         const data = await res.json();
@@ -64,10 +62,9 @@ describe('GET /api/profiles', () => {
     });
 
     it('returns 200 with empty object when no profiles exist', async () => {
-        mockReaddirSync.mockReturnValue([] as any);
+        mockReaddirSync.mockReturnValue(profileFiles());
 
-        const req = new NextRequest('http://localhost/api/profiles');
-        const res = await GET(req);
+        const res = await GET();
 
         expect(res.status).toBe(200);
         const data = await res.json();
@@ -77,8 +74,7 @@ describe('GET /api/profiles', () => {
     it('returns 500 when the profiles directory cannot be read', async () => {
         mockReaddirSync.mockImplementation(() => { throw new Error('ENOENT'); });
 
-        const req = new NextRequest('http://localhost/api/profiles');
-        const res = await GET(req);
+        const res = await GET();
 
         expect(res.status).toBe(500);
         const data = await res.json();
@@ -86,11 +82,10 @@ describe('GET /api/profiles', () => {
     });
 
     it('returns 500 when a profile file cannot be parsed', async () => {
-        mockReaddirSync.mockReturnValue(['bad.json'] as any);
+        mockReaddirSync.mockReturnValue(profileFiles('bad.json'));
         mockReadFileSync.mockReturnValue('not valid json');
 
-        const req = new NextRequest('http://localhost/api/profiles');
-        const res = await GET(req);
+        const res = await GET();
 
         expect(res.status).toBe(500);
     });

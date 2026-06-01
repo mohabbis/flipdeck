@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NextRequest } from 'next/server';
 
 vi.mock('fs', () => ({
     readFileSync: vi.fn(),
@@ -11,6 +10,7 @@ import { GET } from '../app/api/profiles/download/route';
 
 const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockReadFileSync = vi.mocked(fs.readFileSync);
+const profileFiles = (...files: string[]) => files as ReturnType<typeof fs.readdirSync>;
 
 const gitProfileJson = JSON.stringify({
     id: 'git',
@@ -25,11 +25,10 @@ beforeEach(() => {
 
 describe('GET /api/profiles/download', () => {
     it('returns a ZIP file with correct headers when profiles exist in public/', async () => {
-        mockReaddirSync.mockReturnValue(['git.json', 'node.json'] as any);
+        mockReaddirSync.mockReturnValue(profileFiles('git.json', 'node.json'));
         mockReadFileSync.mockReturnValue(gitProfileJson);
 
-        const req = new NextRequest('http://localhost/api/profiles/download');
-        const res = await GET(req);
+        const res = await GET();
 
         expect(res.status).toBe(200);
         expect(res.headers.get('Content-Type')).toBe('application/zip');
@@ -38,11 +37,10 @@ describe('GET /api/profiles/download', () => {
     });
 
     it('returns actual binary ZIP content', async () => {
-        mockReaddirSync.mockReturnValue(['git.json'] as any);
+        mockReaddirSync.mockReturnValue(profileFiles('git.json'));
         mockReadFileSync.mockReturnValue(gitProfileJson);
 
-        const req = new NextRequest('http://localhost/api/profiles/download');
-        const res = await GET(req);
+        const res = await GET();
 
         const buffer = await res.arrayBuffer();
         expect(buffer.byteLength).toBeGreaterThan(0);
@@ -58,8 +56,7 @@ describe('GET /api/profiles/download', () => {
         mockReaddirSync.mockImplementation(() => { throw new Error('ENOENT'); });
         mockReadFileSync.mockReturnValue(gitProfileJson);
 
-        const req = new NextRequest('http://localhost/api/profiles/download');
-        const res = await GET(req);
+        const res = await GET();
 
         // Should still return a valid ZIP via the fallback path
         expect(res.status).toBe(200);
@@ -67,22 +64,20 @@ describe('GET /api/profiles/download', () => {
     });
 
     it('uses SD card fallback when public/ directory is empty', async () => {
-        mockReaddirSync.mockReturnValue([] as any);
+        mockReaddirSync.mockReturnValue(profileFiles());
         mockReadFileSync.mockReturnValue(gitProfileJson);
 
-        const req = new NextRequest('http://localhost/api/profiles/download');
-        const res = await GET(req);
+        const res = await GET();
 
         expect(res.status).toBe(200);
     });
 
     it('returns 500 when ZIP generation itself fails', async () => {
-        mockReaddirSync.mockReturnValue(['git.json'] as any);
+        mockReaddirSync.mockReturnValue(profileFiles('git.json'));
         // Simulate readFileSync throwing inside the zip loop
         mockReadFileSync.mockImplementation(() => { throw new Error('disk error'); });
 
-        const req = new NextRequest('http://localhost/api/profiles/download');
-        const res = await GET(req);
+        const res = await GET();
 
         // The route catches all errors and returns 500
         // (Both primary and fallback paths read files, so both will fail)
