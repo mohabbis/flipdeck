@@ -6,31 +6,31 @@
     {
       "label": "Command Palette",
       "type": "key_combo",
-      "value": "Ctrl+Shift+P",
+      "value": "CTRL+SHIFT+P",
       "confirm": false
     },
     {
       "label": "File Explorer",
       "type": "key_combo",
-      "value": "Ctrl+Shift+E",
+      "value": "CTRL+SHIFT+E",
       "confirm": false
     },
     {
       "label": "Search",
       "type": "key_combo",
-      "value": "Ctrl+Shift+F",
+      "value": "CTRL+SHIFT+F",
       "confirm": false
     },
     {
       "label": "Terminal",
       "type": "key_combo",
-      "value": "Ctrl+`",
+      "value": "CTRL+`",
       "confirm": false
     },
     {
       "label": "Format Document",
       "type": "key_combo",
-      "value": "Shift+Alt+F",
+      "value": "SHIFT+ALT+F",
       "confirm": false
     }
   ]

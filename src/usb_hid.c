@@ -62,15 +62,34 @@ static uint8_t key_name_to_code(const char* name) {
     if(strcmp(name, "F1") == 0) return 58;
     if(strcmp(name, "F2") == 0) return 59;
     if(strcmp(name, "F3") == 0) return 60;
+    if(strcmp(name, "F4") == 0) return 61;
+    if(strcmp(name, "F6") == 0) return 66;
+    if(strcmp(name, "F7") == 0) return 67;
+    if(strcmp(name, "F8") == 0) return 68;
+    if(strcmp(name, "F9") == 0) return 69;
+    if(strcmp(name, "F10") == 0) return 70;
+    if(strcmp(name, "F11") == 0) return 71;
+    if(strcmp(name, "F12") == 0) return 72;
+    // Special characters
+    if(strcmp(name, "`") == 0 || strcmp(name, "~") == 0) return 52;
+    if(strcmp(name, "-") == 0 || strcmp(name, "_") == 0) return 55;
+    if(strcmp(name, "=") == 0 || strcmp(name, "+") == 0) return 56;
     return 0;
 }
 
 // Modifier key mappings
 static uint8_t modifier_name_to_code(const char* name) {
-    if(strcmp(name, "CTRL") == 0 || strcmp(name, "LEFTCTRL") == 0) return 1;
-    if(strcmp(name, "SHIFT") == 0 || strcmp(name, "LEFTSHIFT") == 0) return 2;
-    if(strcmp(name, "ALT") == 0 || strcmp(name, "LEFTALT") == 0) return 4;
-    if(strcmp(name, "GUI") == 0 || strcmp(name, "LEFTGUI") == 0) return 8;
+    // Support both uppercase and lowercase
+    char upper[16];
+    for(int i = 0; name[i] && i < 15; i++) {
+        upper[i] = toupper(name[i]);
+    }
+    upper[15] = '\0';
+    
+    if(strcmp(upper, "CTRL") == 0 || strcmp(upper, "LEFTCTRL") == 0) return 1;
+    if(strcmp(upper, "SHIFT") == 0 || strcmp(upper, "LEFTSHIFT") == 0) return 2;
+    if(strcmp(upper, "ALT") == 0 || strcmp(upper, "LEFTALT") == 0) return 4;
+    if(strcmp(upper, "GUI") == 0 || strcmp(upper, "LEFTGUI") == 0 || strcmp(upper, "WIN") == 0 || strcmp(upper, "CMD") == 0) return 8;
     return 0;
 }
 
