@@ -2,9 +2,8 @@
 
 **A USB Command Deck for Flipper Zero** — Turn your Flipper into a safe, configurable USB keyboard and touchpad for developers and power users.
 
-[![License](https://img.shields.io/github/license/mohabbis/moswagger)](LICENSE)
+[![License](https://img.shields.io/github/license/mohabbis/flipdeck)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-blue)](https://flipperzero.one)
-[![Project History](https://img.shields.io/badge/history-moswagger%20→%20FlipDeck-blue)](ARCHITECTURE.md)
 
 ## Why FlipDeck?
 
@@ -28,8 +27,8 @@ FlipDeck transforms your Flipper Zero into a programmable command deck. Store fr
 
 ## Installation
 
-1. **Download the latest release** from the [releases page](https://github.com/mohabbis/moswagger/releases)
-2. **Copy to SD card**: Extract and copy the `flipdeck` folder to:
+1. **Download the latest release** from the [releases page](https://github.com/mohabbis/flipdeck/releases)
+2. **Copy to SD card**: Extract and copy the `apps_data/flipdeck` folder to:
    ```
    /apps_data/flipdeck/
    ```
@@ -40,17 +39,17 @@ FlipDeck transforms your Flipper Zero into a programmable command deck. Store fr
 
 ### Creating Profiles
 
-Profiles are stored as JSON files in `/stor0800/flipdeck/profiles/` on the SD card. Default profiles include:
+Profiles are stored as JSON files in `/apps_data/flipdeck/profiles/` on the SD card. Default profiles include:
 
 | Category | Location |
 |----------|----------|
 | Git | `profiles/git.json` |
 | Node.js | `profiles/node.json` |
 | Python | `profiles/python.json` |
-| Docker | `profiles/docker.json` (NEW!) |
-| System | `profiles/system.json` (NEW!) |
-| Snippets | `profiles/snippets.json` (NEW!) |
-| AWS | `profiles/aws.json` (NEW!) |
+| Docker | `profiles/docker.json` |
+| System | `profiles/system.json` |
+| Snippets | `profiles/snippets.json` |
+| AWS | `profiles/aws.json` |
 | VSCode | `profiles/vscode.json` |
 | Presentation | `profiles/presentation.json` |
 
@@ -125,15 +124,15 @@ Profiles now use an **actions** array with explicit action types:
 ### SD Card Layout
 
 ```
-/sd/card/apps_data/flipdeck/
+/apps_data/flipdeck/
 ├── profiles/
 │   ├── git.json         # Git commands
 │   ├── node.json        # Node.js commands
 │   ├── python.json      # Python commands
-│   ├── docker.json      # Docker commands (NEW!)
-│   ├── system.json      # System utilities (NEW!)
-│   ├── snippets.json    # Code templates (NEW!)
-│   ├── aws.json         # AWS CLI commands (NEW!)
+│   ├── docker.json      # Docker commands
+│   ├── system.json      # System utilities
+│   ├── snippets.json    # Code templates
+│   ├── aws.json         # AWS CLI commands
 │   ├── vscode.json      # VSCode shortcuts
 │   └── presentation.json # Presentation remote
 ├── snippets/            # Text snippet templates
@@ -180,12 +179,12 @@ FlipDeck is designed with safety as a priority:
 
 ### Building
 
-flipDeck uses the uFBT build system. To compile:
+FlipDeck uses the uFBT build system. To compile:
 
 ```bash
 # Clone the repository
-git clone https://github.com/mohabbis/moswagger.git
-cd moswagger
+git clone https://github.com/mohabbis/flipdeck.git
+cd flipdeck
 
 # Build using fbt (Flipper Build Tool)
 fbt
@@ -194,7 +193,7 @@ fbt
 ### Project Structure
 
 ```
-moswagger/  (FlipDeck)
+flipdeck/
 ├── CMakeLists.txt           # uFBT build configuration
 ├── assets/                  # Icons and resources
 ├── desktop_helper/          # Companion desktop app
@@ -208,10 +207,10 @@ moswagger/  (FlipDeck)
 │       │   ├── git.json
 │       │   ├── node.json
 │       │   ├── python.json
-│       │   ├── docker.json   # NEW!
-│       │   ├── system.json   # NEW!
-│       │   ├── snippets.json # NEW!
-│       │   ├── aws.json      # NEW!
+│       │   ├── docker.json
+│       │   ├── system.json
+│       │   ├── snippets.json
+│       │   ├── aws.json
 │       │   ├── vscode.json
 │       │   └── presentation.json
 │       ├── snippets/        # Text snippet templates
