@@ -109,10 +109,10 @@ function loadDefaultProfiles(): void {
             id: 'vscode',
             description: 'VSCode keyboard shortcuts',
             actions: [
-                { label: 'Command Palette', type: 'key_combo', value: 'Ctrl+Shift+P', confirm: false },
-                { label: 'File Explorer', type: 'key_combo', value: 'Ctrl+Shift+E', confirm: false },
-                { label: 'Search', type: 'key_combo', value: 'Ctrl+Shift+F', confirm: false },
-                { label: 'Terminal', type: 'key_combo', value: 'Ctrl+`', confirm: false },
+                { label: 'Command Palette', type: 'key_combo', value: 'CTRL+SHIFT+P', confirm: false },
+                { label: 'File Explorer', type: 'key_combo', value: 'CTRL+SHIFT+E', confirm: false },
+                { label: 'Search', type: 'key_combo', value: 'CTRL+SHIFT+F', confirm: false },
+                { label: 'Terminal', type: 'key_combo', value: 'CTRL+`', confirm: false },
             ]
         },
         {

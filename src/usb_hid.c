@@ -13,6 +13,19 @@ static bool s_usb_connected = false;
 
 // Key name to HID keycode mapping
 static uint8_t key_name_to_code(const char* name) {
+    // Support single characters directly (a-z, A-Z, 0-9)
+    if(strlen(name) == 1) {
+        char c = name[0];
+        if(c >= 'A' && c <= 'Z') return c - 'A' + 4;
+        if(c >= 'a' && c <= 'z') return c - 'a' + 4;
+        if(c >= '0' && c <= '9') return c - '0' + 39;
+        if(c == '`') return 52;
+        if(c == '-') return 55;
+        if(c == '=') return 56;
+        return 0;
+    }
+    
+    // Full key names (uppercase)
     if(strcmp(name, "A") == 0) return 4;
     if(strcmp(name, "B") == 0) return 5;
     if(strcmp(name, "C") == 0) return 6;
@@ -58,11 +71,8 @@ static uint8_t key_name_to_code(const char* name) {
     if(strcmp(name, "LEFT") == 0) return 80;
     if(strcmp(name, "DOWN") == 0) return 81;
     if(strcmp(name, "UP") == 0) return 82;
-    if(strcmp(name, "F5") == 0) return 65;
-    if(strcmp(name, "F1") == 0) return 58;
-    if(strcmp(name, "F2") == 0) return 59;
-    if(strcmp(name, "F3") == 0) return 60;
     if(strcmp(name, "F4") == 0) return 61;
+    if(strcmp(name, "F5") == 0) return 65;
     if(strcmp(name, "F6") == 0) return 66;
     if(strcmp(name, "F7") == 0) return 67;
     if(strcmp(name, "F8") == 0) return 68;
@@ -70,10 +80,6 @@ static uint8_t key_name_to_code(const char* name) {
     if(strcmp(name, "F10") == 0) return 70;
     if(strcmp(name, "F11") == 0) return 71;
     if(strcmp(name, "F12") == 0) return 72;
-    // Special characters
-    if(strcmp(name, "`") == 0 || strcmp(name, "~") == 0) return 52;
-    if(strcmp(name, "-") == 0 || strcmp(name, "_") == 0) return 55;
-    if(strcmp(name, "=") == 0 || strcmp(name, "+") == 0) return 56;
     return 0;
 }
 
