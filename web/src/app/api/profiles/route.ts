@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { Profile } from "@/types/flipdeck";
 import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
 
-// Path to SD card profiles
-const PROFILES_PATH = join(process.cwd(), "..", "..", "..", "sd_card", "apps_data", "flipdeck", "profiles");
+// Path to profiles copied into the web public directory
+const PROFILES_PATH = join(process.cwd(), "public", "profiles");
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const files = readdirSync(PROFILES_PATH);
     const profiles: Record<string, Profile> = {};
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
     
     return NextResponse.json(profiles);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to load profiles" },
       { status: 500 }

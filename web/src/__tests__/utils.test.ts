@@ -18,7 +18,7 @@ describe('getActionTypeColor', () => {
     });
 
     it('returns gray fallback for unknown type', () => {
-        const result = getActionTypeColor('unknown' as any);
+        const result = getActionTypeColor('unknown' as never);
         expect(result).toContain('gray');
     });
 
