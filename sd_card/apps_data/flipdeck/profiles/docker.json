@@ -4,21 +4,21 @@
   "description": "Docker container and image commands",
   "actions": [
     {
-      "label": "Docker Status",
+      "label": "Docker PS",
       "type": "text",
-      "value": "docker ps -a\n",
+      "value": "docker ps\n",
       "confirm": true
     },
     {
-      "label": "Docker Build",
+      "label": "Docker Images",
       "type": "text",
-      "value": "docker build -t . \n",
+      "value": "docker images\n",
       "confirm": true
     },
     {
-      "label": "Docker Run",
+      "label": "Docker Compose PS",
       "type": "text",
-      "value": "docker run -it \n",
+      "value": "docker-compose ps\n",
       "confirm": true
     },
     {
@@ -28,9 +28,9 @@
       "confirm": true
     },
     {
-      "label": "Docker Clean",
+      "label": "Docker Compose Down",
       "type": "text",
-      "value": "docker system prune -a\n",
+      "value": "docker-compose down\n",
       "confirm": true
     }
   ]
