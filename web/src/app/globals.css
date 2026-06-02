@@ -3,6 +3,9 @@
 :root {
   --background: #08090f;
   --foreground: #f8fafc;
+  --flipper-orange: #ff7a00;
+  --flipper-screen: #ff9d2e;
+  --momentum-cyan: #00d4aa;
   --font-geist-sans: Arial, Helvetica, sans-serif;
   --font-geist-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   color-scheme: dark;
@@ -28,7 +31,11 @@ html {
 
 body {
   min-width: 320px;
-  background: var(--background);
+  background:
+    linear-gradient(rgba(255, 122, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 170, 0.035) 1px, transparent 1px),
+    var(--background);
+  background-size: 28px 28px, 28px 28px, auto;
   color: var(--foreground);
   font-family: var(--font-geist-sans);
   text-rendering: optimizeLegibility;

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flipdeck.dev/schemas/profile.v2.schema.json",
+  "title": "FlipDeck Profile v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "commands"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "maxLength": 32
+    },
+    "extends": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "icon": {
+      "enum": ["git", "docker", "node", "python", "aws", "vscode", "system", "snippets", "presentation"]
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "type", "value"],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "type": {
+            "enum": ["text", "key", "key_combo"]
+          },
+          "value": {
+            "type": "string"
+          },
+          "delay_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000,
+            "default": 100
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "confirmation_required": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    }
+  }
+}
