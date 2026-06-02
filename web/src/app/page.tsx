@@ -1,211 +1,412 @@
-import { Profile } from "@/types/flipdeck";
+import { profileFiles } from "@/lib/profiles";
 import { getActionTypeColor } from "@/lib/utils";
 
-// Profile data - copied from SD card profiles
-const profiles: Profile[] = [
+const navItems = [
+  { label: "Install", href: "#install" },
+  { label: "Profiles", href: "#profiles" },
+  { label: "Safety", href: "#safety" },
+];
+
+const installSteps = [
   {
-    name: "Git",
-    id: "git",
-    description: "Git workflow shortcuts",
-    actions: [
-      { label: "Git Status", type: "text", value: "git status\n", confirm: true },
-      { label: "Git Add All", type: "text", value: "git add .\n", confirm: true },
-      { label: "Git Commit", type: "text", value: "git commit -m \"", confirm: true },
-      { label: "Git Push", type: "text", value: "git push origin\n", confirm: true },
-      { label: "Git Pull", type: "text", value: "git pull origin\n", confirm: true },
-    ],
+    eyebrow: "Connect",
+    title: "Plug In Your Flipper",
+    body: "Use USB, unlock the device, and open qFlipper on your computer.",
   },
   {
-    name: "Node.js",
-    id: "node",
-    description: "Node.js development commands",
-    actions: [
-      { label: "Run dev server", type: "text", value: "npm run dev\n", confirm: true },
-      { label: "Run tests", type: "text", value: "npm test\n", confirm: true },
-      { label: "Build", type: "text", value: "npm run build\n", confirm: true },
-      { label: "Install", type: "text", value: "npm install\n", confirm: true },
-    ],
+    eyebrow: "Browse",
+    title: "Open the SD Card",
+    body: "In qFlipper, open the file browser so the SD card root is visible.",
   },
   {
-    name: "Python",
-    id: "python",
-    description: "Python development commands",
-    actions: [
-      { label: "Run Python", type: "text", value: "python\n", confirm: true },
-      { label: "Run script", type: "text", value: "python ", confirm: true },
-      { label: "Pip Install", type: "text", value: "pip install ", confirm: true },
-      { label: "Pip List", type: "text", value: "pip list\n", confirm: true },
-    ],
+    eyebrow: "Download",
+    title: "Grab the Install Pack",
+    body: "Download one ZIP with the exact apps_data/flipdeck layout already prepared.",
   },
   {
-    name: "Docker",
-    id: "docker",
-    description: "Docker container and image commands",
-    actions: [
-      { label: "Docker PS", type: "text", value: "docker ps\n", confirm: true },
-      { label: "Docker Images", type: "text", value: "docker images\n", confirm: true },
-      { label: "Docker Compose PS", type: "text", value: "docker-compose ps\n", confirm: true },
-      { label: "Docker Compose Up", type: "text", value: "docker-compose up -d\n", confirm: true },
-      { label: "Docker Compose Down", type: "text", value: "docker-compose down\n", confirm: true },
-    ],
-  },
-  {
-    name: "System",
-    id: "system",
-    description: "System utilities",
-    actions: [
-      { label: "Clear", type: "text", value: "clear\n", confirm: true },
-      { label: "LS", type: "text", value: "ls -la\n", confirm: true },
-      { label: "PWD", type: "text", value: "pwd\n", confirm: true },
-      { label: "Whoami", type: "text", value: "whoami\n", confirm: true },
-    ],
-  },
-  {
-    name: "VSCode",
-    id: "vscode",
-    description: "VSCode keyboard shortcuts",
-    actions: [
-      { label: "Command Palette", type: "key_combo", value: "CTRL+SHIFT+P", confirm: false },
-      { label: "File Explorer", type: "key_combo", value: "CTRL+SHIFT+E", confirm: false },
-      { label: "Search", type: "key_combo", value: "CTRL+SHIFT+F", confirm: false },
-      { label: "Terminal", type: "key_combo", value: "CTRL+`", confirm: false },
-      { label: "Format Document", type: "key_combo", value: "SHIFT+ALT+F", confirm: false },
-    ],
-  },
-  {
-    name: "Presentation",
-    id: "presentation",
-    description: "Presentation remote control",
-    actions: [
-      { label: "Next Slide", type: "key", value: "RIGHT", confirm: false },
-      { label: "Previous Slide", type: "key", value: "LEFT", confirm: false },
-      { label: "Start Slideshow", type: "key", value: "F5", confirm: false },
-      { label: "Exit Presentation", type: "key", value: "ESCAPE", confirm: false },
-      { label: "Blank Screen", type: "key", value: "B", confirm: false },
-    ],
-  },
-  {
-    name: "AWS CLI",
-    id: "aws",
-    description: "AWS command line tools",
-    actions: [
-      { label: "EC2 Instances", type: "text", value: "aws ec2 describe-instances\n", confirm: true },
-      { label: "S3 List Buckets", type: "text", value: "aws s3 ls\n", confirm: true },
-      { label: "S3 Sync", type: "text", value: "aws s3 sync . s3://\n", confirm: true },
-      { label: "Lambda List", type: "text", value: "aws lambda list-functions\n", confirm: true },
-      { label: "STS Get Caller", type: "text", value: "aws sts get-caller-identity\n", confirm: true },
-    ],
-  },
-  {
-    name: "Code Snippets",
-    id: "snippets",
-    description: "Common code templates",
-    actions: [
-      { label: "Console Log", type: "text", value: "console.log('DEBUG:', );\n", confirm: true },
-      { label: "For Loop", type: "text", value: "for(let i = 0; i < ; i++) {\n  \n}\n", confirm: true },
-      { label: "If Statement", type: "text", value: "if (condition) {\n  \n}\n", confirm: true },
-      { label: "Try Catch", type: "text", value: "try {\n  \n} catch (error) {\n  console.error(error);\n}\n", confirm: true },
-      { label: "Arrow Function", type: "text", value: "const func = () => {\n  \n}\n", confirm: true },
-    ],
+    eyebrow: "Copy",
+    title: "Drag apps_data Over",
+    body: "Drop apps_data onto the SD card root and merge or replace FlipDeck files if prompted.",
   },
 ];
 
+const featureCards = [
+  {
+    title: "Drag-and-Drop Install",
+    body: "No firmware build, no terminal, no manual JSON juggling. Copy one folder and launch.",
+  },
+  {
+    title: "Ready Profiles",
+    body: "Git, Node.js, Python, Docker, VSCode, snippets, presentation controls, and more.",
+  },
+  {
+    title: "Visible by Design",
+    body: "Profiles are plain JSON, commands are reviewable, and text actions require confirmation.",
+  },
+];
+
+const safetyItems = [
+  "Bundled commands are plain text and easy to inspect.",
+  "Confirmation stays on for command-style actions.",
+  "Use profiles only on computers you own or administer.",
+];
 
 export default function Home() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 font-sans dark:bg-black p-4">
-      <main className="flex flex-col items-center w-full max-w-5xl bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-8">
-        {/* Header */}
-        <header className="w-full mb-8">
-          <h1 className="text-4xl font-bold text-center text-zinc-900 dark:text-zinc-100 mb-2">
-            FlipDeck
-          </h1>
-          <p className="text-lg text-center text-zinc-600 dark:text-zinc-400">
-            USB Command Deck for Flipper Zero
-          </p>
-        </header>
+  const totalActions = profileFiles.reduce(
+    (sum, { profile }) => sum + profile.actions.length,
+    0
+  );
 
-        {/* Profiles Grid */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {profiles.map((profile) => (
-            <div
-              key={profile.id}
-              className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 hover:shadow-md transition-shadow"
+  return (
+    <main
+      id="main-content"
+      className="relative min-h-screen overflow-x-hidden bg-[#08090f] text-white"
+    >
+      <div className="pointer-events-none absolute inset-0 -z-0">
+        <div className="absolute left-1/2 top-[-18rem] h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-orange-500/25 blur-3xl" />
+        <div className="absolute right-[-12rem] top-56 h-[30rem] w-[30rem] rounded-full bg-fuchsia-500/20 blur-3xl" />
+        <div className="absolute bottom-[-14rem] left-[-10rem] h-[34rem] w-[34rem] rounded-full bg-cyan-500/15 blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.10),transparent_32rem)]" />
+      </div>
+
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-zinc-950 focus-visible:ring-4 focus-visible:ring-orange-300"
+      >
+        Skip to Content
+      </a>
+
+      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-7xl gap-8 px-4 py-4 sm:px-6 lg:grid-cols-[17rem_1fr] lg:px-8">
+        <aside className="hidden lg:sticky lg:top-4 lg:flex lg:h-[calc(100vh-2rem)] lg:flex-col lg:justify-between lg:rounded-[2rem] lg:border lg:border-white/10 lg:bg-white/[0.055] lg:p-5 lg:shadow-2xl lg:shadow-black/30 lg:backdrop-blur-xl">
+          <div>
+            <a
+              href="#main-content"
+              className="group flex items-center gap-3 rounded-2xl p-2 focus-visible:ring-4 focus-visible:ring-orange-300"
             >
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xl font-semibold text-zinc-800 dark:text-zinc-200">
-                  {profile.name}
-                </h2>
-                <span className="text-xs px-2 py-1 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 rounded-full">
-                  {profile.id}
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 text-xl font-black shadow-lg shadow-orange-500/25">
+                F
+              </span>
+              <span>
+                <span className="block text-lg font-black tracking-tight">
+                  FlipDeck
                 </span>
-              </div>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-                {profile.description}
+                <span className="block text-xs font-medium text-zinc-400">
+                  USB Command Deck
+                </span>
+              </span>
+            </a>
+
+            <nav className="mt-8" aria-label="Main navigation">
+              <p className="px-3 text-xs font-bold uppercase tracking-[0.25em] text-zinc-500">
+                Main Navigation
               </p>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs text-zinc-500 dark:text-zinc-500">
-                  {profile.actions.length} actions
-                </span>
-                <a
-                  href={`/profiles/${profile.id}.json`}
-                  download
-                  className="text-xs px-2 py-1 text-amber-700 bg-amber-100 dark:bg-amber-900 dark:text-amber-200 rounded hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
-                >
-                  Download
-                </a>
-              </div>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {profile.actions.map((action, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 bg-zinc-50 dark:bg-zinc-800 rounded"
+              <div className="mt-3 space-y-2">
+                {navItems.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-bold text-zinc-300 transition-colors duration-200 hover:bg-white/10 hover:text-white focus-visible:ring-4 focus-visible:ring-orange-300"
                   >
-                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      {action.label}
+                    {item.label}
+                    <span aria-hidden="true" className="text-orange-300">
+                      →
                     </span>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${getActionTypeColor(
-                        action.type
-                      )}`}
-                    >
-                      {action.type}
-                    </span>
-                  </div>
+                  </a>
                 ))}
               </div>
-            </div>
-          ))}
-        </div>
+            </nav>
+          </div>
 
-        {/* Footer */}
-        <footer className="w-full mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-700">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Store profiles on your Flipper Zero SD card:{" "}
-              <code className="bg-zinc-100 dark:bg-zinc-800 px-1 rounded">
-                /apps_data/flipdeck/profiles/
-              </code>
+          <div className="rounded-3xl border border-orange-300/20 bg-orange-400/10 p-4">
+            <p className="text-sm font-bold text-orange-100">Railway Ready</p>
+            <p className="mt-2 text-sm leading-6 text-zinc-300">
+              Deploy from the repo root. The app builds from <code>web/</code>
+              and serves the standalone Next.js bundle.
             </p>
-            <div className="flex gap-3">
+          </div>
+        </aside>
+
+        <div className="space-y-8 pb-12">
+          <header className="flex items-center justify-between rounded-[1.5rem] border border-white/10 bg-white/[0.055] px-4 py-3 backdrop-blur-xl lg:hidden">
+            <a
+              href="#main-content"
+              className="flex items-center gap-3 focus-visible:ring-4 focus-visible:ring-orange-300"
+            >
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-orange-400 to-pink-500 font-black">
+                F
+              </span>
+              <span className="font-black">FlipDeck</span>
+            </a>
+            <a
+              href="/api/install-bundle/download"
+              className="rounded-full bg-white px-4 py-2 text-sm font-black text-zinc-950 transition-colors duration-200 hover:bg-orange-100 focus-visible:ring-4 focus-visible:ring-orange-300"
+            >
+              Install
+            </a>
+          </header>
+
+          <section className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-8 xl:p-10">
+            <div className="absolute right-10 top-10 hidden rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-bold text-orange-100 sm:block">
+              Stock Flipper Friendly
+            </div>
+
+            <div className="grid gap-10 xl:grid-cols-[1fr_27rem] xl:items-center">
+              <div className="max-w-3xl">
+                <p className="inline-flex rounded-full border border-orange-300/25 bg-orange-400/10 px-3 py-1 text-sm font-bold text-orange-100 shadow-lg shadow-orange-950/20">
+                  Flipper Zero Install Pack
+                </p>
+                <h1 className="mt-6 text-balance text-5xl font-black tracking-tight text-white sm:text-7xl lg:text-8xl">
+                  Make FlipDeck Feel One-Click.
+                </h1>
+                <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-zinc-300 sm:text-xl">
+                  Give Flipper users a Momentum-style path: plug in, open
+                  qFlipper, download one pack, drag one folder, and start using
+                  {" "}
+                  {profileFiles.length} profiles with {totalActions} actions.
+                </p>
+
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <a
+                    href="/api/install-bundle/download"
+                    className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 px-6 py-4 text-base font-black text-white shadow-2xl shadow-orange-500/25 transition-transform duration-200 hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-orange-300"
+                  >
+                    Download Flipper Install Pack
+                    <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">
+                      →
+                    </span>
+                  </a>
+                  <a
+                    href="#install"
+                    className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-6 py-4 text-base font-black text-white transition-colors duration-200 hover:bg-white/15 focus-visible:ring-4 focus-visible:ring-orange-300"
+                  >
+                    View Install Steps
+                  </a>
+                </div>
+
+                <dl className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                    <dt className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+                      Profiles
+                    </dt>
+                    <dd className="mt-2 text-3xl font-black tabular-nums">
+                      {profileFiles.length}
+                    </dd>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                    <dt className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+                      Actions
+                    </dt>
+                    <dd className="mt-2 text-3xl font-black tabular-nums">
+                      {totalActions}
+                    </dd>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                    <dt className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+                      Firmware
+                    </dt>
+                    <dd className="mt-2 text-3xl font-black">Stock</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="relative mx-auto w-full max-w-sm">
+                <div className="absolute inset-0 rounded-[3rem] bg-gradient-to-br from-orange-400/30 to-fuchsia-500/30 blur-2xl" />
+                <div className="relative rounded-[2.25rem] border border-white/15 bg-zinc-950 p-4 shadow-2xl shadow-black/50">
+                  <div className="rounded-[1.75rem] border border-white/10 bg-[#f97316] p-3">
+                    <div className="rounded-[1.25rem] bg-[#1f2937] p-4 shadow-inner shadow-black/60">
+                      <div className="mb-4 flex items-center justify-between">
+                        <span className="text-xs font-black uppercase tracking-[0.2em] text-orange-200">
+                          FlipDeck
+                        </span>
+                        <span className="h-2 w-2 rounded-full bg-lime-300 shadow-lg shadow-lime-300/60" />
+                      </div>
+                      <div className="space-y-2">
+                        {profileFiles.slice(0, 5).map(({ profile }) => (
+                          <div
+                            key={profile.id}
+                            className="flex items-center justify-between rounded-xl bg-white/10 px-3 py-2"
+                          >
+                            <span className="text-sm font-bold text-white">
+                              {profile.name}
+                            </span>
+                            <span className="text-xs font-bold text-orange-200 tabular-nums">
+                              {profile.actions.length}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-2 pb-2">
+                      <div className="h-14 rounded-full bg-zinc-950/90" />
+                      <div className="grid h-20 w-20 place-items-center rounded-full border-[10px] border-zinc-950/90 bg-zinc-800 text-xs font-black text-zinc-400">
+                        OK
+                      </div>
+                      <div className="h-14 rounded-full bg-zinc-950/90" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-4 md:grid-cols-3" aria-label="Highlights">
+            {featureCards.map((card) => (
+              <article
+                key={card.title}
+                className="rounded-[2rem] border border-white/10 bg-white/[0.055] p-6 shadow-xl shadow-black/20 backdrop-blur-xl"
+              >
+                <h2 className="text-xl font-black text-white">{card.title}</h2>
+                <p className="mt-3 text-pretty leading-7 text-zinc-300">{card.body}</p>
+              </article>
+            ))}
+          </section>
+
+          <section
+            id="install"
+            className="scroll-mt-6 rounded-[2.5rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/25 backdrop-blur-xl sm:p-8"
+          >
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.25em] text-orange-300">
+                  Web Installer
+                </p>
+                <h2 className="mt-3 text-balance text-4xl font-black text-white sm:text-5xl">
+                  Start When Your Flipper Is Plugged In
+                </h2>
+              </div>
+              <a
+                href="/api/install-bundle/download"
+                className="rounded-2xl bg-white px-5 py-3 text-center text-sm font-black text-zinc-950 transition-colors duration-200 hover:bg-orange-100 focus-visible:ring-4 focus-visible:ring-orange-300"
+              >
+                Download Ready-to-Copy ZIP
+              </a>
+            </div>
+
+            <ol className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {installSteps.map((step, index) => (
+                <li
+                  key={step.title}
+                  className="group rounded-[2rem] border border-white/10 bg-black/20 p-5 transition-transform duration-200 hover:-translate-y-1"
+                >
+                  <div className="mb-8 flex items-center justify-between">
+                    <span className="rounded-full bg-orange-400/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-orange-200">
+                      {step.eyebrow}
+                    </span>
+                    <span className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-sm font-black text-white tabular-nums">
+                      {index + 1}
+                    </span>
+                  </div>
+                  <h3 className="text-2xl font-black text-white">{step.title}</h3>
+                  <p className="mt-3 text-pretty leading-7 text-zinc-300">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section
+            id="profiles"
+            className="scroll-mt-6 rounded-[2.5rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/25 backdrop-blur-xl sm:p-8"
+          >
+            <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.25em] text-orange-300">
+                  Included Profiles
+                </p>
+                <h2 className="mt-3 text-balance text-4xl font-black text-white sm:text-5xl">
+                  Command Sets That Are Ready to Copy
+                </h2>
+              </div>
               <a
                 href="/api/profiles/download"
-                className="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-100 dark:bg-amber-900 dark:text-amber-200 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
+                className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-center text-sm font-black text-white transition-colors duration-200 hover:bg-white/15 focus-visible:ring-4 focus-visible:ring-orange-300"
               >
-                Download All Profiles (ZIP)
-              </a>
-              <a
-                href="https://github.com/mohabbis/flipdeck"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 text-sm font-medium text-zinc-700 bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-              >
-                GitHub
+                Download Profiles Only
               </a>
             </div>
-          </div>
-        </footer>
-      </main>
-    </div>
+
+            <div className="grid w-full grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {profileFiles.map(({ fileName, profile }) => (
+                <article
+                  key={profile.id}
+                  className="min-w-0 rounded-[2rem] border border-white/10 bg-black/20 p-5 transition-transform duration-200 hover:-translate-y-1"
+                >
+                  <div className="mb-4 flex min-w-0 items-center justify-between gap-3">
+                    <h3 className="truncate text-2xl font-black text-white">
+                      {profile.name}
+                    </h3>
+                    <span
+                      translate="no"
+                      className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-zinc-300"
+                    >
+                      {fileName}
+                    </span>
+                  </div>
+                  <p className="mb-5 min-h-12 text-pretty text-sm leading-6 text-zinc-300">
+                    {profile.description}
+                  </p>
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="text-xs font-black uppercase tracking-widest text-zinc-500">
+                      {profile.actions.length} Actions
+                    </span>
+                    <a
+                      href={`/profiles/${profile.id}.json`}
+                      download
+                      className="rounded-full bg-orange-400/10 px-3 py-1 text-xs font-black text-orange-200 transition-colors duration-200 hover:bg-orange-400/20 focus-visible:ring-4 focus-visible:ring-orange-300"
+                    >
+                      Download JSON
+                    </a>
+                  </div>
+                  <div className="max-h-48 space-y-2 overflow-y-auto pr-1 [content-visibility:auto]">
+                    {profile.actions.map((action) => (
+                      <div
+                        key={`${profile.id}-${action.label}`}
+                        className="flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-white/[0.055] p-3"
+                      >
+                        <span className="min-w-0 truncate text-sm font-semibold text-zinc-200">
+                          {action.label}
+                        </span>
+                        <span
+                          translate="no"
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${getActionTypeColor(
+                            action.type
+                          )}`}
+                        >
+                          {action.type}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section
+            id="safety"
+            className="scroll-mt-6 rounded-[2.5rem] border border-orange-300/20 bg-orange-400/10 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-8"
+          >
+            <p className="text-sm font-black uppercase tracking-[0.25em] text-orange-200">
+              Safety First
+            </p>
+            <h2 className="mt-3 text-balance text-4xl font-black text-white">
+              FlipDeck Should Never Feel Like a Hidden Payload.
+            </h2>
+            <ul className="mt-6 grid gap-3 md:grid-cols-3">
+              {safetyItems.map((item) => (
+                <li
+                  key={item}
+                  className="flex gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-zinc-200"
+                >
+                  <span aria-hidden="true" className="text-orange-300">
+                    ✓
+                  </span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      </div>
+    </main>
   );
 }
