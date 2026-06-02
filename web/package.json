@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postbuild": "node scripts/copy-profiles.js",
+    "prebuild": "node scripts/copy-profiles.mjs",
     "test": "vitest run"
   },
   "dependencies": {

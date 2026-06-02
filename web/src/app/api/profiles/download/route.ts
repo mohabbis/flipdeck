@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import JSZip from "jszip";
 import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
 
-// Path to profiles in public directory
-const PROFILES_PATH = join(process.cwd(), "..", "public", "profiles");
+// Path to profiles copied into the web public directory
+const PROFILES_PATH = join(process.cwd(), "public", "profiles");
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const zip = new JSZip();
     
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       for (const profile of defaultProfiles) {
         // Read from SD card as source of truth
         try {
-          const sdPath = join(process.cwd(), "..", "..", "..", "sd_card", "apps_data", "flipdeck", "profiles", profile.file);
+          const sdPath = join(process.cwd(), "..", "sd_card", "apps_data", "flipdeck", "profiles", profile.file);
           const content = readFileSync(sdPath, "utf-8");
           zip.file(profile.file, content);
         } catch {
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         "Content-Disposition": "attachment; filename=flipdeck-profiles.zip",
       },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to create zip archive" },
       { status: 500 }
