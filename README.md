@@ -25,15 +25,28 @@ FlipDeck transforms your Flipper Zero into a programmable command deck. Store fr
 - ✅ **Safe Mode** — Confirmation before sending commands
 - ✅ **Settings** — Configurable delays and preferences
 
-## Installation
+## Installation for Flipper Zero users
 
-1. **Download the latest release** from the [releases page](https://github.com/mohabbis/flipdeck/releases)
-2. **Copy to SD card**: Extract and copy the `apps_data/flipdeck` folder to:
-   ```
-   /apps_data/flipdeck/
-   ```
-   (or browse to Apps → Install in the Flipper menu)
-3. **Launch**: From your Flipper, go to `Apps → FlipDeck`
+The web installer is designed to feel like a firmware install: plug in the Flipper, download one ZIP, and drag one folder onto the SD card.
+
+1. **Plug in and unlock your Flipper Zero** with USB.
+2. **Open qFlipper** and choose the SD card / file browser view.
+3. **Open the deployed FlipDeck web app** (Railway, Vercel, or local).
+4. **Click `Download Flipper install pack`**. The ZIP already contains the correct `apps_data/flipdeck` folder layout.
+5. **Extract the ZIP and drag `apps_data` onto the Flipper SD card root**. Merge/replace the FlipDeck files if prompted.
+6. **Launch FlipDeck** from the Flipper apps menu, choose a profile, review the command, and press OK.
+
+Manual path if you are copying files yourself:
+```
+/apps_data/flipdeck/
+├── settings.json
+├── profiles/
+└── snippets/
+```
+
+### Deploying the web installer on Railway
+
+This repository includes `nixpacks.toml` for Railway. Point Railway at the repository root; it will install, build, and start the app from `web/` using the standalone Next.js server.
 
 ## Getting Started
 
