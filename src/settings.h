@@ -6,16 +6,7 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <furi.h>
-
-/**
- * @brief Settings structure
- */
-typedef struct {
-    uint32_t send_delay_ms;
-    bool confirm_before_send;
-    bool auto_connect_usb;
-} FlipDeckSettings;
+#include "flipdeck_app.h"
 
 /**
  * @brief Load settings from storage
