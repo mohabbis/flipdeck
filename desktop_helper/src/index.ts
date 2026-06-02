@@ -1,7 +1,8 @@
+#!/usr/bin/env node
 /**
  * @file src/index.ts
  * @brief FlipDeck Desktop Helper - CLI Application
- * 
+ *
  * Companion CLI app for FlipDeck Flipper Zero application.
  * Provides profile management, GitHub sync, and automation.
  */
@@ -12,6 +13,7 @@ import { join, dirname } from 'path';
 import * as fsExtra from 'fs-extra';
 import axios from 'axios';
 import { validateProfile } from './validation';
+import { registerProfileCommands } from './lib/profile-tools';
 
 interface FlipDeckAction {
     label: string;
@@ -36,10 +38,10 @@ interface Settings {
     startup_category: string;
 }
 
-const PROFILES_DIR = join(__dirname, '../sd_card/apps_data/flipdeck/profiles');
-const SETTINGS_FILE = join(__dirname, '../sd_card/apps_data/flipdeck/settings.json');
-const SNIPPETS_DIR = join(__dirname, '../sd_card/apps_data/flipdeck/snippets');
-const DEFAULT_PROFILES_DIR = join(__dirname, '../sd_card/apps_data/flipdeck/profiles');
+const DATA_DIR = join(__dirname, '../../sd_card/apps_data/flipdeck');
+const PROFILES_DIR = join(DATA_DIR, 'profiles');
+const SETTINGS_FILE = join(DATA_DIR, 'settings.json');
+const SNIPPETS_DIR = join(DATA_DIR, 'snippets');
 
 // Ensure directories exist
 export function ensureDirectories() {
@@ -163,6 +165,8 @@ program
     .name('flipdeck')
     .description('CLI tool for FlipDeck - USB Command Deck for Flipper Zero')
     .version('1.0.0');
+
+registerProfileCommands(program, PROFILES_DIR);
 
 program
     .command('init')
