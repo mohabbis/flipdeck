@@ -8,8 +8,7 @@ describe('GET /api/profiles/download', () => {
 
         expect(res.status).toBe(200);
         expect(res.headers.get('Content-Type')).toBe('application/zip');
-        expect(res.headers.get('Content-Disposition')).toContain('attachment');
-        expect(res.headers.get('Content-Disposition')).toContain('flipdeck-profiles.zip');
+        expect(res.headers.get('Content-Disposition')).toBe('attachment; filename=flipdeck-profiles.zip');
     });
 
     it('returns actual binary ZIP content', async () => {
@@ -18,10 +17,9 @@ describe('GET /api/profiles/download', () => {
         const buffer = await res.arrayBuffer();
         expect(buffer.byteLength).toBeGreaterThan(0);
 
-        // ZIP files start with PK magic bytes (0x50 0x4B)
         const bytes = new Uint8Array(buffer);
-        expect(bytes[0]).toBe(0x50); // 'P'
-        expect(bytes[1]).toBe(0x4B); // 'K'
+        expect(bytes[0]).toBe(0x50);
+        expect(bytes[1]).toBe(0x4B);
     });
 
     it('includes every bundled default profile in the ZIP', async () => {
