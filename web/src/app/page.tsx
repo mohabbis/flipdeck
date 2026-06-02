@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { profileFiles } from "@/lib/profiles";
 import { getActionTypeColor } from "@/lib/utils";
 
@@ -63,9 +66,16 @@ const safetyItems = [
 ];
 
 export default function Home() {
+  const [searchQuery, setSearchQuery] = useState("");
+
   const totalActions = profileFiles.reduce(
     (sum, { profile }) => sum + profile.actions.length,
     0
+  );
+
+  const filteredProfiles = profileFiles.filter(({ profile }) =>
+    profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    profile.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -92,7 +102,7 @@ export default function Home() {
           <div>
             <a
               href="#main-content"
-              className="group flex items-center gap-3 rounded-2xl p-2 focus-visible:ring-4 focus-visible:ring-orange-300"
+              className="group flex items-center gap-3 rounded-2xl p-2 focus-visible:ring-4 focus-visible:ring-orange-300 transition-transform hover:-translate-y-0.5"
             >
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 text-xl font-black shadow-lg shadow-orange-500/25">
                 F
@@ -156,7 +166,7 @@ export default function Home() {
             </a>
           </header>
 
-          <section className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-8 xl:p-10">
+          <section className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-8 xl:p-10 transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/10">
             <div className="absolute right-10 top-10 hidden rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-bold text-orange-100 sm:block">
               Stock Flipper Friendly
             </div>
@@ -166,7 +176,7 @@ export default function Home() {
                 <p className="inline-flex rounded-full border border-orange-300/25 bg-orange-400/10 px-3 py-1 text-sm font-bold text-orange-100 shadow-lg shadow-orange-950/20">
                   Flipper Zero Install Pack
                 </p>
-                <h1 className="mt-6 text-balance text-5xl font-black tracking-tight text-white sm:text-7xl lg:text-8xl">
+                <h1 className="mt-6 text-balance text-5xl font-black tracking-tight text-white sm:text-7xl lg:text-8xl bg-clip-text bg-gradient-to-r from-orange-400 to-pink-500 text-transparent">
                   Make FlipDeck Feel One-Click.
                 </h1>
                 <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-zinc-300 sm:text-xl">
@@ -178,7 +188,7 @@ export default function Home() {
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <a
                     href="/api/install-bundle/download"
-                    className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 px-6 py-4 text-base font-black text-white shadow-2xl shadow-orange-500/25 transition-transform duration-200 hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-orange-300"
+                    className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 px-6 py-4 text-base font-black text-white shadow-2xl shadow-orange-500/25 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-orange-500/40 focus-visible:ring-4 focus-visible:ring-orange-300"
                   >
                     Download Flipper Install Pack
                     <span
@@ -190,14 +200,14 @@ export default function Home() {
                   </a>
                   <a
                     href="#install"
-                    className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-6 py-4 text-base font-black text-white transition-colors duration-200 hover:bg-white/15 focus-visible:ring-4 focus-visible:ring-orange-300"
+                    className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-6 py-4 text-base font-black text-white transition-all duration-200 hover:bg-white/15 hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-orange-300"
                   >
                     View Install Steps
                   </a>
                 </div>
 
                 <dl className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4 transition-all duration-200 hover:bg-black/30 hover:border-white/20">
                     <dt className="text-xs font-bold uppercase tracking-widest text-zinc-500">
                       Profiles
                     </dt>
@@ -205,7 +215,7 @@ export default function Home() {
                       {profileFiles.length}
                     </dd>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4 transition-all duration-200 hover:bg-black/30 hover:border-white/20">
                     <dt className="text-xs font-bold uppercase tracking-widest text-zinc-500">
                       Actions
                     </dt>
@@ -213,7 +223,7 @@ export default function Home() {
                       {totalActions}
                     </dd>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4 transition-all duration-200 hover:bg-black/30 hover:border-white/20">
                     <dt className="text-xs font-bold uppercase tracking-widest text-zinc-500">
                       Firmware
                     </dt>
@@ -222,7 +232,7 @@ export default function Home() {
                 </dl>
               </div>
 
-              <div className="rounded-3xl bg-zinc-950 p-5 text-zinc-100 shadow-2xl dark:bg-black">
+              <div className="rounded-3xl bg-zinc-950 p-5 text-zinc-100 shadow-2xl dark:bg-black border border-white/10">
                 <div className="mb-4 flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-red-400" />
                   <span className="h-3 w-3 rounded-full bg-yellow-400" />
@@ -259,7 +269,7 @@ export default function Home() {
             {featureCards.map((card) => (
               <article
                 key={card.title}
-                className="rounded-[2rem] border border-white/10 bg-white/[0.055] p-6 shadow-xl shadow-black/20 backdrop-blur-xl"
+                className="rounded-[2rem] border border-white/10 bg-white/[0.055] p-6 shadow-xl shadow-black/20 backdrop-blur-xl transition-all duration-200 hover:bg-white/[0.075] hover:border-white/20 hover:-translate-y-1"
               >
                 <h2 className="text-xl font-black text-white">{card.title}</h2>
                 <p className="mt-3 text-pretty leading-7 text-zinc-300">
@@ -284,7 +294,7 @@ export default function Home() {
               </div>
               <a
                 href="/api/install-bundle/download"
-                className="rounded-2xl bg-white px-5 py-3 text-center text-sm font-black text-zinc-950 transition-colors duration-200 hover:bg-orange-100 focus-visible:ring-4 focus-visible:ring-orange-300"
+                className="rounded-2xl bg-white px-5 py-3 text-center text-sm font-black text-zinc-950 transition-all duration-200 hover:bg-orange-100 hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-orange-300"
               >
                 Download Ready-to-Copy ZIP
               </a>
@@ -294,13 +304,13 @@ export default function Home() {
               {installSteps.map((step, index) => (
                 <li
                   key={step.title}
-                  className="group rounded-[2rem] border border-white/10 bg-black/20 p-5 transition-transform duration-200 hover:-translate-y-1"
+                  className="group rounded-[2rem] border border-white/10 bg-black/20 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-orange-300/50 hover:bg-black/30"
                 >
                   <div className="mb-8 flex items-center justify-between">
                     <span className="rounded-full bg-orange-400/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-orange-200">
                       {step.eyebrow}
                     </span>
-                    <span className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-sm font-black text-white tabular-nums">
+                    <span className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-sm font-black text-white tabular-nums group-hover:bg-orange-400/20 group-hover:text-orange-200 transition-colors duration-200">
                       {index + 1}
                     </span>
                   </div>
@@ -330,72 +340,91 @@ export default function Home() {
               </div>
               <a
                 href="/api/profiles/download"
-                className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-center text-sm font-black text-white transition-colors duration-200 hover:bg-white/15 focus-visible:ring-4 focus-visible:ring-orange-300"
+                className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-center text-sm font-black text-white transition-all duration-200 hover:bg-white/15 hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-orange-300"
               >
                 Download Profiles Only
               </a>
             </div>
 
+            {/* Search Bar */}
+            <div className="mb-8">
+              <input
+                type="search"
+                placeholder="Search profiles by name or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-5 py-3 rounded-2xl border border-white/15 bg-white/[0.055] text-white placeholder-zinc-400 focus:outline-none focus:ring-4 focus:ring-orange-300/50 focus:border-orange-300/50 backdrop-blur-xl transition-all duration-200"
+              />
+            </div>
+
             <div className="grid w-full grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {profileFiles.map(({ fileName, profile }) => (
-                <article
-                  key={profile.id}
-                  className="min-w-0 rounded-[2rem] border border-white/10 bg-black/20 p-5 transition-transform duration-200 hover:-translate-y-1"
-                >
-                  <div className="mb-4 flex min-w-0 items-center justify-between gap-3">
-                    <h3 className="truncate text-2xl font-black text-white">
-                      {profile.name}
-                    </h3>
-                    <span
-                      translate="no"
-                      className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-zinc-300"
-                    >
-                      {fileName}
-                    </span>
-                  </div>
-                  <p className="mb-5 min-h-12 text-pretty text-sm leading-6 text-zinc-300">
-                    {profile.description}
-                  </p>
-                  <div className="mb-4 flex items-center justify-between">
-                    <span className="text-xs font-black uppercase tracking-widest text-zinc-500">
-                      {profile.actions.length} Actions
-                    </span>
-                    <a
-                      href={`/profiles/${profile.id}.json`}
-                      download
-                      className="rounded-full bg-orange-400/10 px-3 py-1 text-xs font-black text-orange-200 transition-colors duration-200 hover:bg-orange-400/20 focus-visible:ring-4 focus-visible:ring-orange-300"
-                    >
-                      Download JSON
-                    </a>
-                  </div>
-                  <div className="max-h-48 space-y-2 overflow-y-auto pr-1 [content-visibility:auto]">
-                    {profile.actions.map((action) => (
-                      <div
-                        key={`${profile.id}-${action.label}`}
-                        className="flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-white/[0.055] p-3"
+              {filteredProfiles.length > 0 ? (
+                filteredProfiles.map(({ fileName, profile }) => (
+                  <article
+                    key={profile.id}
+                    className="min-w-0 rounded-[2rem] border border-white/10 bg-black/20 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-orange-300/50 hover:bg-black/30"
+                  >
+                    <div className="mb-4 flex min-w-0 items-center justify-between gap-3">
+                      <h3 className="truncate text-2xl font-black text-white">
+                        {profile.name}
+                      </h3>
+                      <span
+                        translate="no"
+                        className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-zinc-300"
                       >
-                        <span className="min-w-0 truncate text-sm font-semibold text-zinc-200">
-                          {action.label}
-                        </span>
-                        <span
-                          translate="no"
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${getActionTypeColor(
-                            action.type
-                          )}`}
+                        {fileName}
+                      </span>
+                    </div>
+                    <p className="mb-5 min-h-12 text-pretty text-sm leading-6 text-zinc-300">
+                      {profile.description}
+                    </p>
+                    <div className="mb-4 flex items-center justify-between">
+                      <span className="text-xs font-black uppercase tracking-widest text-zinc-500">
+                        {profile.actions.length} Actions
+                      </span>
+                      <a
+                        href={`/profiles/${profile.id}.json`}
+                        download
+                        className="rounded-full bg-orange-400/10 px-3 py-1 text-xs font-black text-orange-200 transition-all duration-200 hover:bg-orange-400/20 focus-visible:ring-4 focus-visible:ring-orange-300"
+                      >
+                        Download JSON
+                      </a>
+                    </div>
+                    <div className="max-h-48 space-y-2 overflow-y-auto pr-1 [content-visibility:auto]">
+                      {profile.actions.map((action) => (
+                        <div
+                          key={`${profile.id}-${action.label}`}
+                          className="flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-white/[0.055] p-3 transition-colors duration-200 hover:bg-white/[0.075]"
                         >
-                          {action.type}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </article>
-              ))}
+                          <span className="min-w-0 truncate text-sm font-semibold text-zinc-200">
+                            {action.label}
+                          </span>
+                          <span
+                            translate="no"
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${getActionTypeColor(
+                              action.type
+                            )}`}
+                          >
+                            {action.type}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <div className="col-span-full flex items-center justify-center py-12">
+                  <p className="text-lg text-zinc-400">
+                    No profiles match "{searchQuery}"
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 
           <section
             id="safety"
-            className="scroll-mt-6 rounded-[2.5rem] border border-orange-300/20 bg-orange-400/10 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-8"
+            className="scroll-mt-6 rounded-[2.5rem] border border-orange-300/20 bg-orange-400/10 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-8 transition-all duration-200 hover:shadow-xl hover:shadow-orange-500/10"
           >
             <p className="text-sm font-black uppercase tracking-[0.25em] text-orange-200">
               Safety First
@@ -407,9 +436,9 @@ export default function Home() {
               {safetyItems.map((item) => (
                 <li
                   key={item}
-                  className="flex gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-zinc-200"
+                  className="flex gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-zinc-200 transition-all duration-200 hover:bg-black/30 hover:border-orange-300/50"
                 >
-                  <span aria-hidden="true" className="text-orange-300">
+                  <span aria-hidden="true" className="text-orange-300 flex-shrink-0">
                     ✓
                   </span>
                   <span>{item}</span>
