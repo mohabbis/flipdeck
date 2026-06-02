@@ -8,7 +8,6 @@
 
 #include <furi.h>
 #include <furi_hal.h>
-#include <furi_hal_usb_hid.h>
 
 /**
  * @brief Check if USB HID is connected and ready
@@ -36,11 +35,5 @@ bool usb_hid_send_key(const char* keyName);
  * @return true if sent successfully
  */
 bool usb_hid_send_key_combo(const char* combo);
-
-/**
- * @brief Send a raw HID keyboard report
- * @param report The keyboard report to send
- */
-void usb_hid_send_report(furi_hal_usb_hid_keyboard_report_t* report);
 
 #endif // USB_HID_H

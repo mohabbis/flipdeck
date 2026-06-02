@@ -8,6 +8,7 @@
 
 #include <furi.h>
 #include <furi_hal.h>
+#include <gui/gui.h>
 
 /** Current app state */
 typedef enum {
@@ -24,8 +25,9 @@ typedef enum {
 #define FLIPDECK_MAX_COMMAND_LENGTH 256
 #define FLIPDECK_MAX_PROFILE_NAME 64
 #define FLIPDECK_MAX_SNIPPET_LENGTH_WARN 100  /* Warn for snippets longer than this */
+#define FLIPDECK_MAX_CATEGORIES 10
 
-/** Settings structure */
+/** Settings structure - canonical definition */
 typedef struct {
     uint32_t send_delay_ms;
     bool confirm_before_send;
@@ -35,6 +37,9 @@ typedef struct {
     char startup_category[32];
     uint32_t long_snippet_warn_state;  // Temporary state for long snippet warning
 } FlipDeckSettings;
+
+/** Forward declaration */
+typedef struct FlipDeckApp FlipDeckApp;
 
 /** App context containing all state */
 struct FlipDeckApp {
@@ -50,21 +55,33 @@ struct FlipDeckApp {
 
 /**
  * @brief Initialize the FlipDeck application
- * @param furi_void Pointer to Furi object
+ * @param p Unused parameter for compatibility
  * @return true if initialization successful
  */
-bool flipdeck_app_init(void* furi_void);
+bool flipdeck_app_init(void* p);
 
 /**
  * @brief Free resources and shutdown gracefully
- * @param furi_void Pointer to Furi object
+ * @param p Unused parameter for compatibility
  */
-void flipdeck_app_free(void* furi_void);
+void flipdeck_app_free(void* p);
 
 /**
  * @brief Main application loop
- * @param furi_void Pointer to Furi object
+ * @param p Unused parameter for compatibility
  */
-void flipdeck_app_loop(void* furi_void);
+void flipdeck_app_loop(void* p);
+
+/**
+ * @brief Get the global app context
+ * @return Pointer to app context or NULL
+ */
+FlipDeckApp* flipdeck_app_get_context(void);
+
+/**
+ * @brief Set the application state
+ * @param new_state New state to set
+ */
+void flipdeck_app_set_state(FlipDeckState new_state);
 
 #endif // FLIPDECK_APP_H

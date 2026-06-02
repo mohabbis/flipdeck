@@ -9,7 +9,8 @@
 #include "usb_hid.h"
 #include <furi.h>
 #include <furi_hal.h>
-#include <furi_core/string.h>
+#include <stdlib.h>
+#include <string.h>
 
 static FlipDeckApp* g_app_ctx = NULL;
 
@@ -17,7 +18,8 @@ static FlipDeckApp* g_app_ctx = NULL;
 static void flipdeck_load_settings(void);
 static void flipdeck_load_categories(void);
 
-bool flipdeck_app_init(void* furi_void) {
+bool flipdeck_app_init(void* p) {
+    (void)p;
     FURI_LOG_I("FlipDeck", "Initializing FlipDeck application");
     
     // Allocate app context
@@ -69,7 +71,8 @@ static void flipdeck_load_categories(void) {
     }
 }
 
-void flipdeck_app_free(void* furi_void) {
+void flipdeck_app_free(void* p) {
+    (void)p;
     FURI_LOG_I("FlipDeck", "Shutting down FlipDeck application");
     
     if(g_app_ctx) {
@@ -79,8 +82,8 @@ void flipdeck_app_free(void* furi_void) {
     }
 }
 
-void flipdeck_app_loop(void* furi_void) {
-    furi_t furi = furi_void;
+void flipdeck_app_loop(void* p) {
+    (void)p;
     
     // Poll USB connection status
     g_app_ctx->usb_connected = usb_hid_is_connected();
@@ -90,27 +93,27 @@ void flipdeck_app_loop(void* furi_void) {
             break;
             
         case FlipDeckState_CategoryBrowser:
-            flipdeck_ui_handle_category_browser(furi);
+            flipdeck_ui_handle_category_browser();
             break;
             
         case FlipDeckState_ActionBrowser:
-            flipdeck_ui_handle_action_browser(furi);
+            flipdeck_ui_handle_action_browser();
             break;
             
         case FlipDeckState_ActionDetail:
-            flipdeck_ui_handle_confirm(furi);
+            flipdeck_ui_handle_confirm();
             break;
             
         case FlipDeckState_SendConfirm:
-            flipdeck_ui_handle_confirm(furi);
+            flipdeck_ui_handle_confirm();
             break;
             
         case FlipDeckState_LongSnippetWarning:
-            flipdeck_ui_handle_long_snippet_warning(furi);
+            flipdeck_ui_handle_long_snippet_warning();
             break;
             
         case FlipDeckState_Settings:
-            flipdeck_ui_handle_settings(furi);
+            flipdeck_ui_handle_settings();
             break;
     }
 }
@@ -123,4 +126,19 @@ void flipdeck_app_set_state(FlipDeckState new_state) {
     if(g_app_ctx) {
         g_app_ctx->state = new_state;
     }
+}
+
+// Main entry point for uFBT
+int32_t flipdeck_app(void* p) {
+    if(!flipdeck_app_init(p)) {
+        return -1;
+    }
+
+    while(flipdeck_app_get_context()) {
+        flipdeck_app_loop(p);
+        furi_delay_ms(50);
+    }
+
+    flipdeck_app_free(p);
+    return 0;
 }
