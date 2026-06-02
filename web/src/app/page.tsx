@@ -4,65 +4,37 @@ import { useState } from "react";
 import { profileFiles } from "@/lib/profiles";
 import { getActionTypeColor } from "@/lib/utils";
 
-const navItems = [
-  { label: "Install", href: "#install" },
-  { label: "Profiles", href: "#profiles" },
-  { label: "Safety", href: "#safety" },
-];
-
 const installSteps = [
   {
-    eyebrow: "Connect",
+    number: "1",
     title: "Plug In Your Flipper",
-    body: "Use USB, unlock the device, and open qFlipper on your computer.",
+    description: "Connect via USB and unlock the device",
+    icon: "🔌",
   },
   {
-    eyebrow: "Browse",
-    title: "Open the SD Card",
-    body: "In qFlipper, open the file browser so the SD card root is visible.",
+    number: "2",
+    title: "Open qFlipper",
+    description: "Browse to the SD card file explorer",
+    icon: "📁",
   },
   {
-    eyebrow: "Download",
-    title: "Grab the Install Pack",
-    body: "Download one ZIP with the exact apps_data/flipdeck layout already prepared.",
+    number: "3",
+    title: "Download Pack",
+    description: "Get the ready-to-copy ZIP bundle",
+    icon: "📥",
   },
   {
-    eyebrow: "Copy",
-    title: "Drag apps_data Over",
-    body: "Drop apps_data onto the SD card root and merge or replace FlipDeck files if prompted.",
+    number: "4",
+    title: "Drag & Drop",
+    description: "Copy apps_data folder to SD card",
+    icon: "✨",
   },
   {
-    eyebrow: "Launch",
-    title: "Open FlipDeck",
-    body: "On the Flipper, open FlipDeck, pick a profile, review the action, and press OK.",
+    number: "5",
+    title: "Launch",
+    description: "Run FlipDeck and select a profile",
+    icon: "▶️",
   },
-];
-
-const featureCards = [
-  {
-    title: "Drag-and-Drop Install",
-    body: "No firmware build, no terminal, no manual JSON juggling. Copy one folder and launch.",
-  },
-  {
-    title: "Ready Profiles",
-    body: "Git, Node.js, Python, Docker, VSCode, snippets, presentation controls, and more.",
-  },
-  {
-    title: "Visible by Design",
-    body: "Profiles are plain JSON, commands are reviewable, and text actions require confirmation.",
-  },
-];
-
-const quickChecks = [
-  "No custom firmware required for the bundled profiles.",
-  "Commands require confirmation before text is sent.",
-  "Profiles live at /apps_data/flipdeck/profiles/ on the SD card.",
-];
-
-const safetyItems = [
-  "Bundled commands are plain text and easy to inspect.",
-  "Confirmation stays on for command-style actions.",
-  "Use profiles only on computers you own or administer.",
 ];
 
 export default function Home() {
@@ -79,375 +51,266 @@ export default function Home() {
   );
 
   return (
-    <main
-      id="main-content"
-      className="relative min-h-screen overflow-x-hidden bg-[#08090f] text-white"
-    >
-      <div className="pointer-events-none absolute inset-0 -z-0">
-        <div className="absolute left-1/2 top-[-18rem] h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-orange-500/25 blur-3xl" />
-        <div className="absolute right-[-12rem] top-56 h-[30rem] w-[30rem] rounded-full bg-fuchsia-500/20 blur-3xl" />
-        <div className="absolute bottom-[-14rem] left-[-10rem] h-[34rem] w-[34rem] rounded-full bg-cyan-500/15 blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.10),transparent_32rem)]" />
-      </div>
+    <main className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        {/* Gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900" />
+        <div className="absolute inset-0 opacity-40">
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-500 rounded-full filter blur-3xl opacity-20" />
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-blue-500 rounded-full filter blur-3xl opacity-20" />
+        </div>
 
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-zinc-950 focus-visible:ring-4 focus-visible:ring-orange-300"
-      >
-        Skip to Content
-      </a>
-
-      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-7xl gap-8 px-4 py-4 sm:px-6 lg:grid-cols-[17rem_1fr] lg:px-8">
-        <aside className="hidden lg:sticky lg:top-4 lg:flex lg:h-[calc(100vh-2rem)] lg:flex-col lg:justify-between lg:rounded-[2rem] lg:border lg:border-white/10 lg:bg-white/[0.055] lg:p-5 lg:shadow-2xl lg:shadow-black/30 lg:backdrop-blur-xl">
-          <div>
-            <a
-              href="#main-content"
-              className="group flex items-center gap-3 rounded-2xl p-2 focus-visible:ring-4 focus-visible:ring-orange-300 transition-transform hover:-translate-y-0.5"
-            >
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 text-xl font-black shadow-lg shadow-orange-500/25">
-                F
-              </span>
-              <span>
-                <span className="block text-lg font-black tracking-tight">
-                  FlipDeck
-                </span>
-                <span className="block text-xs font-medium text-zinc-400">
-                  USB Command Deck
-                </span>
-              </span>
-            </a>
-
-            <nav className="mt-8" aria-label="Main navigation">
-              <p className="px-3 text-xs font-bold uppercase tracking-[0.25em] text-zinc-500">
-                Main Navigation
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-block mb-4 px-4 py-2 bg-purple-500/20 border border-purple-400/40 rounded-full">
+                <span className="text-purple-300 text-sm font-semibold">✨ USB Command Deck</span>
+              </div>
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white mb-6 leading-tight">
+                Transform Your <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400">Flipper Zero</span>
+              </h1>
+              <p className="text-xl text-slate-300 mb-8 leading-relaxed">
+                One drag-and-drop install. {profileFiles.length} ready-made profiles. {totalActions} powerful commands at your fingertips.
               </p>
-              <div className="mt-3 space-y-2">
-                {navItems.map((item) => (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-bold text-zinc-300 transition-colors duration-200 hover:bg-white/10 hover:text-white focus-visible:ring-4 focus-visible:ring-orange-300"
-                  >
-                    {item.label}
-                    <span aria-hidden="true" className="text-orange-300">
-                      -&gt;
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </nav>
-          </div>
-
-          <div className="rounded-3xl border border-orange-300/20 bg-orange-400/10 p-4">
-            <p className="text-sm font-bold text-orange-100">Railway Ready</p>
-            <p className="mt-2 text-sm leading-6 text-zinc-300">
-              Deploy from the repo root. The app builds from <code>web/</code>
-              and serves the standalone Next.js bundle.
-            </p>
-          </div>
-        </aside>
-
-        <div className="space-y-8 pb-12">
-          <header className="flex items-center justify-between rounded-[1.5rem] border border-white/10 bg-white/[0.055] px-4 py-3 backdrop-blur-xl lg:hidden">
-            <a
-              href="#main-content"
-              className="flex items-center gap-3 focus-visible:ring-4 focus-visible:ring-orange-300"
-            >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-orange-400 to-pink-500 font-black">
-                F
-              </span>
-              <span className="font-black">FlipDeck</span>
-            </a>
-            <a
-              href="/api/install-bundle/download"
-              className="rounded-full bg-white px-4 py-2 text-sm font-black text-zinc-950 transition-colors duration-200 hover:bg-orange-100 focus-visible:ring-4 focus-visible:ring-orange-300"
-            >
-              Install
-            </a>
-          </header>
-
-          <section className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-8 xl:p-10 transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/10">
-            <div className="absolute right-10 top-10 hidden rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-bold text-orange-100 sm:block">
-              Stock Flipper Friendly
-            </div>
-
-            <div className="grid gap-10 xl:grid-cols-[1fr_27rem] xl:items-center">
-              <div className="max-w-3xl">
-                <p className="inline-flex rounded-full border border-orange-300/25 bg-orange-400/10 px-3 py-1 text-sm font-bold text-orange-100 shadow-lg shadow-orange-950/20">
-                  Flipper Zero Install Pack
-                </p>
-                <h1 className="mt-6 text-balance text-5xl font-black tracking-tight text-white sm:text-7xl lg:text-8xl bg-clip-text bg-gradient-to-r from-orange-400 to-pink-500 text-transparent">
-                  Make FlipDeck Feel One-Click.
-                </h1>
-                <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-zinc-300 sm:text-xl">
-                  Give Flipper users a simple path: plug in, open qFlipper,
-                  download one pack, drag one folder, and start using {" "}
-                  {profileFiles.length} profiles with {totalActions} actions.
-                </p>
-
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <a
-                    href="/api/install-bundle/download"
-                    className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 px-6 py-4 text-base font-black text-white shadow-2xl shadow-orange-500/25 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-orange-500/40 focus-visible:ring-4 focus-visible:ring-orange-300"
-                  >
-                    Download Flipper Install Pack
-                    <span
-                      aria-hidden="true"
-                      className="transition-transform duration-200 group-hover:translate-x-1"
-                    >
-                      -&gt;
-                    </span>
-                  </a>
-                  <a
-                    href="#install"
-                    className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-6 py-4 text-base font-black text-white transition-all duration-200 hover:bg-white/15 hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-orange-300"
-                  >
-                    View Install Steps
-                  </a>
-                </div>
-
-                <dl className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4 transition-all duration-200 hover:bg-black/30 hover:border-white/20">
-                    <dt className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-                      Profiles
-                    </dt>
-                    <dd className="mt-2 text-3xl font-black tabular-nums">
-                      {profileFiles.length}
-                    </dd>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4 transition-all duration-200 hover:bg-black/30 hover:border-white/20">
-                    <dt className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-                      Actions
-                    </dt>
-                    <dd className="mt-2 text-3xl font-black tabular-nums">
-                      {totalActions}
-                    </dd>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4 transition-all duration-200 hover:bg-black/30 hover:border-white/20">
-                    <dt className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-                      Firmware
-                    </dt>
-                    <dd className="mt-2 text-3xl font-black">Stock</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div className="rounded-3xl bg-zinc-950 p-5 text-zinc-100 shadow-2xl dark:bg-black border border-white/10">
-                <div className="mb-4 flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-red-400" />
-                  <span className="h-3 w-3 rounded-full bg-yellow-400" />
-                  <span className="h-3 w-3 rounded-full bg-green-400" />
-                  <span className="ml-2 text-sm text-zinc-400">
-                    SD card layout
-                  </span>
-                </div>
-                <pre className="overflow-x-auto rounded-2xl bg-black/50 p-4 text-sm leading-7 text-orange-100">
-{`/apps_data/flipdeck/
-├── settings.json
-├── profiles/
-│   ├── git.json
-│   ├── node.json
-│   ├── python.json
-│   └── ...
-└── snippets/
-    ├── react_component.txt
-    └── debug_log.txt`}
-                </pre>
-                <ul className="mt-5 space-y-3">
-                  {quickChecks.map((check) => (
-                    <li key={check} className="flex gap-3 text-sm text-zinc-300">
-                      <span className="mt-0.5 text-orange-400">✓</span>
-                      <span>{check}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          <section className="grid gap-4 md:grid-cols-3" aria-label="Highlights">
-            {featureCards.map((card) => (
-              <article
-                key={card.title}
-                className="rounded-[2rem] border border-white/10 bg-white/[0.055] p-6 shadow-xl shadow-black/20 backdrop-blur-xl transition-all duration-200 hover:bg-white/[0.075] hover:border-white/20 hover:-translate-y-1"
-              >
-                <h2 className="text-xl font-black text-white">{card.title}</h2>
-                <p className="mt-3 text-pretty leading-7 text-zinc-300">
-                  {card.body}
-                </p>
-              </article>
-            ))}
-          </section>
-
-          <section
-            id="install"
-            className="scroll-mt-6 rounded-[2.5rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/25 backdrop-blur-xl sm:p-8"
-          >
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-sm font-black uppercase tracking-[0.25em] text-orange-300">
-                  Web Installer
-                </p>
-                <h2 className="mt-3 text-balance text-4xl font-black text-white sm:text-5xl">
-                  Start When Your Flipper Is Plugged In
-                </h2>
-              </div>
-              <a
-                href="/api/install-bundle/download"
-                className="rounded-2xl bg-white px-5 py-3 text-center text-sm font-black text-zinc-950 transition-all duration-200 hover:bg-orange-100 hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-orange-300"
-              >
-                Download Ready-to-Copy ZIP
-              </a>
-            </div>
-
-            <ol className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-              {installSteps.map((step, index) => (
-                <li
-                  key={step.title}
-                  className="group rounded-[2rem] border border-white/10 bg-black/20 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-orange-300/50 hover:bg-black/30"
+              <div className="flex flex-col sm:flex-row gap-4">
+                <a
+                  href="/api/install-bundle/download"
+                  className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl shadow-purple-900/50 transition-all duration-300 transform hover:scale-105"
                 >
-                  <div className="mb-8 flex items-center justify-between">
-                    <span className="rounded-full bg-orange-400/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-orange-200">
-                      {step.eyebrow}
-                    </span>
-                    <span className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-sm font-black text-white tabular-nums group-hover:bg-orange-400/20 group-hover:text-orange-200 transition-colors duration-200">
-                      {index + 1}
-                    </span>
-                  </div>
-                  <h3 className="text-2xl font-black text-white">
-                    {step.title}
-                  </h3>
-                  <p className="mt-3 text-pretty leading-7 text-zinc-300">
-                    {step.body}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          <section
-            id="profiles"
-            className="scroll-mt-6 rounded-[2.5rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/25 backdrop-blur-xl sm:p-8"
-          >
-            <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-sm font-black uppercase tracking-[0.25em] text-orange-300">
-                  Included Profiles
-                </p>
-                <h2 className="mt-3 text-balance text-4xl font-black text-white sm:text-5xl">
-                  Command Sets That Are Ready to Copy
-                </h2>
-              </div>
-              <a
-                href="/api/profiles/download"
-                className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-center text-sm font-black text-white transition-all duration-200 hover:bg-white/15 hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-orange-300"
-              >
-                Download Profiles Only
-              </a>
-            </div>
-
-            {/* Search Bar */}
-            <div className="mb-8">
-              <input
-                type="search"
-                placeholder="Search profiles by name or description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-5 py-3 rounded-2xl border border-white/15 bg-white/[0.055] text-white placeholder-zinc-400 focus:outline-none focus:ring-4 focus:ring-orange-300/50 focus:border-orange-300/50 backdrop-blur-xl transition-all duration-200"
-              />
-            </div>
-
-            <div className="grid w-full grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {filteredProfiles.length > 0 ? (
-                filteredProfiles.map(({ fileName, profile }) => (
-                  <article
-                    key={profile.id}
-                    className="min-w-0 rounded-[2rem] border border-white/10 bg-black/20 p-5 transition-all duration-200 hover:-translate-y-1 hover:border-orange-300/50 hover:bg-black/30"
-                  >
-                    <div className="mb-4 flex min-w-0 items-center justify-between gap-3">
-                      <h3 className="truncate text-2xl font-black text-white">
-                        {profile.name}
-                      </h3>
-                      <span
-                        translate="no"
-                        className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-zinc-300"
-                      >
-                        {fileName}
-                      </span>
-                    </div>
-                    <p className="mb-5 min-h-12 text-pretty text-sm leading-6 text-zinc-300">
-                      {profile.description}
-                    </p>
-                    <div className="mb-4 flex items-center justify-between">
-                      <span className="text-xs font-black uppercase tracking-widest text-zinc-500">
-                        {profile.actions.length} Actions
-                      </span>
-                      <a
-                        href={`/profiles/${profile.id}.json`}
-                        download
-                        className="rounded-full bg-orange-400/10 px-3 py-1 text-xs font-black text-orange-200 transition-all duration-200 hover:bg-orange-400/20 focus-visible:ring-4 focus-visible:ring-orange-300"
-                      >
-                        Download JSON
-                      </a>
-                    </div>
-                    <div className="max-h-48 space-y-2 overflow-y-auto pr-1 [content-visibility:auto]">
-                      {profile.actions.map((action) => (
-                        <div
-                          key={`${profile.id}-${action.label}`}
-                          className="flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-white/[0.055] p-3 transition-colors duration-200 hover:bg-white/[0.075]"
-                        >
-                          <span className="min-w-0 truncate text-sm font-semibold text-zinc-200">
-                            {action.label}
-                          </span>
-                          <span
-                            translate="no"
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${getActionTypeColor(
-                              action.type
-                            )}`}
-                          >
-                            {action.type}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </article>
-                ))
-              ) : (
-                <div className="col-span-full flex items-center justify-center py-12">
-                  <p className="text-lg text-zinc-400">
-                    No profiles match "{searchQuery}"
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section
-            id="safety"
-            className="scroll-mt-6 rounded-[2.5rem] border border-orange-300/20 bg-orange-400/10 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-8 transition-all duration-200 hover:shadow-xl hover:shadow-orange-500/10"
-          >
-            <p className="text-sm font-black uppercase tracking-[0.25em] text-orange-200">
-              Safety First
-            </p>
-            <h2 className="mt-3 text-balance text-4xl font-black text-white">
-              FlipDeck Should Never Feel Like a Hidden Payload.
-            </h2>
-            <ul className="mt-6 grid gap-3 md:grid-cols-3">
-              {safetyItems.map((item) => (
-                <li
-                  key={item}
-                  className="flex gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-zinc-200 transition-all duration-200 hover:bg-black/30 hover:border-orange-300/50"
+                  <span className="text-xl">📦</span>
+                  Download Install Pack
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </a>
+                <a
+                  href="#steps"
+                  className="inline-flex items-center justify-center px-8 py-4 border-2 border-purple-400 text-purple-300 font-bold rounded-xl hover:bg-purple-500/10 transition-all duration-300"
                 >
-                  <span aria-hidden="true" className="text-orange-300 flex-shrink-0">
-                    ✓
-                  </span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+                  Learn More
+                </a>
+              </div>
+            </div>
+
+            {/* Feature cards */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="group p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 hover:border-white/40 transition-all duration-300 hover:-translate-y-2">
+                <div className="text-4xl mb-3">🎯</div>
+                <h3 className="text-white font-bold mb-2">9 Profiles</h3>
+                <p className="text-slate-400 text-sm">Git, Docker, Node, Python & more</p>
+              </div>
+              <div className="group p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 hover:border-white/40 transition-all duration-300 hover:-translate-y-2">
+                <div className="text-4xl mb-3">⚡</div>
+                <h3 className="text-white font-bold mb-2">{totalActions} Actions</h3>
+                <p className="text-slate-400 text-sm">Pre-built commands & shortcuts</p>
+              </div>
+              <div className="group p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 hover:border-white/40 transition-all duration-300 hover:-translate-y-2">
+                <div className="text-4xl mb-3">🔒</div>
+                <h3 className="text-white font-bold mb-2">Safe by Default</h3>
+                <p className="text-slate-400 text-sm">Confirmation required for all commands</p>
+              </div>
+              <div className="group p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 hover:border-white/40 transition-all duration-300 hover:-translate-y-2">
+                <div className="text-4xl mb-3">📱</div>
+                <h3 className="text-white font-bold mb-2">No Firmware</h3>
+                <p className="text-slate-400 text-sm">Works on stock Flipper Zero</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Installation Steps */}
+      <section id="steps" className="py-20 sm:py-32 bg-slate-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 mb-4">
+              Install in 5 Simple Steps
+            </h2>
+            <p className="text-xl text-slate-600">From zero to FlipDeck in minutes</p>
+          </div>
+
+          <div className="grid md:grid-cols-5 gap-6">
+            {installSteps.map((step, idx) => (
+              <div
+                key={idx}
+                className="group relative p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-slate-200 hover:border-purple-300"
+              >
+                {/* Number badge */}
+                <div className="absolute -top-4 -right-4 w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                  {step.number}
+                </div>
+
+                <div className="text-5xl mb-4">{step.icon}</div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">{step.title}</h3>
+                <p className="text-slate-600 text-sm">{step.description}</p>
+
+                {idx < installSteps.length - 1 && (
+                  <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-0.5 bg-gradient-to-r from-purple-400 to-transparent" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Profiles Section */}
+      <section className="py-20 sm:py-32 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-12">
+            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 mb-4">
+              Choose Your Profiles
+            </h2>
+            <p className="text-xl text-slate-600 mb-8">
+              Download the full pack or customize your selection
+            </p>
+
+            {/* Search bar */}
+            <div className="relative max-w-2xl">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <span className="text-2xl">🔍</span>
+              </div>
+              <input
+                type="search"
+                placeholder="Search profiles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-14 pr-6 py-4 border-2 border-slate-300 rounded-xl focus:outline-none focus:border-purple-600 focus:ring-4 focus:ring-purple-200 text-lg transition-all duration-200"
+              />
+            </div>
+          </div>
+
+          {/* Profile cards grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProfiles.length > 0 ? (
+              filteredProfiles.map(({ fileName, profile }) => (
+                <div
+                  key={profile.id}
+                  className="group h-full flex flex-col p-8 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border-2 border-slate-200 hover:border-purple-400 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="mb-4">
+                    <div className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold mb-2">
+                      {fileName}
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 group-hover:text-purple-600 transition-colors">
+                      {profile.name}
+                    </h3>
+                  </div>
+
+                  <p className="text-slate-600 mb-6 flex-grow">{profile.description}</p>
+
+                  <div className="mb-6 pt-6 border-t border-slate-300">
+                    <span className="text-sm font-semibold text-slate-500">
+                      {profile.actions.length} commands
+                    </span>
+                  </div>
+
+                  {/* Action types */}
+                  <div className="space-y-2 mb-6 max-h-64 overflow-y-auto">
+                    {profile.actions.map((action) => (
+                      <div
+                        key={`${profile.id}-${action.label}`}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 group-hover:border-purple-200 transition-colors"
+                      >
+                        <span className="text-sm font-medium text-slate-700">
+                          {action.label}
+                        </span>
+                        <span
+                          className={`px-2 py-1 text-xs font-bold rounded-full ${getActionTypeColor(
+                            action.type
+                          )}`}
+                        >
+                          {action.type}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <a
+                    href={`/profiles/${profile.id}.json`}
+                    download
+                    className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 shadow-md hover:shadow-lg transition-all duration-300 text-center"
+                  >
+                    Download JSON
+                  </a>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full py-12 text-center">
+                <p className="text-xl text-slate-500">
+                  No profiles match "{searchQuery}"
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Bulk download */}
+          <div className="mt-12 text-center">
+            <a
+              href="/api/install-bundle/download"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <span>📦</span>
+              Download All Profiles
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Safety Section */}
+      <section className="py-20 sm:py-32 bg-gradient-to-br from-slate-900 to-slate-800">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-8">
+            Built With Safety In Mind
+          </h2>
+          <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto">
+            FlipDeck is transparent by design. All commands are visible, reviewable, and require explicit confirmation before execution.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: "👁️",
+                title: "Visible Commands",
+                desc: "All profiles are plain JSON. Inspect before you run.",
+              },
+              {
+                icon: "✅",
+                title: "Confirmation Required",
+                desc: "Every action needs your approval on the device.",
+              },
+              {
+                icon: "🛡️",
+                title: "No Hidden Payloads",
+                desc: "No auto-execution, no background processes, no secrets.",
+              },
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                className="p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all duration-300"
+              >
+                <div className="text-5xl mb-4">{item.icon}</div>
+                <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
+                <p className="text-slate-300">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Footer */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-black text-slate-900 mb-6">
+            Ready to supercharge your Flipper?
+          </h2>
+          <a
+            href="/api/install-bundle/download"
+            className="inline-flex items-center justify-center gap-2 px-10 py-5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl shadow-purple-900/50 transition-all duration-300 transform hover:scale-105"
+          >
+            <span className="text-2xl">🚀</span>
+            Get Started Now
+          </a>
+        </div>
+      </section>
     </main>
   );
 }
