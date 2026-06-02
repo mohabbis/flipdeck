@@ -28,6 +28,11 @@ const installSteps = [
     title: "Drag apps_data Over",
     body: "Drop apps_data onto the SD card root and merge or replace FlipDeck files if prompted.",
   },
+  {
+    eyebrow: "Launch",
+    title: "Open FlipDeck",
+    body: "On the Flipper, open FlipDeck, pick a profile, review the action, and press OK.",
+  },
 ];
 
 const featureCards = [
@@ -43,6 +48,12 @@ const featureCards = [
     title: "Visible by Design",
     body: "Profiles are plain JSON, commands are reviewable, and text actions require confirmation.",
   },
+];
+
+const quickChecks = [
+  "No custom firmware required for the bundled profiles.",
+  "Commands require confirmation before text is sent.",
+  "Profiles live at /apps_data/flipdeck/profiles/ on the SD card.",
 ];
 
 const safetyItems = [
@@ -109,7 +120,7 @@ export default function Home() {
                   >
                     {item.label}
                     <span aria-hidden="true" className="text-orange-300">
-                      →
+                      -&gt;
                     </span>
                   </a>
                 ))}
@@ -159,9 +170,8 @@ export default function Home() {
                   Make FlipDeck Feel One-Click.
                 </h1>
                 <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-zinc-300 sm:text-xl">
-                  Give Flipper users a Momentum-style path: plug in, open
-                  qFlipper, download one pack, drag one folder, and start using
-                  {" "}
+                  Give Flipper users a simple path: plug in, open qFlipper,
+                  download one pack, drag one folder, and start using {" "}
                   {profileFiles.length} profiles with {totalActions} actions.
                 </p>
 
@@ -171,8 +181,11 @@ export default function Home() {
                     className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 px-6 py-4 text-base font-black text-white shadow-2xl shadow-orange-500/25 transition-transform duration-200 hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-orange-300"
                   >
                     Download Flipper Install Pack
-                    <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">
-                      →
+                    <span
+                      aria-hidden="true"
+                      className="transition-transform duration-200 group-hover:translate-x-1"
+                    >
+                      -&gt;
                     </span>
                   </a>
                   <a
@@ -209,42 +222,35 @@ export default function Home() {
                 </dl>
               </div>
 
-              <div className="relative mx-auto w-full max-w-sm">
-                <div className="absolute inset-0 rounded-[3rem] bg-gradient-to-br from-orange-400/30 to-fuchsia-500/30 blur-2xl" />
-                <div className="relative rounded-[2.25rem] border border-white/15 bg-zinc-950 p-4 shadow-2xl shadow-black/50">
-                  <div className="rounded-[1.75rem] border border-white/10 bg-[#f97316] p-3">
-                    <div className="rounded-[1.25rem] bg-[#1f2937] p-4 shadow-inner shadow-black/60">
-                      <div className="mb-4 flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-[0.2em] text-orange-200">
-                          FlipDeck
-                        </span>
-                        <span className="h-2 w-2 rounded-full bg-lime-300 shadow-lg shadow-lime-300/60" />
-                      </div>
-                      <div className="space-y-2">
-                        {profileFiles.slice(0, 5).map(({ profile }) => (
-                          <div
-                            key={profile.id}
-                            className="flex items-center justify-between rounded-xl bg-white/10 px-3 py-2"
-                          >
-                            <span className="text-sm font-bold text-white">
-                              {profile.name}
-                            </span>
-                            <span className="text-xs font-bold text-orange-200 tabular-nums">
-                              {profile.actions.length}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-2 pb-2">
-                      <div className="h-14 rounded-full bg-zinc-950/90" />
-                      <div className="grid h-20 w-20 place-items-center rounded-full border-[10px] border-zinc-950/90 bg-zinc-800 text-xs font-black text-zinc-400">
-                        OK
-                      </div>
-                      <div className="h-14 rounded-full bg-zinc-950/90" />
-                    </div>
-                  </div>
+              <div className="rounded-3xl bg-zinc-950 p-5 text-zinc-100 shadow-2xl dark:bg-black">
+                <div className="mb-4 flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-red-400" />
+                  <span className="h-3 w-3 rounded-full bg-yellow-400" />
+                  <span className="h-3 w-3 rounded-full bg-green-400" />
+                  <span className="ml-2 text-sm text-zinc-400">
+                    SD card layout
+                  </span>
                 </div>
+                <pre className="overflow-x-auto rounded-2xl bg-black/50 p-4 text-sm leading-7 text-orange-100">
+{`/apps_data/flipdeck/
+├── settings.json
+├── profiles/
+│   ├── git.json
+│   ├── node.json
+│   ├── python.json
+│   └── ...
+└── snippets/
+    ├── react_component.txt
+    └── debug_log.txt`}
+                </pre>
+                <ul className="mt-5 space-y-3">
+                  {quickChecks.map((check) => (
+                    <li key={check} className="flex gap-3 text-sm text-zinc-300">
+                      <span className="mt-0.5 text-orange-400">✓</span>
+                      <span>{check}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </section>
@@ -256,7 +262,9 @@ export default function Home() {
                 className="rounded-[2rem] border border-white/10 bg-white/[0.055] p-6 shadow-xl shadow-black/20 backdrop-blur-xl"
               >
                 <h2 className="text-xl font-black text-white">{card.title}</h2>
-                <p className="mt-3 text-pretty leading-7 text-zinc-300">{card.body}</p>
+                <p className="mt-3 text-pretty leading-7 text-zinc-300">
+                  {card.body}
+                </p>
               </article>
             ))}
           </section>
@@ -282,7 +290,7 @@ export default function Home() {
               </a>
             </div>
 
-            <ol className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <ol className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               {installSteps.map((step, index) => (
                 <li
                   key={step.title}
@@ -296,8 +304,12 @@ export default function Home() {
                       {index + 1}
                     </span>
                   </div>
-                  <h3 className="text-2xl font-black text-white">{step.title}</h3>
-                  <p className="mt-3 text-pretty leading-7 text-zinc-300">{step.body}</p>
+                  <h3 className="text-2xl font-black text-white">
+                    {step.title}
+                  </h3>
+                  <p className="mt-3 text-pretty leading-7 text-zinc-300">
+                    {step.body}
+                  </p>
                 </li>
               ))}
             </ol>
