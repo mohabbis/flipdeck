@@ -8,7 +8,6 @@
 
 #include "flipdeck_app.h"
 #include <furi.h>
-#include <gui/gui.h>
 
 /**
  * @brief Initialize the UI system
@@ -23,32 +22,32 @@ void flipdeck_ui_free(void);
 
 /**
  * @brief Handle category browser view
+ * @param furi Furi object
  */
-void flipdeck_ui_handle_category_browser(void);
+void flipdeck_ui_handle_category_browser(furi_t furi);
 
 /**
  * @brief Handle action browser view
+ * @param furi Furi object
  */
-void flipdeck_ui_handle_action_browser(void);
+void flipdeck_ui_handle_action_browser(furi_t furi);
 
 /**
  * @brief Handle action detail view
+ * @param furi Furi object
  */
-void flipdeck_ui_handle_action_detail(void);
+void flipdeck_ui_handle_action_detail(furi_t furi);
 
 /**
  * @brief Handle send confirmation dialog
+ * @param furi Furi object
  */
-void flipdeck_ui_handle_confirm(void);
+void flipdeck_ui_handle_confirm(furi_t furi);
 
 /**
  * @brief Handle settings screen
+ * @param furi Furi object
  */
-void flipdeck_ui_handle_settings(void);
-
-/**
- * @brief Handle long snippet warning screen
- */
-void flipdeck_ui_handle_long_snippet_warning(void);
+void flipdeck_ui_handle_settings(furi_t furi);
 
 #endif // FLIPDECK_UI_H
