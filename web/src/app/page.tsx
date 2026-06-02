@@ -1,211 +1,220 @@
-import { Profile } from "@/types/flipdeck";
+import { profileFiles } from "@/lib/profiles";
 import { getActionTypeColor } from "@/lib/utils";
 
-// Profile data - copied from SD card profiles
-const profiles: Profile[] = [
+const installSteps = [
   {
-    name: "Git",
-    id: "git",
-    description: "Git workflow shortcuts",
-    actions: [
-      { label: "Git Status", type: "text", value: "git status\n", confirm: true },
-      { label: "Git Add All", type: "text", value: "git add .\n", confirm: true },
-      { label: "Git Commit", type: "text", value: "git commit -m \"", confirm: true },
-      { label: "Git Push", type: "text", value: "git push origin\n", confirm: true },
-      { label: "Git Pull", type: "text", value: "git pull origin\n", confirm: true },
-    ],
+    title: "1. Plug in your Flipper Zero",
+    body: "Use the USB cable, unlock the Flipper, and open the official qFlipper app on your computer.",
   },
   {
-    name: "Node.js",
-    id: "node",
-    description: "Node.js development commands",
-    actions: [
-      { label: "Run dev server", type: "text", value: "npm run dev\n", confirm: true },
-      { label: "Run tests", type: "text", value: "npm test\n", confirm: true },
-      { label: "Build", type: "text", value: "npm run build\n", confirm: true },
-      { label: "Install", type: "text", value: "npm install\n", confirm: true },
-    ],
+    title: "2. Open the SD card",
+    body: "In qFlipper, choose the file browser / SD card view so you can copy files onto the Flipper.",
   },
   {
-    name: "Python",
-    id: "python",
-    description: "Python development commands",
-    actions: [
-      { label: "Run Python", type: "text", value: "python\n", confirm: true },
-      { label: "Run script", type: "text", value: "python ", confirm: true },
-      { label: "Pip Install", type: "text", value: "pip install ", confirm: true },
-      { label: "Pip List", type: "text", value: "pip list\n", confirm: true },
-    ],
+    title: "3. Download this ready-to-copy pack",
+    body: "Grab the ZIP below. It already contains the exact apps_data/flipdeck folders your Flipper needs.",
   },
   {
-    name: "Docker",
-    id: "docker",
-    description: "Docker container and image commands",
-    actions: [
-      { label: "Docker PS", type: "text", value: "docker ps\n", confirm: true },
-      { label: "Docker Images", type: "text", value: "docker images\n", confirm: true },
-      { label: "Docker Compose PS", type: "text", value: "docker-compose ps\n", confirm: true },
-      { label: "Docker Compose Up", type: "text", value: "docker-compose up -d\n", confirm: true },
-      { label: "Docker Compose Down", type: "text", value: "docker-compose down\n", confirm: true },
-    ],
+    title: "4. Drag apps_data onto the SD card",
+    body: "Merge it with the existing apps_data folder. When prompted, keep/replace the FlipDeck files from this pack.",
   },
   {
-    name: "System",
-    id: "system",
-    description: "System utilities",
-    actions: [
-      { label: "Clear", type: "text", value: "clear\n", confirm: true },
-      { label: "LS", type: "text", value: "ls -la\n", confirm: true },
-      { label: "PWD", type: "text", value: "pwd\n", confirm: true },
-      { label: "Whoami", type: "text", value: "whoami\n", confirm: true },
-    ],
-  },
-  {
-    name: "VSCode",
-    id: "vscode",
-    description: "VSCode keyboard shortcuts",
-    actions: [
-      { label: "Command Palette", type: "key_combo", value: "CTRL+SHIFT+P", confirm: false },
-      { label: "File Explorer", type: "key_combo", value: "CTRL+SHIFT+E", confirm: false },
-      { label: "Search", type: "key_combo", value: "CTRL+SHIFT+F", confirm: false },
-      { label: "Terminal", type: "key_combo", value: "CTRL+`", confirm: false },
-      { label: "Format Document", type: "key_combo", value: "SHIFT+ALT+F", confirm: false },
-    ],
-  },
-  {
-    name: "Presentation",
-    id: "presentation",
-    description: "Presentation remote control",
-    actions: [
-      { label: "Next Slide", type: "key", value: "RIGHT", confirm: false },
-      { label: "Previous Slide", type: "key", value: "LEFT", confirm: false },
-      { label: "Start Slideshow", type: "key", value: "F5", confirm: false },
-      { label: "Exit Presentation", type: "key", value: "ESCAPE", confirm: false },
-      { label: "Blank Screen", type: "key", value: "B", confirm: false },
-    ],
-  },
-  {
-    name: "AWS CLI",
-    id: "aws",
-    description: "AWS command line tools",
-    actions: [
-      { label: "EC2 Instances", type: "text", value: "aws ec2 describe-instances\n", confirm: true },
-      { label: "S3 List Buckets", type: "text", value: "aws s3 ls\n", confirm: true },
-      { label: "S3 Sync", type: "text", value: "aws s3 sync . s3://\n", confirm: true },
-      { label: "Lambda List", type: "text", value: "aws lambda list-functions\n", confirm: true },
-      { label: "STS Get Caller", type: "text", value: "aws sts get-caller-identity\n", confirm: true },
-    ],
-  },
-  {
-    name: "Code Snippets",
-    id: "snippets",
-    description: "Common code templates",
-    actions: [
-      { label: "Console Log", type: "text", value: "console.log('DEBUG:', );\n", confirm: true },
-      { label: "For Loop", type: "text", value: "for(let i = 0; i < ; i++) {\n  \n}\n", confirm: true },
-      { label: "If Statement", type: "text", value: "if (condition) {\n  \n}\n", confirm: true },
-      { label: "Try Catch", type: "text", value: "try {\n  \n} catch (error) {\n  console.error(error);\n}\n", confirm: true },
-      { label: "Arrow Function", type: "text", value: "const func = () => {\n  \n}\n", confirm: true },
-    ],
+    title: "5. Launch FlipDeck",
+    body: "On the Flipper, go to Apps → GPIO / USB or Apps → Tools, open FlipDeck, pick a profile, and press OK.",
   },
 ];
 
+const quickChecks = [
+  "No custom firmware required for the bundled profiles.",
+  "Commands require confirmation before text is sent.",
+  "Profiles live at /apps_data/flipdeck/profiles/ on the SD card.",
+];
 
 export default function Home() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 font-sans dark:bg-black p-4">
-      <main className="flex flex-col items-center w-full max-w-5xl bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-8">
-        {/* Header */}
-        <header className="w-full mb-8">
-          <h1 className="text-4xl font-bold text-center text-zinc-900 dark:text-zinc-100 mb-2">
-            FlipDeck
-          </h1>
-          <p className="text-lg text-center text-zinc-600 dark:text-zinc-400">
-            USB Command Deck for Flipper Zero
-          </p>
-        </header>
+  const totalActions = profileFiles.reduce(
+    (sum, { profile }) => sum + profile.actions.length,
+    0
+  );
 
-        {/* Profiles Grid */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {profiles.map((profile) => (
-            <div
-              key={profile.id}
-              className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xl font-semibold text-zinc-800 dark:text-zinc-200">
-                  {profile.name}
-                </h2>
-                <span className="text-xs px-2 py-1 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 rounded-full">
-                  {profile.id}
-                </span>
-              </div>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-                {profile.description}
+  return (
+    <main className="min-h-screen bg-orange-50 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
+      <section className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="rounded-[2rem] border border-orange-200 bg-white p-6 shadow-xl shadow-orange-950/5 dark:border-orange-900/60 dark:bg-zinc-900 sm:p-10">
+          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <div>
+              <p className="mb-4 inline-flex rounded-full bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-800 dark:bg-orange-950 dark:text-orange-200">
+                Flipper Zero setup made easy
               </p>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs text-zinc-500 dark:text-zinc-500">
-                  {profile.actions.length} actions
-                </span>
+              <h1 className="text-4xl font-black tracking-tight text-zinc-950 dark:text-white sm:text-6xl">
+                Install FlipDeck in one SD card drag-and-drop.
+              </h1>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-zinc-700 dark:text-zinc-300">
+                Plug in your Flipper, open qFlipper, download the install pack,
+                and copy one folder. The pack includes {profileFiles.length} default
+                profiles with {totalActions} ready-to-use commands and shortcuts.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a
-                  href={`/profiles/${profile.id}.json`}
-                  download
-                  className="text-xs px-2 py-1 text-amber-700 bg-amber-100 dark:bg-amber-900 dark:text-amber-200 rounded hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
+                  href="/api/install-bundle/download"
+                  className="inline-flex items-center justify-center rounded-xl bg-orange-600 px-6 py-3 text-base font-bold text-white shadow-lg shadow-orange-600/25 transition hover:bg-orange-700 focus:outline-none focus:ring-4 focus:ring-orange-300"
                 >
-                  Download
+                  Download Flipper install pack
+                </a>
+                <a
+                  href="#install"
+                  className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-6 py-3 text-base font-bold text-zinc-800 transition hover:bg-zinc-100 focus:outline-none focus:ring-4 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  Show step-by-step guide
                 </a>
               </div>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {profile.actions.map((action, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 bg-zinc-50 dark:bg-zinc-800 rounded"
-                  >
-                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      {action.label}
-                    </span>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${getActionTypeColor(
-                        action.type
-                      )}`}
-                    >
-                      {action.type}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
-          ))}
-        </div>
 
-        {/* Footer */}
-        <footer className="w-full mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-700">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Store profiles on your Flipper Zero SD card:{" "}
-              <code className="bg-zinc-100 dark:bg-zinc-800 px-1 rounded">
-                /apps_data/flipdeck/profiles/
-              </code>
-            </p>
-            <div className="flex gap-3">
-              <a
-                href="/api/profiles/download"
-                className="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-100 dark:bg-amber-900 dark:text-amber-200 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
-              >
-                Download All Profiles (ZIP)
-              </a>
-              <a
-                href="https://github.com/mohabbis/flipdeck"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 text-sm font-medium text-zinc-700 bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-              >
-                GitHub
-              </a>
+            <div className="rounded-3xl bg-zinc-950 p-5 text-zinc-100 shadow-2xl dark:bg-black">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full bg-red-400" />
+                <span className="h-3 w-3 rounded-full bg-yellow-400" />
+                <span className="h-3 w-3 rounded-full bg-green-400" />
+                <span className="ml-2 text-sm text-zinc-400">SD card layout</span>
+              </div>
+              <pre className="overflow-x-auto rounded-2xl bg-black/50 p-4 text-sm leading-7 text-orange-100">
+{`/apps_data/flipdeck/
+├── settings.json
+├── profiles/
+│   ├── git.json
+│   ├── node.json
+│   ├── python.json
+│   └── ...
+└── snippets/
+    ├── react_component.txt
+    └── debug_log.txt`}
+              </pre>
+              <ul className="mt-5 space-y-3">
+                {quickChecks.map((check) => (
+                  <li key={check} className="flex gap-3 text-sm text-zinc-300">
+                    <span className="mt-0.5 text-orange-400">✓</span>
+                    <span>{check}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-        </footer>
-      </main>
-    </div>
+        </div>
+
+        <section
+          id="install"
+          className="rounded-[2rem] border border-orange-200 bg-white p-6 shadow-lg shadow-orange-950/5 dark:border-orange-900/60 dark:bg-zinc-900 sm:p-8"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-widest text-orange-700 dark:text-orange-300">
+                Beginner install guide
+              </p>
+              <h2 className="mt-2 text-3xl font-black text-zinc-950 dark:text-white">
+                Start when your Flipper is plugged in
+              </h2>
+            </div>
+            <a
+              href="/api/install-bundle/download"
+              className="rounded-xl bg-zinc-950 px-5 py-3 text-center text-sm font-bold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+            >
+              Download the ready-to-copy ZIP
+            </a>
+          </div>
+
+          <ol className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            {installSteps.map((step) => (
+              <li
+                key={step.title}
+                className="rounded-2xl border border-zinc-200 bg-orange-50 p-4 dark:border-zinc-700 dark:bg-zinc-950"
+              >
+                <h3 className="font-bold text-zinc-950 dark:text-white">
+                  {step.title}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+                  {step.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+
+          <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+            <strong>Important:</strong> FlipDeck is intentionally visible and
+            confirmation-based. Review each command before sending it, and only
+            use profiles you trust on computers you own or administer.
+          </div>
+        </section>
+
+        <section className="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-lg shadow-orange-950/5 dark:border-zinc-800 dark:bg-zinc-900 sm:p-8">
+          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-widest text-orange-700 dark:text-orange-300">
+                Included profiles
+              </p>
+              <h2 className="mt-2 text-3xl font-black text-zinc-950 dark:text-white">
+                Download everything or just one profile
+              </h2>
+            </div>
+            <a
+              href="/api/profiles/download"
+              className="rounded-xl border border-orange-200 bg-orange-100 px-5 py-3 text-center text-sm font-bold text-orange-900 transition hover:bg-orange-200 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-100 dark:hover:bg-orange-900"
+            >
+              Download profiles only
+            </a>
+          </div>
+
+          <div className="grid w-full grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {profileFiles.map(({ fileName, profile }) => (
+              <article
+                key={profile.id}
+                className="rounded-2xl border border-zinc-200 p-4 transition hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-700"
+              >
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                    {profile.name}
+                  </h3>
+                  <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                    {fileName}
+                  </span>
+                </div>
+                <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+                  {profile.description}
+                </p>
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    {profile.actions.length} actions
+                  </span>
+                  <a
+                    href={`/profiles/${profile.id}.json`}
+                    download
+                    className="rounded-lg bg-orange-100 px-3 py-1 text-xs font-bold text-orange-800 transition hover:bg-orange-200 dark:bg-orange-950 dark:text-orange-100 dark:hover:bg-orange-900"
+                  >
+                    Download JSON
+                  </a>
+                </div>
+                <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
+                  {profile.actions.map((action) => (
+                    <div
+                      key={`${profile.id}-${action.label}`}
+                      className="flex items-center justify-between gap-3 rounded-xl bg-zinc-50 p-2 dark:bg-zinc-800"
+                    >
+                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        {action.label}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getActionTypeColor(
+                          action.type
+                        )}`}
+                      >
+                        {action.type}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
+    </main>
   );
 }
