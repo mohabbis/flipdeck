@@ -1,11 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #08090f;
+  --background: #070b10;
   --foreground: #f8fafc;
-  --flipper-orange: #ff7a00;
-  --flipper-screen: #ff9d2e;
-  --momentum-cyan: #00d4aa;
   --font-geist-sans: Arial, Helvetica, sans-serif;
   --font-geist-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   color-scheme: dark;
@@ -18,9 +15,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html {
   background: var(--background);
@@ -31,15 +26,18 @@ html {
 
 body {
   min-width: 320px;
+  min-height: 100vh;
   background:
-    linear-gradient(rgba(255, 122, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 212, 170, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at top left, rgba(255, 122, 0, 0.14), transparent 34rem),
+    radial-gradient(circle at top right, rgba(0, 212, 170, 0.10), transparent 30rem),
     var(--background);
-  background-size: 28px 28px, 28px 28px, auto;
   color: var(--foreground);
   font-family: var(--font-geist-sans);
   text-rendering: optimizeLegibility;
 }
+
+a { text-decoration: none; }
+button, a { touch-action: manipulation; }
 
 ::selection {
   background: rgba(251, 146, 60, 0.35);
@@ -47,16 +45,12 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  ::before,
-  ::after {
+  html { scroll-behavior: auto; }
+  *, ::before, ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
 }
+
