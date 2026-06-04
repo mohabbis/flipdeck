@@ -1,0 +1,17 @@
+App(
+    appid="flipdeck",
+    name="FlipDeck",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="flipdeck_app",
+    stack_size=4096,
+    fap_category="Tools",
+    fap_icon="assets/icon.bmp",
+    fap_icon_assets="assets",
+    sources=[
+        "src/flipdeck_app.c",
+        "src/flipdeck_ui.c",
+        "src/profile_manager.c",
+        "src/usb_hid.c",
+        "src/settings.c",
+    ],
+)

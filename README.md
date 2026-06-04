@@ -27,22 +27,25 @@ FlipDeck transforms your Flipper Zero into a programmable command deck. Store fr
 
 ## Installation for Flipper Zero users
 
-The web installer is designed to feel like a firmware install: plug in the Flipper, download one ZIP, and drag one folder onto the SD card.
+The web installer is designed to feel like a device install: keep the microSD card inside the Flipper, plug the Flipper in over USB, download one ZIP, and copy one folder through qFlipper.
 
-1. **Plug in and unlock your Flipper Zero** with USB.
-2. **Open qFlipper** and choose the SD card / file browser view.
-3. **Open the deployed FlipDeck web app** (Railway, Vercel, or local).
-4. **Click `Download Flipper install pack`**. The ZIP already contains the correct `apps_data/flipdeck` folder layout.
-5. **Extract the ZIP and drag `apps_data` onto the Flipper SD card root**. Merge/replace the FlipDeck files if prompted.
-6. **Launch FlipDeck** from the Flipper apps menu, choose a profile, review the command, and press OK.
+1. **Leave the microSD card inserted in your Flipper Zero.**
+2. **Plug in and unlock your Flipper Zero** with USB.
+3. **Open qFlipper** and choose the Flipper SD card / file browser view.
+4. **Open the deployed FlipDeck web app** (Railway, Vercel, or local).
+5. **Click `Download Flipper install pack`**. The ZIP already contains the correct `apps_data/flipdeck` folder layout.
+6. **Extract the ZIP and drag `apps_data` onto the Flipper SD card root in qFlipper**. Merge/replace the FlipDeck files if prompted.
+7. **Launch FlipDeck** from the Flipper apps menu, choose a profile, review the command, and press OK.
 
-Manual path if you are copying files yourself:
+Manual fallback if you are copying files yourself:
 ```
 /apps_data/flipdeck/
 ├── settings.json
 ├── profiles/
 └── snippets/
 ```
+
+Developer-only fallback for local testing: build the `.fap`, mount the Flipper microSD card in an external reader, copy the `.fap` into `/apps/Tools/`, verify the file exists, eject the card, and insert it back into the Flipper.
 
 ### Deploying the web installer on Railway
 
