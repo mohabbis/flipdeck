@@ -8,9 +8,9 @@ import { SmartInstallButton } from "@/components/SmartInstallButton";
 import { getProfileCommands, normalizeProfile, profileFiles } from "@/lib/profiles";
 
 const installSteps = [
-  "Download the pack",
-  "Open qFlipper",
-  "Copy apps_data to SD",
+  "Plug in Flipper",
+  "Keep microSD inserted",
+  "Install to Flipper",
   "Launch FlipDeck",
 ];
 

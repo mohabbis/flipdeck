@@ -1,21 +1,24 @@
 # FlipDeck Web Installer
 
-A Next.js web installer for FlipDeck. It gives Flipper Zero users a simple qFlipper-style flow: plug in the Flipper, download one ZIP, and drag the included `apps_data` folder onto the SD card.
+A Next.js web installer for FlipDeck. The public flow assumes users keep the microSD card inside the Flipper Zero, connect the Flipper over USB, and copy the included `apps_data` folder through qFlipper.
 
 ## User install flow
 
-1. Plug in and unlock the Flipper Zero.
-2. Open qFlipper and browse the SD card.
-3. Open the deployed FlipDeck web app.
-4. Click **Download Flipper install pack**.
-5. Extract the ZIP and drag `apps_data` onto the SD card root.
-6. Launch FlipDeck from the Flipper apps menu.
+1. Leave the microSD card inserted in the Flipper Zero.
+2. Plug in and unlock the Flipper over USB.
+3. Open qFlipper and browse the Flipper SD card.
+4. Open the deployed FlipDeck web app.
+5. Click **Download Flipper install pack**.
+6. Extract the ZIP and drag `apps_data` onto the Flipper SD card root in qFlipper.
+7. Launch FlipDeck from the Flipper apps menu.
 
 The install pack endpoint is:
 
 ```txt
 /api/install-bundle/download
 ```
+
+Manual fallback: download the ZIP and copy `apps_data` to the SD card yourself. Developer-only fallback: mount the microSD card in an external reader, copy `apps_data` to that mounted volume, eject it, and insert it back into the Flipper.
 
 It includes:
 

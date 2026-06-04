@@ -43,13 +43,13 @@ export function SmartInstallButton({
   async function connectDevice() {
     const usb = (navigator as NavigatorWithUsb).usb;
     if (!usb) {
-      setStatus("WebUSB unavailable in this browser");
+      setStatus("WebUSB unavailable here; use the qFlipper ZIP fallback below.");
       return;
     }
 
     try {
       await usb.requestDevice({ filters: [] });
-      setStatus("Device detected");
+      setStatus("Flipper detected. Continue with the installer pack and copy it through qFlipper.");
       onDeviceDetected?.();
     } catch {
       setStatus("Connection cancelled");
@@ -80,7 +80,7 @@ export function SmartInstallButton({
             className="h-11 rounded-md border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={!webUsbAvailable}
           >
-            Detect Flipper
+            Detect Flipper over USB
           </button>
           {downloadHref ? (
             <a

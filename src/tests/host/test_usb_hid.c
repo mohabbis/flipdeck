@@ -52,7 +52,7 @@ static void test_special_keys(void) {
     EXPECT_EQ(key_name_to_code("ESCAPE"),    41, "ESCAPE");
     EXPECT_EQ(key_name_to_code("BACKSPACE"), 42, "BACKSPACE");
     EXPECT_EQ(key_name_to_code("TAB"),       43, "TAB");
-    EXPECT_EQ(key_name_to_code("SPACE"),     49, "SPACE");
+    EXPECT_EQ(key_name_to_code("SPACE"),     44, "SPACE");
 }
 
 static void test_arrow_keys(void) {
@@ -64,8 +64,8 @@ static void test_arrow_keys(void) {
 
 static void test_function_keys(void) {
     EXPECT_EQ(key_name_to_code("F4"),  61, "F4");
-    EXPECT_EQ(key_name_to_code("F5"),  65, "F5");
-    EXPECT_EQ(key_name_to_code("F12"), 72, "F12");
+    EXPECT_EQ(key_name_to_code("F5"),  62, "F5");
+    EXPECT_EQ(key_name_to_code("F12"), 69, "F12");
 }
 
 static void test_unknown_keys(void) {

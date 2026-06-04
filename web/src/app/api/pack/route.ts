@@ -33,7 +33,8 @@ async function buildPack(ids: string[]) {
     [
       "FlipDeck custom install pack",
       "",
-      "Copy the apps_data folder to the root of your Flipper Zero SD card with qFlipper.",
+      "Primary install: keep the microSD card inside your Flipper Zero, connect USB, then copy the apps_data folder to the Flipper SD card with qFlipper.",
+      "Manual fallback: copy apps_data to a mounted Flipper microSD card yourself, then reinsert it before launching FlipDeck.",
       "Review every command before running it on a host computer.",
       "",
     ].join("\n")

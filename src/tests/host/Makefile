@@ -1,8 +1,8 @@
 CC      = gcc
-CFLAGS  = -I./stubs -std=c99 -Wall -Wextra -Wpedantic
+CFLAGS  = -DUFBT_HOST_BUILD -I./stubs -std=c99 -Wall -Wextra -Wpedantic
 SRCDIR  = ../..
 
-.PHONY: all run clean
+.PHONY: all test run clean
 
 all: test_profile_manager test_usb_hid
 
@@ -11,6 +11,8 @@ test_profile_manager: test_profile_manager.c $(SRCDIR)/profile_manager.c
 
 test_usb_hid: test_usb_hid.c $(SRCDIR)/usb_hid.c $(SRCDIR)/usb_hid.h
 	$(CC) $(CFLAGS) -o $@ test_usb_hid.c
+
+test: run
 
 run: all
 	@echo "--- profile_manager ---"
