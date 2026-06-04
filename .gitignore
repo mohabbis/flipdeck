@@ -1,3 +1,55 @@
+```
+# Compiled and build artifacts
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Dependencies
+venv/
+.venv/
+__pycache__/
+*.egg-info/
+dist/
+build/
+target/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# Gradle
+.gradle/
+
+# MyPy
+.mypy_cache/
+
+# PyTest
+.pytest_cache/
+```
 # Build outputs
 build/
 *.fap

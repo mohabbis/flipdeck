@@ -9,6 +9,11 @@
 #include "flipdeck_app.h"
 #include <furi.h>
 
+#ifdef UFBT_HOST_BUILD
+/* Host test build - include stubs */
+#include "tests/host/stubs/furi.h"
+#endif
+
 // Maximum number of profile categories
 #define FLIPDECK_MAX_CATEGORIES 10
 #define FLIPDECK_MAX_ACTIONS_PER_CATEGORY 20
