@@ -8,9 +8,9 @@ import { SmartInstallButton } from "@/components/SmartInstallButton";
 import { getProfileCommands, normalizeProfile, profileFiles } from "@/lib/profiles";
 
 const installSteps = [
-  "Download the pack",
-  "Open qFlipper",
-  "Copy apps_data to SD",
+  "Plug in Flipper",
+  "Keep microSD inserted",
+  "Install to Flipper",
   "Launch FlipDeck",
 ];
 
@@ -38,8 +38,8 @@ export default function Home() {
                 Flip<span className="text-[#00D4AA]">Deck</span>
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-                Build a Flipper-ready SD card pack from trusted developer profiles, inspect every
-                command, and download a copyable installer ZIP.
+                Plug in your Flipper Zero with its microSD card inserted, inspect every
+                command, then install the FlipDeck pack directly to the Flipper.
               </p>
             </div>
 
@@ -75,7 +75,15 @@ export default function Home() {
           />
 
           <section className="rounded-lg border border-white/10 bg-[linear-gradient(135deg,rgba(14,165,233,0.16),rgba(0,212,170,0.09),rgba(251,191,36,0.10))] p-4 backdrop-blur-md">
-            <h2 className="text-lg font-semibold text-white">Copy Flow</h2>
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Primary install flow</h2>
+                <p className="mt-1 text-sm text-slate-300">
+                  Public users should leave the microSD card inside the Flipper and use USB/qFlipper
+                  to copy the pack to the card mounted inside the device.
+                </p>
+              </div>
+            </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-4">
               {installSteps.map((step, index) => (
                 <div key={step} className="rounded-lg border border-white/10 bg-slate-950/55 p-3">
@@ -93,13 +101,19 @@ export default function Home() {
           <CommandAudit commands={selectedCommands} />
           <SmartInstallButton selectedIds={selectedProfile?.id ? [selectedProfile.id] : []} />
           <section className="rounded-lg border border-white/10 bg-white/[0.07] p-4 backdrop-blur-md">
-            <h2 className="text-lg font-semibold text-white">Profile JSON</h2>
+            <h2 className="text-lg font-semibold text-white">Manual fallback</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              If browser USB detection is unavailable, download the ZIP and copy its
+              <code className="mx-1 rounded bg-slate-950/70 px-1.5 py-0.5 text-[#9FF5DF]">apps_data</code>
+              folder to the Flipper SD card with qFlipper. Developer testing can use an external
+              SD-card reader, but that is not the public install path.
+            </p>
             <a
               href={`/profiles/${selectedProfile?.id}.json`}
               download
               className="mt-4 inline-flex h-10 items-center rounded-md border border-white/10 px-3 text-sm font-semibold text-slate-200 transition hover:border-[#00D4AA]/50 hover:text-[#9FF5DF]"
             >
-              Download selected profile
+              Download selected profile JSON
             </a>
           </section>
         </aside>

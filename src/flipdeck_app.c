@@ -127,3 +127,17 @@ void flipdeck_app_set_state(FlipDeckState new_state) {
         g_app_ctx->state = new_state;
     }
 }
+
+int32_t flipdeck_app(void* p) {
+    if(!flipdeck_app_init(p)) {
+        return 1;
+    }
+
+    while(true) {
+        flipdeck_app_loop(p);
+        furi_delay_ms(50);
+    }
+
+    flipdeck_app_free(p);
+    return 0;
+}

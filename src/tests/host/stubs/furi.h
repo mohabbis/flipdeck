@@ -24,6 +24,8 @@
 /* Filesystem stubs */
 typedef struct { int _dummy; } FuriFs;
 
+#define FuriStatusOK 0
+
 #define FuriFlagRead      (1 << 0)
 #define FuriFlagWrite     (1 << 1)
 #define FuriFlagCreate    (1 << 2)
