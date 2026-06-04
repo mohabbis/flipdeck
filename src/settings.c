@@ -22,5 +22,5 @@ bool settings_save(FlipDeckSettings* settings) {
 void settings_reset_to_defaults(FlipDeckSettings* settings) {
     settings->send_delay_ms = 100;
     settings->confirm_before_send = true;
-    settings->auto_detect_usb = true;
+    settings->auto_connect_usb = true;
 }

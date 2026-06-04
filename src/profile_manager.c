@@ -11,9 +11,12 @@
 #include <stdlib.h>
 #include <storage/storage.h>
 #include <inttypes.h>
+#include <furi_core/string.h>
+#include <furi_core/fs.h>
+#include <furi_core/storage.h>
 
-#define PROFILE_BASE_PATH "/ext/flipdeck/profiles"
-#define SETTINGS_PATH "/ext/flipdeck/settings.json"
+#define PROFILE_BASE_PATH "/stor0800/flipdeck/profiles"
+#define SETTINGS_PATH "/stor0800/flipdeck/settings.json"
 
 // Simple string helpers for JSON parsing (no external library)
 static char* find_json_string(char* json, const char* key, char* output, size_t max_len) {

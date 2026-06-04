@@ -9,17 +9,13 @@
 #include "usb_hid.h"
 #include <furi.h>
 #include <furi_hal.h>
-#include <gui/gui.h>
 #include <gui/view.h>
-#include <gui/elements.h>
-#include <input/input.h>
-#include <stdlib.h>
-#include <string.h>
+#include <gui/view_manager.h>
 
 typedef struct {
     FlipDeckApp* app_ctx;
     View* view;
-    Gui* gui;
+    ViewDispatcher* view_dispenser;
     char category_ids[FLIPDECK_MAX_CATEGORIES][32];
     FlipDeckProfileCategory current_category;
 } FlipDeckUi;
@@ -38,12 +34,22 @@ static bool flipdeck_ui_input_settings(InputEvent* event, void* context);
 static void flipdeck_ui_send_action(FlipDeckAction* action);
 static void flipdeck_ui_draw_long_snippet_warning(Canvas* canvas, void* context);
 static bool flipdeck_ui_input_long_snippet_warning(InputEvent* event, void* context);
+static void flipdeck_ui_draw_category_browser(void* ctx, VContext vctx);
+static bool flipdeck_ui_input_category_browser(void* ctx, InputEvent* event);
+static void flipdeck_ui_draw_action_browser(void* ctx, VContext vctx);
+static bool flipdeck_ui_input_action_browser(void* ctx, InputEvent* event);
+static void flipdeck_ui_draw_confirm(void* ctx, VContext vctx);
+static bool flipdeck_ui_input_confirm(void* ctx, InputEvent* event);
+static void flipdeck_ui_draw_settings(void* ctx, VContext vctx);
+static bool flipdeck_ui_input_settings(void* ctx, InputEvent* event);
+static void flipdeck_ui_send_action(FlipDeckAction* action);
+static void flipdeck_ui_draw_long_snippet_warning(void* ctx, VContext vctx);
+static bool flipdeck_ui_input_long_snippet_warning(void* ctx, InputEvent* event);
 
 void flipdeck_ui_init(FlipDeckApp* app_ctx) {
     FURI_LOG_I("FlipDeck", "Initializing UI");
     
     ui.app_ctx = app_ctx;
-    ui.gui = furi_record_open("gui");
     memset(&ui.current_category, 0, sizeof(FlipDeckProfileCategory));
     
     // Load category list
@@ -51,6 +57,7 @@ void flipdeck_ui_init(FlipDeckApp* app_ctx) {
     
     // Allocate views
     ui.view = view_alloc();
+    ui.view_dispenser = view_dispatcher_alloc();
     
     // Category browser view
     view_set_context(ui.view, &ui);
@@ -60,6 +67,10 @@ void flipdeck_ui_init(FlipDeckApp* app_ctx) {
     
     // Add view to GUI
     gui_add_view_port(ui.gui, view_get_viewport(ui.view));
+    view_set_callback_context(ui.view, &ui);
+    view_set_draw_callback(ui.view, flipdeck_ui_draw_category_browser);
+    view_set_input_callback(ui.view, flipdeck_ui_input_category_browser);
+    view_dispatcher_add_view(ui.view_dispenser, 0, ui.view);
 }
 
 void flipdeck_ui_free(void) {
@@ -78,23 +89,39 @@ void flipdeck_ui_handle_category_browser(void) {
 }
 
 void flipdeck_ui_handle_action_browser(void) {
+    view_dispatcher_free(ui.view_dispenser);
+    view_free(ui.view);
+}
+
+void flipdeck_ui_handle_category_browser(furi_t furi) {
+    view_dispatcher_attach_view(ui.view_dispenser, furi_gui_view_manager(furi));
+}
+
+void flipdeck_ui_handle_action_browser(furi_t furi) {
     view_set_draw_callback(ui.view, flipdeck_ui_draw_action_browser);
     view_set_input_callback(ui.view, flipdeck_ui_input_action_browser);
+    view_dispatcher_attach_view(ui.view_dispenser, furi_gui_view_manager(furi));
 }
 
 void flipdeck_ui_handle_confirm(void) {
+void flipdeck_ui_handle_confirm(furi_t furi) {
     view_set_draw_callback(ui.view, flipdeck_ui_draw_confirm);
     view_set_input_callback(ui.view, flipdeck_ui_input_confirm);
+    view_dispatcher_attach_view(ui.view_dispenser, furi_gui_view_manager(furi));
 }
 
 void flipdeck_ui_handle_settings(void) {
+void flipdeck_ui_handle_settings(furi_t furi) {
     view_set_draw_callback(ui.view, flipdeck_ui_draw_settings);
     view_set_input_callback(ui.view, flipdeck_ui_input_settings);
+    view_dispatcher_attach_view(ui.view_dispenser, furi_gui_view_manager(furi));
 }
 
 void flipdeck_ui_handle_long_snippet_warning(void) {
+void flipdeck_ui_handle_long_snippet_warning(furi_t furi) {
     view_set_draw_callback(ui.view, flipdeck_ui_draw_long_snippet_warning);
     view_set_input_callback(ui.view, flipdeck_ui_input_long_snippet_warning);
+    view_dispatcher_attach_view(ui.view_dispenser, furi_gui_view_manager(furi));
 }
 
 // Send action to USB HID
@@ -112,9 +139,10 @@ static void flipdeck_ui_send_action(FlipDeckAction* action) {
         uint32_t len = strlen(action->value);
         if(len > FLIPDECK_MAX_SNIPPET_LENGTH_WARN) {
             // Store the action and show warning
-            memcpy(&ui.current_category.actions[ui.app_ctx->selected_action_index], 
+            FlipDeckUi* ui_ctx = &ui;
+            memcpy(&ui_ctx->current_category.actions[ui_ctx->app_ctx->selected_action_index], 
                    action, sizeof(FlipDeckAction));
-            ui.app_ctx->state = FlipDeckState_LongSnippetWarning;
+            ui_ctx->app_ctx->state = FlipDeckState_LongSnippetWarning;
             return;
         }
         usb_hid_send_string(action->value);
@@ -126,95 +154,103 @@ static void flipdeck_ui_send_action(FlipDeckAction* action) {
 }
 
 // Category browser - Main screen
-static void flipdeck_ui_draw_category_browser(Canvas* canvas) {
-    FlipDeckApp* app = ui.app_ctx;
+static void flipdeck_ui_draw_category_browser(void* ctx, VContext vctx) {
+    FlipDeckUi* ui_ctx = (FlipDeckUi*)ctx;
+    FlipDeckApp* app = ui_ctx->app_ctx;
     
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 0, 10, "FlipDeck");
+    canvas_set_font(vctx, CanvasFontMedium);
+    canvas_draw_str(vctx, 0, 10, "FlipDeck");
     
-    canvas_draw_str(canvas, 88, 10, app->usb_connected ? "[OK]" : "[X]");
+    canvas_set_font(vctx, CanvasFontSmall);
+    canvas_draw_str(vctx, 88, 10, app->usb_connected ? "[OK]" : "[X]");
     
     elements_frame(canvas, 0, 20, 128, 1);
+    canvas_draw_line(vctx, 0, 20, 128, 20);
     
-    canvas_set_font(canvas, FontSecondary);
+    canvas_set_font(vctx, CanvasFontSmall);
     for(uint32_t i = 0; i < app->category_count && i < 5; i++) {
-        int y = 30 + (i * 12);
+        int y = 30 + (i * 10);
         if(i == app->current_category_index) {
-            elements_frame(canvas, 0, y - 9, 127, 11);
+            canvas_invert_rectangle(vctx, 0, y - 2, 128, 8);
         }
-        canvas_draw_str(canvas, 5, y, ui.category_ids[i]);
+        canvas_draw_str(vctx, 5, y, ui_ctx->category_ids[i]);
     }
     
-    canvas_draw_str(canvas, 0, 60, "OK:Select|Menu:Settings");
+    canvas_set_font(vctx, CanvasFontSmall);
+    canvas_draw_str(vctx, 0, 60, "OK:Select | MENU:Settings");
 }
 
-static bool flipdeck_ui_input_category_browser(InputEvent* event) {
-    FlipDeckApp* app = ui.app_ctx;
+static bool flipdeck_ui_input_category_browser(void* ctx, InputEvent* event) {
+    FlipDeckUi* ui_ctx = (FlipDeckUi*)ctx;
+    FlipDeckApp* app = ui_ctx->app_ctx;
     
-    if(event->type != InputTypeShort) return false;
+    if(event->type != InputType_Click) return false;
     
     switch(event->key) {
         case InputKeyBack:
+        case InputKey_Up:
             if(app->current_category_index > 0) app->current_category_index--;
             return true;
-        case InputKeyDown:
+        case InputKey_Down:
             if(app->current_category_index < app->category_count - 1) app->current_category_index++;
             return true;
-        case InputKeyOk:
+        case InputKey_OK:
             profile_manager_load_category(
-                ui.category_ids[app->current_category_index], 
-                &ui.current_category);
-            strncpy(app->current_category_id, ui.category_ids[app->current_category_index], 31);
+                ui_ctx->category_ids[app->current_category_index], 
+                &ui_ctx->current_category);
+            strncpy(app->current_category_id, ui_ctx->category_ids[app->current_category_index], 31);
             app->state = FlipDeckState_ActionBrowser;
             return true;
-        case InputKeyMenu:
+        case InputKey_Menu:
             app->state = FlipDeckState_Settings;
             return true;
-        default:
-            break;
     }
     return false;
 }
 
 // Action browser - Profile screen
-static void flipdeck_ui_draw_action_browser(Canvas* canvas) {
-    FlipDeckApp* app = ui.app_ctx;
+static void flipdeck_ui_draw_action_browser(void* ctx, VContext vctx) {
+    FlipDeckUi* ui_ctx = (FlipDeckUi*)ctx;
+    FlipDeckApp* app = ui_ctx->app_ctx;
     
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 0, 10, ui.current_category.name);
+    canvas_set_font(vctx, CanvasFontMedium);
+    canvas_draw_str(vctx, 0, 10, ui_ctx->current_category.name);
     
     elements_frame(canvas, 0, 20, 128, 1);
+    canvas_draw_line(vctx, 0, 20, 128, 20);
     
-    canvas_set_font(canvas, FontSecondary);
-    for(uint32_t i = 0; i < ui.current_category.action_count && i < 5; i++) {
-        int y = 30 + (i * 12);
+    canvas_set_font(vctx, CanvasFontSmall);
+    for(uint32_t i = 0; i < ui_ctx->current_category.action_count && i < 5; i++) {
+        int y = 30 + (i * 10);
         if(i == app->selected_action_index) {
-            elements_frame(canvas, 0, y - 9, 127, 11);
+            canvas_invert_rectangle(vctx, 0, y - 2, 128, 8);
         }
-        canvas_draw_str(canvas, 5, y, ui.current_category.actions[i].label);
+        canvas_draw_str(vctx, 5, y, ui_ctx->current_category.actions[i].label);
     }
     
-    canvas_draw_str(canvas, 0, 60, "OK:Send|Back:Categories");
+    canvas_set_font(vctx, CanvasFontSmall);
+    canvas_draw_str(vctx, 0, 60, "OK:Send | BACK:Categories");
 }
 
-static bool flipdeck_ui_input_action_browser(InputEvent* event) {
-    FlipDeckApp* app = ui.app_ctx;
+static bool flipdeck_ui_input_action_browser(void* ctx, InputEvent* event) {
+    FlipDeckUi* ui_ctx = (FlipDeckUi*)ctx;
+    FlipDeckApp* app = ui_ctx->app_ctx;
     
-    if(event->type != InputTypeShort) return false;
+    if(event->type != InputType_Click) return false;
     
-    uint32_t action_count = ui.current_category.action_count;
+    uint32_t action_count = ui_ctx->current_category.action_count;
     if(action_count == 0) return false;
     
     switch(event->key) {
-        case InputKeyUp:
+        case InputKey_Up:
             if(app->selected_action_index > 0) app->selected_action_index--;
             return true;
-        case InputKeyDown:
+        case InputKey_Down:
             if(app->selected_action_index < action_count - 1) app->selected_action_index++;
             return true;
-        case InputKeyOk:
+        case InputKey_OK:
             {
-                FlipDeckAction* action = &ui.current_category.actions[app->selected_action_index];
+                FlipDeckAction* action = &ui_ctx->current_category.actions[app->selected_action_index];
                 if(action->confirm) {
                     app->state = FlipDeckState_SendConfirm;
                 } else {
@@ -223,77 +259,73 @@ static bool flipdeck_ui_input_action_browser(InputEvent* event) {
                 }
             }
             return true;
-        case InputKeyBack:
+        case InputKey_Back:
             app->state = FlipDeckState_CategoryBrowser;
             app->selected_action_index = 0;
             return true;
-        default:
-            break;
     }
     return false;
 }
 
 // Confirmation screen
-static void flipdeck_ui_draw_confirm(Canvas* canvas) {
-    FlipDeckAction* action = &ui.current_category.actions[ui.app_ctx->selected_action_index];
+static void flipdeck_ui_draw_confirm(void* ctx, VContext vctx) {
+    FlipDeckUi* ui_ctx = (FlipDeckUi*)ctx;
+    FlipDeckAction* action = &ui_ctx->current_category.actions[ui_ctx->app_ctx->selected_action_index];
     
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 0, 10, "Send Command?");
+    canvas_set_font(vctx, CanvasFontMedium);
+    canvas_draw_str(vctx, 0, 10, "Send Command?");
     
     elements_frame(canvas, 0, 20, 128, 1);
+    canvas_draw_line(vctx, 0, 20, 128, 20);
     
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 5, 35, action->label);
+    canvas_set_font(vctx, CanvasFontSmall);
+    canvas_draw_str(vctx, 5, 35, action->label);
+    canvas_draw_str(vctx, 5, 50, action->value);
     
-    // Truncate value if too long
-    char display_value[64];
-    strncpy(display_value, action->value, sizeof(display_value) - 1);
-    display_value[sizeof(display_value) - 1] = '\0';
-    canvas_draw_str(canvas, 5, 48, display_value);
-    
-    canvas_draw_str(canvas, 0, 60, "OK:Send|Back:Cancel");
+    canvas_draw_str(vctx, 0, 60, "[YES] Send | [NO] Cancel");
 }
 
-static bool flipdeck_ui_input_confirm(InputEvent* event) {
-    FlipDeckApp* app = ui.app_ctx;
+static bool flipdeck_ui_input_confirm(void* ctx, InputEvent* event) {
+    FlipDeckUi* ui_ctx = (FlipDeckUi*)ctx;
+    FlipDeckApp* app = ui_ctx->app_ctx;
     
-    if(event->type != InputTypeShort) return false;
+    if(event->type != InputType_Click) return false;
     
     switch(event->key) {
-        case InputKeyOk:
-            flipdeck_ui_send_action(&ui.current_category.actions[app->selected_action_index]);
+        case InputKey_OK:
+            flipdeck_ui_send_action(&ui_ctx->current_category.actions[app->selected_action_index]);
             snprintf(app->status_message, sizeof(app->status_message), "Sent!");
             app->state = FlipDeckState_ActionBrowser;
             return true;
-        case InputKeyBack:
+        case InputKey_Back:
+        case InputKey_Cancel:
             app->state = FlipDeckState_ActionBrowser;
             return true;
-        default:
-            break;
     }
     return false;
 }
 
 // Settings screen
-static void flipdeck_ui_draw_settings(Canvas* canvas) {
-    FlipDeckApp* app = ui.app_ctx;
+static void flipdeck_ui_draw_settings(void* ctx, VContext vctx) {
+    FlipDeckApp* app = ((FlipDeckUi*)ctx)->app_ctx;
     
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 0, 10, "Settings");
+    canvas_set_font(vctx, CanvasFontMedium);
+    canvas_draw_str(vctx, 0, 10, "Settings");
     
     elements_frame(canvas, 0, 20, 128, 1);
+    canvas_draw_line(vctx, 0, 20, 128, 20);
     
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 5, 35, "USB:");
-    canvas_draw_str(canvas, 60, 35, app->usb_connected ? "[OK]" : "[DISC]");
+    canvas_set_font(vctx, CanvasFontSmall);
+    canvas_draw_str(vctx, 5, 35, "USB:");
+    canvas_draw_str(vctx, 88, 35, app->usb_connected ? "[OK]" : "[DISC]");
     
-    canvas_draw_str(canvas, 5, 50, "Press Back to exit");
+    canvas_draw_str(vctx, 5, 50, "Back to Categories");
 }
 
-static bool flipdeck_ui_input_settings(InputEvent* event) {
-    FlipDeckApp* app = ui.app_ctx;
+static bool flipdeck_ui_input_settings(void* ctx, InputEvent* event) {
+    FlipDeckApp* app = ((FlipDeckUi*)ctx)->app_ctx;
     
-    if(event->type == InputTypeShort && event->key == InputKeyBack) {
+    if(event->type == InputType_Click && event->key == InputKey_Back) {
         app->state = FlipDeckState_CategoryBrowser;
         return true;
     }
@@ -301,43 +333,42 @@ static bool flipdeck_ui_input_settings(InputEvent* event) {
 }
 
 // Long snippet warning screen
-static void flipdeck_ui_draw_long_snippet_warning(Canvas* canvas) {
-    FlipDeckAction* action = &ui.current_category.actions[ui.app_ctx->selected_action_index];
-    
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 0, 10, "Long Snippet!");
+static void flipdeck_ui_draw_long_snippet_warning(void* ctx, VContext vctx) {
+    FlipDeckUi* ui_ctx = (FlipDeckUi*)ctx;
+    FlipDeckAction* action = &ui_ctx->current_category.actions[ui_ctx->app_ctx->selected_action_index];
     
     elements_frame(canvas, 0, 20, 128, 1);
+    canvas_set_font(vctx, CanvasFontMedium);
+    canvas_draw_str(vctx, 0, 10, "Long Snippet!");
     
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 5, 35, "Length:");
+    canvas_draw_line(vctx, 0, 20, 128, 20);
     
-    char len_str[16];
-    snprintf(len_str, sizeof(len_str), "%d chars", (int)strlen(action->value));
-    canvas_draw_str(canvas, 50, 35, len_str);
+    canvas_set_font(vctx, CanvasFontSmall);
+    canvas_draw_str(vctx, 5, 35, "Length:");
+    canvas_draw_str(vctx, 40, 35, action->value);
     
-    canvas_draw_str(canvas, 0, 55, "OK:Send Anyway");
-    canvas_draw_str(canvas, 0, 65, "Back:Cancel");
+    canvas_draw_str(vctx, 0, 55, "[YES] Send Anyway");
+    canvas_draw_str(vctx, 0, 65, "[NO] Cancel");
 }
 
-static bool flipdeck_ui_input_long_snippet_warning(InputEvent* event) {
-    FlipDeckApp* app = ui.app_ctx;
+static bool flipdeck_ui_input_long_snippet_warning(void* ctx, InputEvent* event) {
+    FlipDeckUi* ui_ctx = (FlipDeckUi*)ctx;
+    FlipDeckApp* app = ui_ctx->app_ctx;
     
-    if(event->type != InputTypeShort) return false;
+    if(event->type != InputType_Click) return false;
     
     switch(event->key) {
-        case InputKeyOk:
+        case InputKey_OK:
             // Send the stored action
-            FlipDeckAction* action = &ui.current_category.actions[app->selected_action_index];
+            FlipDeckAction* action = &ui_ctx->current_category.actions[app->selected_action_index];
             usb_hid_send_string(action->value);
             snprintf(app->status_message, sizeof(app->status_message), "Sent!");
             app->state = FlipDeckState_ActionBrowser;
             return true;
-        case InputKeyBack:
+        case InputKey_Back:
+        case InputKey_Cancel:
             app->state = FlipDeckState_ActionBrowser;
             return true;
-        default:
-            break;
     }
     return false;
 }
