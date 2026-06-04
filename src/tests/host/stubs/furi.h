@@ -7,15 +7,19 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-/* Logging stubs — variadic with no required args after the first */
+/* Logging stubs — only defined if not already defined by real headers */
+#ifndef FURI_LOG_I
 #define FURI_LOG_I(...)  ((void)0)
+#endif
+#ifndef FURI_LOG_W
 #define FURI_LOG_W(...)  ((void)0)
+#endif
+#ifndef FURI_LOG_E
 #define FURI_LOG_E(...)  ((void)0)
+#endif
+#ifndef FURI_LOG_D
 #define FURI_LOG_D(...)  ((void)0)
-
-/* Status codes */
-typedef int FuriStatus;
-#define FuriStatusOK 0
+#endif
 
 /* Filesystem stubs */
 typedef struct { int _dummy; } FuriFs;
@@ -29,7 +33,7 @@ static inline FuriFs* furi_open(const char* path, int flags, bool truncate) {
     (void)path; (void)flags; (void)truncate; return NULL;
 }
 static inline void furi_close(FuriFs* fs) { (void)fs; }
-static inline FuriStatus furi_mkdir(const char* path) { (void)path; return FuriStatusOK; }
+static inline int furi_mkdir(const char* path) { (void)path; return 0; }
 static inline uint32_t furi_stream_read(FuriFs* fs, void* buf, uint32_t size) {
     (void)fs; (void)buf; (void)size; return 0;
 }

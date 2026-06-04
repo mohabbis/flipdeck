@@ -11,6 +11,7 @@
 #include <furi_hal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 static FlipDeckApp* g_app_ctx = NULL;
 
@@ -64,7 +65,7 @@ static void flipdeck_load_settings(void) {
 
 static void flipdeck_load_categories(void) {
     if(profile_manager_list_categories(NULL, &g_app_ctx->category_count)) {
-        FURI_LOG_I("FlipDeck", "Found %d categories", g_app_ctx->category_count);
+        FURI_LOG_I("FlipDeck", "Found %" PRIu32 " categories", g_app_ctx->category_count);
     } else {
         FURI_LOG_W("FlipDeck", "No categories found");
         g_app_ctx->category_count = 0;

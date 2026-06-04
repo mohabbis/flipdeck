@@ -27,17 +27,17 @@ typedef struct {
 static FlipDeckUi ui;
 
 // Forward declarations
-static void flipdeck_ui_draw_category_browser(Canvas* canvas);
-static bool flipdeck_ui_input_category_browser(InputEvent* event);
-static void flipdeck_ui_draw_action_browser(Canvas* canvas);
-static bool flipdeck_ui_input_action_browser(InputEvent* event);
-static void flipdeck_ui_draw_confirm(Canvas* canvas);
-static bool flipdeck_ui_input_confirm(InputEvent* event);
-static void flipdeck_ui_draw_settings(Canvas* canvas);
-static bool flipdeck_ui_input_settings(InputEvent* event);
+static void flipdeck_ui_draw_category_browser(Canvas* canvas, void* context);
+static bool flipdeck_ui_input_category_browser(InputEvent* event, void* context);
+static void flipdeck_ui_draw_action_browser(Canvas* canvas, void* context);
+static bool flipdeck_ui_input_action_browser(InputEvent* event, void* context);
+static void flipdeck_ui_draw_confirm(Canvas* canvas, void* context);
+static bool flipdeck_ui_input_confirm(InputEvent* event, void* context);
+static void flipdeck_ui_draw_settings(Canvas* canvas, void* context);
+static bool flipdeck_ui_input_settings(InputEvent* event, void* context);
 static void flipdeck_ui_send_action(FlipDeckAction* action);
-static void flipdeck_ui_draw_long_snippet_warning(Canvas* canvas);
-static bool flipdeck_ui_input_long_snippet_warning(InputEvent* event);
+static void flipdeck_ui_draw_long_snippet_warning(Canvas* canvas, void* context);
+static bool flipdeck_ui_input_long_snippet_warning(InputEvent* event, void* context);
 
 void flipdeck_ui_init(FlipDeckApp* app_ctx) {
     FURI_LOG_I("FlipDeck", "Initializing UI");
@@ -55,45 +55,45 @@ void flipdeck_ui_init(FlipDeckApp* app_ctx) {
     // Category browser view
     view_set_context(ui.view, &ui);
     view_allocate_model(ui.view, ViewModelTypeLocking, sizeof(FlipDeckUi));
-    view_set_draw_callback(ui.view, (ViewDrawCallback)flipdeck_ui_draw_category_browser);
+    view_set_draw_callback(ui.view, flipdeck_ui_draw_category_browser);
     view_set_input_callback(ui.view, flipdeck_ui_input_category_browser);
     
     // Add view to GUI
-    gui_add_view(ui.gui, ui.view);
+    gui_add_view_port(ui.gui, view_get_viewport(ui.view));
 }
 
 void flipdeck_ui_free(void) {
     FURI_LOG_I("FlipDeck", "Freeing UI");
     
     if(ui.gui) {
-        gui_remove_view(ui.gui, ui.view);
+        gui_remove_view_port(ui.gui, view_get_viewport(ui.view));
         furi_record_close("gui");
     }
     view_free(ui.view);
 }
 
 void flipdeck_ui_handle_category_browser(void) {
-    view_set_draw_callback(ui.view, (ViewDrawCallback)flipdeck_ui_draw_category_browser);
+    view_set_draw_callback(ui.view, flipdeck_ui_draw_category_browser);
     view_set_input_callback(ui.view, flipdeck_ui_input_category_browser);
 }
 
 void flipdeck_ui_handle_action_browser(void) {
-    view_set_draw_callback(ui.view, (ViewDrawCallback)flipdeck_ui_draw_action_browser);
+    view_set_draw_callback(ui.view, flipdeck_ui_draw_action_browser);
     view_set_input_callback(ui.view, flipdeck_ui_input_action_browser);
 }
 
 void flipdeck_ui_handle_confirm(void) {
-    view_set_draw_callback(ui.view, (ViewDrawCallback)flipdeck_ui_draw_confirm);
+    view_set_draw_callback(ui.view, flipdeck_ui_draw_confirm);
     view_set_input_callback(ui.view, flipdeck_ui_input_confirm);
 }
 
 void flipdeck_ui_handle_settings(void) {
-    view_set_draw_callback(ui.view, (ViewDrawCallback)flipdeck_ui_draw_settings);
+    view_set_draw_callback(ui.view, flipdeck_ui_draw_settings);
     view_set_input_callback(ui.view, flipdeck_ui_input_settings);
 }
 
 void flipdeck_ui_handle_long_snippet_warning(void) {
-    view_set_draw_callback(ui.view, (ViewDrawCallback)flipdeck_ui_draw_long_snippet_warning);
+    view_set_draw_callback(ui.view, flipdeck_ui_draw_long_snippet_warning);
     view_set_input_callback(ui.view, flipdeck_ui_input_long_snippet_warning);
 }
 
@@ -134,7 +134,7 @@ static void flipdeck_ui_draw_category_browser(Canvas* canvas) {
     
     canvas_draw_str(canvas, 88, 10, app->usb_connected ? "[OK]" : "[X]");
     
-    elements_line(canvas, 0, 20, 128, 20);
+    elements_frame(canvas, 0, 20, 128, 1);
     
     canvas_set_font(canvas, FontSecondary);
     for(uint32_t i = 0; i < app->category_count && i < 5; i++) {
@@ -154,7 +154,7 @@ static bool flipdeck_ui_input_category_browser(InputEvent* event) {
     if(event->type != InputTypeShort) return false;
     
     switch(event->key) {
-        case InputKeyUp:
+        case InputKeyBack:
             if(app->current_category_index > 0) app->current_category_index--;
             return true;
         case InputKeyDown:
@@ -183,7 +183,7 @@ static void flipdeck_ui_draw_action_browser(Canvas* canvas) {
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 0, 10, ui.current_category.name);
     
-    elements_line(canvas, 0, 20, 128, 20);
+    elements_frame(canvas, 0, 20, 128, 1);
     
     canvas_set_font(canvas, FontSecondary);
     for(uint32_t i = 0; i < ui.current_category.action_count && i < 5; i++) {
@@ -240,7 +240,7 @@ static void flipdeck_ui_draw_confirm(Canvas* canvas) {
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 0, 10, "Send Command?");
     
-    elements_line(canvas, 0, 20, 128, 20);
+    elements_frame(canvas, 0, 20, 128, 1);
     
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 5, 35, action->label);
@@ -281,7 +281,7 @@ static void flipdeck_ui_draw_settings(Canvas* canvas) {
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 0, 10, "Settings");
     
-    elements_line(canvas, 0, 20, 128, 20);
+    elements_frame(canvas, 0, 20, 128, 1);
     
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 5, 35, "USB:");
@@ -307,7 +307,7 @@ static void flipdeck_ui_draw_long_snippet_warning(Canvas* canvas) {
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 0, 10, "Long Snippet!");
     
-    elements_line(canvas, 0, 20, 128, 20);
+    elements_frame(canvas, 0, 20, 128, 1);
     
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 5, 35, "Length:");

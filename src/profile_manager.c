@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <storage/storage.h>
+#include <inttypes.h>
 
 #define PROFILE_BASE_PATH "/ext/flipdeck/profiles"
 #define SETTINGS_PATH "/ext/flipdeck/settings.json"
@@ -96,7 +97,7 @@ bool profile_manager_load_all_categories(FlipDeckProfileCategory* categories, ui
     }
     
     furi_close(dir);
-    FURI_LOG_I("FlipDeck", "Loaded %d categories", *count);
+    FURI_LOG_I("FlipDeck", "Loaded %" PRIu32 " categories", *count);
     return *count > 0;
 }
 
@@ -164,7 +165,7 @@ bool profile_manager_load_category(const char* category_id, FlipDeckProfileCateg
     }
     
     furi_close(file);
-    FURI_LOG_I("FlipDeck", "Loaded category '%s' with %d actions", category->name, category->action_count);
+    FURI_LOG_I("FlipDeck", "Loaded category '%s' with %" PRIu32 " actions", category->name, category->action_count);
     return true;
 }
 
@@ -322,7 +323,7 @@ bool profile_manager_save_settings(FlipDeckSettings* settings) {
         "  \"auto_detect_usb\": %s,\n"
         "  \"show_icons\": %s,\n"
         "  \"show_descriptions\": %s,\n"
-        "  \"send_delay_ms\": %u,\n"
+        "  \"send_delay_ms\": %" PRIu32 ",\n"
         "  \"startup_category\": \"%s\"\n"
         "}\n",
         settings->confirm_before_send ? "true" : "false",
@@ -333,7 +334,7 @@ bool profile_manager_save_settings(FlipDeckSettings* settings) {
         settings->startup_category);
     
     // Ensure directory exists
-    furi_mkdir("/stor0800/flipdeck");
+    furi_mkdir("/ext/flipdeck");
     
     // Write to file
     FuriFs* file = furi_open(SETTINGS_PATH, FuriFlagWrite | FuriFlagCreate, true);

@@ -8,7 +8,13 @@
 
 #include <furi.h>
 #include <furi_hal.h>
+
+#ifdef UFBT_HOST_BUILD
+/* Host test build - skip GUI headers */
+typedef void Gui;
+#else
 #include <gui/gui.h>
+#endif
 
 /** Current app state */
 typedef enum {
