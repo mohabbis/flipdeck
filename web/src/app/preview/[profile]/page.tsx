@@ -14,8 +14,8 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
 
   if (!profile) {
     return (
-      <main className="min-h-screen bg-[#0F172A] px-4 py-10 text-white">
-        <div className="mx-auto max-w-3xl rounded-lg border border-white/10 bg-white/[0.07] p-6">
+      <main className="min-h-screen bg-[#f5f1e8] px-4 py-10 text-[#171717]">
+        <div className="mx-auto max-w-3xl rounded-lg border border-black/10 bg-white p-6 shadow-sm">
           Profile not found.
         </div>
       </main>
@@ -23,7 +23,7 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[#0F172A] px-4 py-10 text-white">
+    <main className="min-h-screen bg-[#f5f1e8] px-4 py-10 text-[#171717]">
       <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_360px]">
         <CommandPreview profile={profile} renderAs="flipper-screen" />
         <CommandAudit commands={getProfileCommands(profile)} />

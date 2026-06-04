@@ -6,9 +6,12 @@ import { getProfileCommands } from "@/lib/profiles";
 
 interface ProfileSelectorProps {
   profiles: Profile[];
-  selectedId: string;
-  onSelect: (profileId: string) => void;
-  onHover?: (profileId: string) => void;
+  activeId: string;
+  selectedIds: string[];
+  onToggle: (profileId: string) => void;
+  onPreview?: (profileId: string) => void;
+  onSelectAll?: () => void;
+  onClear?: () => void;
   search?: boolean;
   filters?: string[];
   previewOnHover?: boolean;
@@ -24,29 +27,33 @@ function profileCategory(profile: Profile): string {
 function categoryTone(category: string, selected: boolean) {
   const tones: Record<string, string> = {
     dev: selected
-      ? "border-[#00D4AA] bg-[#00D4AA]/15"
-      : "border-[#00D4AA]/20 bg-[#00D4AA]/8 hover:border-[#00D4AA]/45",
+      ? "border-[#009f84] bg-[#e7fbf5]"
+      : "border-black/10 bg-white hover:border-[#009f84]/45",
     cloud: selected
-      ? "border-sky-300 bg-sky-400/15"
-      : "border-sky-400/20 bg-sky-400/8 hover:border-sky-300/45",
+      ? "border-[#2563eb] bg-[#eff6ff]"
+      : "border-black/10 bg-white hover:border-[#2563eb]/45",
     system: selected
-      ? "border-amber-300 bg-amber-300/15"
-      : "border-amber-300/20 bg-amber-300/8 hover:border-amber-300/45",
+      ? "border-[#ff7a00] bg-[#fff3df]"
+      : "border-black/10 bg-white hover:border-[#ff7a00]/45",
   };
   return tones[category] ?? tones.dev;
 }
 
 export function ProfileSelector({
   profiles,
-  selectedId,
-  onSelect,
-  onHover,
+  activeId,
+  selectedIds,
+  onToggle,
+  onPreview,
+  onSelectAll,
+  onClear,
   search = true,
   filters = ["dev", "cloud", "system"],
   previewOnHover = true,
 }: ProfileSelectorProps) {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   const filteredProfiles = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -62,24 +69,44 @@ export function ProfileSelector({
   }, [activeFilter, profiles, query]);
 
   return (
-    <section className="rounded-lg border border-[#00D4AA]/20 bg-[linear-gradient(180deg,rgba(0,212,170,0.12),rgba(15,23,42,0.62))] p-4 shadow-2xl shadow-black/20 backdrop-blur-md">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <section className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">Profiles</h2>
-          <p className="text-sm text-slate-400">Choose the command sets to include.</p>
+          <h2 className="text-lg font-semibold text-[#171717]">Profiles</h2>
+          <p className="text-sm text-[#6b7280]">
+            {selectedIds.length} of {profiles.length} included
+          </p>
         </div>
-        {search && (
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search"
-            className="h-10 w-full rounded-md border border-white/10 bg-slate-950/70 px-3 text-sm text-white outline-none ring-0 placeholder:text-slate-500 focus:border-[#00D4AA] sm:w-56"
-          />
-        )}
+        <div className="flex w-full flex-col gap-2 sm:w-auto">
+          {search && (
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search profiles"
+              className="h-10 w-full rounded-md border border-black/10 bg-[#f9fafb] px-3 text-sm text-[#171717] outline-none ring-0 placeholder:text-[#9ca3af] focus:border-[#ff7a00] sm:w-64"
+            />
+          )}
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+            <button
+              type="button"
+              onClick={onSelectAll}
+              className="h-9 rounded-md border border-black/10 px-3 text-sm font-semibold text-[#171717] transition hover:border-[#ff7a00]/50"
+            >
+              Select all
+            </button>
+            <button
+              type="button"
+              onClick={onClear}
+              className="h-9 rounded-md border border-black/10 px-3 text-sm font-semibold text-[#6b7280] transition hover:border-[#ff7a00]/50 hover:text-[#171717]"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Profile filters">
         {["all", ...filters].map((filter) => (
           <button
             key={filter}
@@ -87,8 +114,8 @@ export function ProfileSelector({
             onClick={() => setActiveFilter(filter)}
             className={`h-9 rounded-md border px-3 text-sm capitalize transition ${
               activeFilter === filter
-                ? "border-[#00D4AA] bg-[#00D4AA]/20 text-[#C7FFF1]"
-                : "border-white/10 bg-slate-950/50 text-slate-300 hover:border-white/25"
+                ? "border-[#171717] bg-[#171717] text-white"
+                : "border-black/10 bg-[#f9fafb] text-[#4b5563] hover:border-black/25"
             }`}
           >
             {filter}
@@ -99,28 +126,41 @@ export function ProfileSelector({
       <div className="mt-4 grid gap-3">
         {filteredProfiles.map((profile) => {
           const profileId = profile.id ?? profile.name.toLowerCase();
-          const selected = selectedId === profileId;
+          const selected = selectedIdSet.has(profileId);
+          const active = activeId === profileId;
           const category = profileCategory(profile);
           return (
-            <button
+            <label
               key={profileId}
-              type="button"
-              onClick={() => onSelect(profileId)}
-              onMouseEnter={() => previewOnHover && onHover?.(profileId)}
-              className={`grid min-h-24 grid-cols-[1fr_auto] gap-3 rounded-lg border p-4 text-left transition ${categoryTone(category, selected)}`}
+              onMouseEnter={() => previewOnHover && onPreview?.(profileId)}
+              onFocus={() => onPreview?.(profileId)}
+              className={`grid min-h-24 cursor-pointer grid-cols-[auto_1fr_auto] gap-3 rounded-lg border p-4 text-left transition ${categoryTone(category, selected)} ${
+                active ? "ring-2 ring-[#171717]/15" : ""
+              }`}
             >
-              <span>
-                <span className="block font-semibold text-white">{profile.name}</span>
-                <span className="mt-1 block text-sm leading-5 text-slate-400">
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={() => onToggle(profileId)}
+                className="mt-1 h-4 w-4 rounded border-black/20 accent-[#ff7a00]"
+              />
+              <span className="min-w-0">
+                <span className="block font-semibold text-[#171717]">{profile.name}</span>
+                <span className="mt-1 block text-sm leading-5 text-[#6b7280]">
                   {profile.description}
                 </span>
               </span>
-              <span className="rounded-md border border-white/10 bg-slate-950/40 px-2 py-1 text-xs text-slate-200">
+              <span className="self-start rounded-md border border-black/10 bg-white/80 px-2 py-1 text-xs font-semibold text-[#4b5563]">
                 {getProfileCommands(profile).length}
               </span>
-            </button>
+            </label>
           );
         })}
+        {!filteredProfiles.length && (
+          <div className="rounded-lg border border-dashed border-black/15 bg-[#f9fafb] p-4 text-sm text-[#6b7280]">
+            No profiles match that search.
+          </div>
+        )}
       </div>
     </section>
   );

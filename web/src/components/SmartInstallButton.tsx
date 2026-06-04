@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 interface NavigatorWithUsb extends Navigator {
   usb?: {
@@ -10,18 +10,35 @@ interface NavigatorWithUsb extends Navigator {
 
 interface SmartInstallButtonProps {
   selectedIds: string[];
+  selectedCount?: number;
   onDeviceDetected?: () => void;
   fallbackToInstructions?: boolean;
 }
 
+function subscribeWebUsb() {
+  return () => undefined;
+}
+
+function getWebUsbSnapshot() {
+  return typeof navigator !== "undefined" && Boolean((navigator as NavigatorWithUsb).usb);
+}
+
+function getServerWebUsbSnapshot() {
+  return false;
+}
+
 export function SmartInstallButton({
   selectedIds,
+  selectedCount = 0,
   onDeviceDetected,
   fallbackToInstructions = true,
 }: SmartInstallButtonProps) {
-  const [status, setStatus] = useState("Connect over USB with the microSD card inside the Flipper.");
-  const webUsbAvailable =
-    typeof navigator !== "undefined" && Boolean((navigator as NavigatorWithUsb).usb);
+  const webUsbAvailable = useSyncExternalStore(
+    subscribeWebUsb,
+    getWebUsbSnapshot,
+    getServerWebUsbSnapshot
+  );
+  const [status, setStatus] = useState("Ready to download");
 
   async function connectDevice() {
     const usb = (navigator as NavigatorWithUsb).usb;
@@ -41,36 +58,47 @@ export function SmartInstallButton({
 
   const params = new URLSearchParams();
   for (const id of selectedIds) params.append("profile", id);
+  const hasSelection = selectedIds.length > 0;
+  const downloadHref = hasSelection ? `/api/pack?${params.toString()}` : undefined;
 
   return (
-    <section className="rounded-lg border border-[#00D4AA]/40 bg-[linear-gradient(135deg,rgba(0,212,170,0.22),rgba(255,122,0,0.13))] p-4 shadow-2xl shadow-[#00D4AA]/10 backdrop-blur-md">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <section className="rounded-lg border border-black/10 bg-[#171717] p-4 text-white shadow-xl shadow-black/10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">Install to your Flipper</h2>
-          <p className="text-sm text-slate-300">{status}</p>
+          <h2 className="text-lg font-semibold">Install Pack</h2>
+          <p className="text-sm text-[#d1d5db]">
+            {hasSelection
+              ? `${selectedIds.length} profile${selectedIds.length === 1 ? "" : "s"} and ${selectedCount} command${selectedCount === 1 ? "" : "s"} selected`
+              : "Select at least one profile"}
+          </p>
+          <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[#9ca3af]">{status}</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <button
             type="button"
             onClick={connectDevice}
-            className="h-11 rounded-md border border-white/20 bg-slate-950/40 px-4 text-sm font-semibold text-[#C7FFF1] transition hover:bg-[#00D4AA]/20 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-11 rounded-md border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={!webUsbAvailable}
           >
             Detect Flipper over USB
           </button>
-          <a
-            href={`/api/pack?${params.toString()}`}
-            className="inline-flex h-11 items-center justify-center rounded-md bg-[#ff7a00] px-4 text-sm font-semibold text-white shadow-lg shadow-orange-950/30 transition hover:bg-[#ff9d2e]"
-          >
-            Download installer pack
-          </a>
+          {downloadHref ? (
+            <a
+              href={downloadHref}
+              className="inline-flex h-11 items-center justify-center rounded-md bg-[#ff7a00] px-5 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-[#e86f00]"
+            >
+              Download Install Pack
+            </a>
+          ) : (
+            <span className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-md bg-white/10 px-5 text-sm font-semibold text-white/50">
+              Download Install Pack
+            </span>
+          )}
         </div>
       </div>
       {fallbackToInstructions && (
-        <p className="mt-3 text-xs leading-5 text-slate-400">
-          Primary path: keep the microSD card in the Flipper, connect USB, then copy the ZIP
-          contents through qFlipper. Manual fallback: download the .fap or ZIP and copy it to the
-          SD card yourself.
+        <p className="mt-3 text-xs leading-5 text-[#d1d5db]">
+          WebUSB support varies by browser. The ZIP works offline with qFlipper SD card copy.
         </p>
       )}
     </section>
