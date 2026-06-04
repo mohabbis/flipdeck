@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #08090f;
-  --foreground: #f8fafc;
+  --background: #f5f1e8;
+  --foreground: #171717;
   --flipper-orange: #ff7a00;
   --flipper-screen: #ff9d2e;
-  --momentum-cyan: #00d4aa;
+  --momentum-cyan: #00a88a;
   --font-geist-sans: Arial, Helvetica, sans-serif;
   --font-geist-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -31,19 +31,15 @@ html {
 
 body {
   min-width: 320px;
-  background:
-    linear-gradient(rgba(255, 122, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 212, 170, 0.035) 1px, transparent 1px),
-    var(--background);
-  background-size: 28px 28px, 28px 28px, auto;
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans);
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: rgba(251, 146, 60, 0.35);
-  color: #fff7ed;
+  background: rgba(255, 122, 0, 0.26);
+  color: #171717;
 }
 
 @media (prefers-reduced-motion: reduce) {
