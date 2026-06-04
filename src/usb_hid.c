@@ -11,80 +11,80 @@
 // USB HID state
 static bool s_usb_connected = false;
 
-// Key name to HID keycode mapping
-static uint8_t key_name_to_code(const char* name) {
+// Key name to HID keycode mapping (using HID_KEYBOARD_* constants from firmware)
+static uint16_t key_name_to_code(const char* name) {
     // Support single characters directly (a-z, A-Z, 0-9)
     if(strlen(name) == 1) {
         char c = name[0];
-        if(c >= 'A' && c <= 'Z') return c - 'A' + 4;
-        if(c >= 'a' && c <= 'z') return c - 'a' + 4;
-        if(c >= '0' && c <= '9') return c - '0' + 39;
-        if(c == '`') return 52;
-        if(c == '-') return 55;
-        if(c == '=') return 56;
+        if(c >= 'A' && c <= 'Z') return c - 'A' + HID_KEYBOARD_A;
+        if(c >= 'a' && c <= 'z') return c - 'a' + HID_KEYBOARD_A;
+        if(c >= '0' && c <= '9') return c - '0' + HID_KEYBOARD_0;
+        if(c == '`') return HID_KEYBOARD_GRAVE_ACCENT;
+        if(c == '-') return HID_KEYBOARD_MINUS;
+        if(c == '=') return HID_KEYBOARD_EQUAL_SIGN;
         return 0;
     }
     
     // Full key names (uppercase)
-    if(strcmp(name, "A") == 0) return 4;
-    if(strcmp(name, "B") == 0) return 5;
-    if(strcmp(name, "C") == 0) return 6;
-    if(strcmp(name, "D") == 0) return 7;
-    if(strcmp(name, "E") == 0) return 8;
-    if(strcmp(name, "F") == 0) return 9;
-    if(strcmp(name, "G") == 0) return 10;
-    if(strcmp(name, "H") == 0) return 11;
-    if(strcmp(name, "I") == 0) return 12;
-    if(strcmp(name, "J") == 0) return 13;
-    if(strcmp(name, "K") == 0) return 14;
-    if(strcmp(name, "L") == 0) return 15;
-    if(strcmp(name, "M") == 0) return 16;
-    if(strcmp(name, "N") == 0) return 17;
-    if(strcmp(name, "O") == 0) return 18;
-    if(strcmp(name, "P") == 0) return 19;
-    if(strcmp(name, "Q") == 0) return 20;
-    if(strcmp(name, "R") == 0) return 21;
-    if(strcmp(name, "S") == 0) return 22;
-    if(strcmp(name, "T") == 0) return 23;
-    if(strcmp(name, "U") == 0) return 24;
-    if(strcmp(name, "V") == 0) return 25;
-    if(strcmp(name, "W") == 0) return 26;
-    if(strcmp(name, "X") == 0) return 27;
-    if(strcmp(name, "Y") == 0) return 28;
-    if(strcmp(name, "Z") == 0) return 29;
-    if(strcmp(name, "0") == 0) return 39;
-    if(strcmp(name, "1") == 0) return 40;
-    if(strcmp(name, "2") == 0) return 41;
-    if(strcmp(name, "3") == 0) return 42;
-    if(strcmp(name, "4") == 0) return 43;
-    if(strcmp(name, "5") == 0) return 44;
-    if(strcmp(name, "6") == 0) return 45;
-    if(strcmp(name, "7") == 0) return 46;
-    if(strcmp(name, "8") == 0) return 47;
-    if(strcmp(name, "9") == 0) return 48;
-    if(strcmp(name, "ENTER") == 0) return 40;
-    if(strcmp(name, "ESCAPE") == 0) return 41;
-    if(strcmp(name, "BACKSPACE") == 0) return 42;
-    if(strcmp(name, "TAB") == 0) return 43;
-    if(strcmp(name, "SPACE") == 0) return 49;
-    if(strcmp(name, "RIGHT") == 0) return 79;
-    if(strcmp(name, "LEFT") == 0) return 80;
-    if(strcmp(name, "DOWN") == 0) return 81;
-    if(strcmp(name, "UP") == 0) return 82;
-    if(strcmp(name, "F4") == 0) return 61;
-    if(strcmp(name, "F5") == 0) return 65;
-    if(strcmp(name, "F6") == 0) return 66;
-    if(strcmp(name, "F7") == 0) return 67;
-    if(strcmp(name, "F8") == 0) return 68;
-    if(strcmp(name, "F9") == 0) return 69;
-    if(strcmp(name, "F10") == 0) return 70;
-    if(strcmp(name, "F11") == 0) return 71;
-    if(strcmp(name, "F12") == 0) return 72;
+    if(strcmp(name, "A") == 0) return HID_KEYBOARD_A;
+    if(strcmp(name, "B") == 0) return HID_KEYBOARD_B;
+    if(strcmp(name, "C") == 0) return HID_KEYBOARD_C;
+    if(strcmp(name, "D") == 0) return HID_KEYBOARD_D;
+    if(strcmp(name, "E") == 0) return HID_KEYBOARD_E;
+    if(strcmp(name, "F") == 0) return HID_KEYBOARD_F;
+    if(strcmp(name, "G") == 0) return HID_KEYBOARD_G;
+    if(strcmp(name, "H") == 0) return HID_KEYBOARD_H;
+    if(strcmp(name, "I") == 0) return HID_KEYBOARD_I;
+    if(strcmp(name, "J") == 0) return HID_KEYBOARD_J;
+    if(strcmp(name, "K") == 0) return HID_KEYBOARD_K;
+    if(strcmp(name, "L") == 0) return HID_KEYBOARD_L;
+    if(strcmp(name, "M") == 0) return HID_KEYBOARD_M;
+    if(strcmp(name, "N") == 0) return HID_KEYBOARD_N;
+    if(strcmp(name, "O") == 0) return HID_KEYBOARD_O;
+    if(strcmp(name, "P") == 0) return HID_KEYBOARD_P;
+    if(strcmp(name, "Q") == 0) return HID_KEYBOARD_Q;
+    if(strcmp(name, "R") == 0) return HID_KEYBOARD_R;
+    if(strcmp(name, "S") == 0) return HID_KEYBOARD_S;
+    if(strcmp(name, "T") == 0) return HID_KEYBOARD_T;
+    if(strcmp(name, "U") == 0) return HID_KEYBOARD_U;
+    if(strcmp(name, "V") == 0) return HID_KEYBOARD_V;
+    if(strcmp(name, "W") == 0) return HID_KEYBOARD_W;
+    if(strcmp(name, "X") == 0) return HID_KEYBOARD_X;
+    if(strcmp(name, "Y") == 0) return HID_KEYBOARD_Y;
+    if(strcmp(name, "Z") == 0) return HID_KEYBOARD_Z;
+    if(strcmp(name, "0") == 0) return HID_KEYBOARD_0;
+    if(strcmp(name, "1") == 0) return HID_KEYBOARD_1;
+    if(strcmp(name, "2") == 0) return HID_KEYBOARD_2;
+    if(strcmp(name, "3") == 0) return HID_KEYBOARD_3;
+    if(strcmp(name, "4") == 0) return HID_KEYBOARD_4;
+    if(strcmp(name, "5") == 0) return HID_KEYBOARD_5;
+    if(strcmp(name, "6") == 0) return HID_KEYBOARD_6;
+    if(strcmp(name, "7") == 0) return HID_KEYBOARD_7;
+    if(strcmp(name, "8") == 0) return HID_KEYBOARD_8;
+    if(strcmp(name, "9") == 0) return HID_KEYBOARD_9;
+    if(strcmp(name, "ENTER") == 0) return HID_KEYBOARD_RETURN;
+    if(strcmp(name, "ESCAPE") == 0) return HID_KEYBOARD_ESCAPE;
+    if(strcmp(name, "BACKSPACE") == 0) return HID_KEYBOARD_DELETE;
+    if(strcmp(name, "TAB") == 0) return HID_KEYBOARD_TAB;
+    if(strcmp(name, "SPACE") == 0) return HID_KEYBOARD_SPACEBAR;
+    if(strcmp(name, "RIGHT") == 0) return HID_KEYBOARD_RIGHT_ARROW;
+    if(strcmp(name, "LEFT") == 0) return HID_KEYBOARD_LEFT_ARROW;
+    if(strcmp(name, "DOWN") == 0) return HID_KEYBOARD_DOWN_ARROW;
+    if(strcmp(name, "UP") == 0) return HID_KEYBOARD_UP_ARROW;
+    if(strcmp(name, "F4") == 0) return HID_KEYBOARD_F4;
+    if(strcmp(name, "F5") == 0) return HID_KEYBOARD_F5;
+    if(strcmp(name, "F6") == 0) return HID_KEYBOARD_F6;
+    if(strcmp(name, "F7") == 0) return HID_KEYBOARD_F7;
+    if(strcmp(name, "F8") == 0) return HID_KEYBOARD_F8;
+    if(strcmp(name, "F9") == 0) return HID_KEYBOARD_F9;
+    if(strcmp(name, "F10") == 0) return HID_KEYBOARD_F10;
+    if(strcmp(name, "F11") == 0) return HID_KEYBOARD_F11;
+    if(strcmp(name, "F12") == 0) return HID_KEYBOARD_F12;
     return 0;
 }
 
-// Modifier key mappings
-static uint8_t modifier_name_to_code(const char* name) {
+// Modifier key mappings (using KEY_MOD_* constants from firmware)
+static uint16_t modifier_name_to_code(const char* name) {
     // Support both uppercase and lowercase
     char upper[16];
     int i;
@@ -93,10 +93,10 @@ static uint8_t modifier_name_to_code(const char* name) {
     }
     upper[i] = '\0';  // terminate at actual end of string, not always at [15]
     
-    if(strcmp(upper, "CTRL") == 0 || strcmp(upper, "LEFTCTRL") == 0) return 1;
-    if(strcmp(upper, "SHIFT") == 0 || strcmp(upper, "LEFTSHIFT") == 0) return 2;
-    if(strcmp(upper, "ALT") == 0 || strcmp(upper, "LEFTALT") == 0) return 4;
-    if(strcmp(upper, "GUI") == 0 || strcmp(upper, "LEFTGUI") == 0 || strcmp(upper, "WIN") == 0 || strcmp(upper, "CMD") == 0) return 8;
+    if(strcmp(upper, "CTRL") == 0 || strcmp(upper, "LEFTCTRL") == 0) return KEY_MOD_LEFT_CTRL;
+    if(strcmp(upper, "SHIFT") == 0 || strcmp(upper, "LEFTSHIFT") == 0) return KEY_MOD_LEFT_SHIFT;
+    if(strcmp(upper, "ALT") == 0 || strcmp(upper, "LEFTALT") == 0) return KEY_MOD_LEFT_ALT;
+    if(strcmp(upper, "GUI") == 0 || strcmp(upper, "LEFTGUI") == 0 || strcmp(upper, "WIN") == 0 || strcmp(upper, "CMD") == 0) return KEY_MOD_LEFT_GUI;
     return 0;
 }
 
