@@ -5,7 +5,7 @@ nixPkgs = ["nodejs_20", "python311"]
 cmds = ["cd web && npm ci"]
 
 [phases.build]
-cmds = ["cd web && npm run build", "node scripts/prebuild-packs.js"]
+cmds = ["cd web && npm run build", "cd web && node scripts/prebuild-packs.js"]
 
 [start]
 cmd = "cd web && npm run start"
