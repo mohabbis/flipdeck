@@ -1,0 +1,36 @@
+name: Build .fap
+
+on:
+  push:
+    branches: [master]
+    paths: ["src/**", "application.fam", "assets/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-fap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Cache uFBT SDK
+        uses: actions/cache@v4
+        with:
+          path: ~/.ufbt
+          key: ufbt-sdk-${{ runner.os }}-${{ hashFiles('application.fam') }}
+          restore-keys: ufbt-sdk-${{ runner.os }}-
+      - name: Build .fap
+        run: pip install ufbt && ufbt
+      - name: Commit .fap
+        run: |
+          cp dist/flipdeck.fap web/public/flipdeck.fap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add web/public/flipdeck.fap
+          git diff --cached --quiet && exit 0
+          git commit -m "build: rebuild flipdeck.fap"
+          git push
