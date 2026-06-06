@@ -62,22 +62,22 @@ export function SmartInstallButton({
   const downloadHref = hasSelection ? `/api/pack?${params.toString()}` : undefined;
 
   return (
-    <section className="rounded-lg border border-black/10 bg-[#171717] p-4 text-white shadow-xl shadow-black/10">
+    <section className="overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/80 p-4 shadow-lg">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Install Pack</h2>
-          <p className="text-sm text-[#d1d5db]">
+          <h2 className="text-lg font-semibold text-foreground">📦 Install Pack</h2>
+          <p className="text-sm text-muted-foreground">
             {hasSelection
               ? `${selectedIds.length} profile${selectedIds.length === 1 ? "" : "s"} and ${selectedCount} command${selectedCount === 1 ? "" : "s"} selected`
               : "Select at least one profile"}
           </p>
-          <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[#9ca3af]">{status}</p>
+          <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">{status}</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <button
             type="button"
             onClick={connectDevice}
-            className="h-11 rounded-md border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-11 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={!webUsbAvailable}
           >
             Detect Flipper over USB
@@ -85,19 +85,19 @@ export function SmartInstallButton({
           {downloadHref ? (
             <a
               href={downloadHref}
-              className="inline-flex h-11 items-center justify-center rounded-md bg-[#ff7a00] px-5 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-[#e86f00]"
+              className="inline-flex h-11 items-center justify-center rounded-lg bg-gradient-to-r from-accent to-accent-primary-hover px-5 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:shadow-accent/30 hover:scale-105"
             >
               Download Install Pack
             </a>
           ) : (
-            <span className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-md bg-white/10 px-5 text-sm font-semibold text-white/50">
+            <span className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-lg bg-background/50 px-5 text-sm font-semibold text-muted-foreground">
               Download Install Pack
             </span>
           )}
         </div>
       </div>
       {fallbackToInstructions && (
-        <p className="mt-3 text-xs leading-5 text-[#d1d5db]">
+        <p className="mt-3 text-xs leading-5 text-muted-foreground">
           WebUSB support varies by browser. The ZIP works offline with qFlipper SD card copy.
         </p>
       )}
