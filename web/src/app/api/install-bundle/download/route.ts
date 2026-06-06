@@ -15,23 +15,24 @@ const settings = {
 
 const snippets: Record<string, string> = {
   "debug_log.txt": `// Debug logging snippet
-console.log('[DEBUG]', 'Variable name:', variableName);
+console.log('[DEBUG]', 'value:', variableName);
 console.error('[ERROR]', errorMessage);
-debugger;`,
+debugger;
+console.trace('[TRACE]', 'Stack trace above');`,
   "go.txt": `### Main Function (Go)
 func main() {
     fmt.Println("Hello, World!")
 }
 
 ### Struct Definition (Go)
-type  struct {
+type User struct {
     Name string
     Age  int
 }
 
 ### Goroutine
 go func() {
-    ()
+    fmt.Println("Running in background")
 }()
 
 ### Channel
@@ -42,10 +43,13 @@ if err != nil {
     log.Fatal(err)
 }`,
   "react_component.txt": `// React component template
-import React from 'react';
-import PropTypes from 'prop-types';
+import { FC, ReactNode } from 'react';
 
-const ComponentName = ({ children }) => {
+interface ComponentNameProps {
+  children?: ReactNode;
+}
+
+export const ComponentName: FC<ComponentNameProps> = ({ children }) => {
     return (
         <div className="component-name">
             {children}
@@ -53,33 +57,29 @@ const ComponentName = ({ children }) => {
     );
 };
 
-ComponentName.propTypes = {
-    children: PropTypes.node,
-};
-
 export default ComponentName;`,
   "typescript.txt": `### Console Log
-console.log('DEBUG:', );
+console.log('DEBUG:', value);
 
 ### Object Destructuring
-const { } = ;
+const { name, value } = obj;
 
 ### Async Function
-async function func() {
+async function fetchData() {
   try {
-    const result = await ;
+    const result = await fetch('/api/data');
   } catch (error) {
     console.error(error);
   }
 }
 
 ### API Route Handler
-app.get('/api/', (req, res) => {
-  res.json({});
+app.get('/api/users', (req, res) => {
+  res.json({ users: [] });
 });
 
 ### Type Definition (TypeScript)
-interface  {
+interface User {
   name: string;
   value: number;
 }`,
