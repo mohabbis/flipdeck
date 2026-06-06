@@ -26,10 +26,23 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card-bg);
+  --color-card-border: var(--card-border);
   --color-border: var(--card-border);
   --color-accent: var(--accent-primary);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-primary-hover: var(--accent-primary-hover);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-success: var(--accent-success);
+  --color-accent-warning: var(--accent-warning);
+  --color-text-muted: var(--text-muted);
+  --color-text-secondary: var(--text-secondary);
+  --color-flipper-screen: var(--flipper-screen);
+  --color-flipper-screen-bg: var(--flipper-screen-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Tailwind color palette aliases for dark theme */
+  --color-muted-foreground: var(--text-muted);
+  --color-muted: var(--text-muted);
 }
 
 * {
