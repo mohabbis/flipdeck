@@ -14,6 +14,10 @@ const destStaticDir = join(standaloneDir, '.next', 'static');
 
 if (existsSync(srcStaticDir)) {
   console.log('Copying static files to standalone output...');
+  const destParent = dirname(destStaticDir);
+  if (!existsSync(destParent)) {
+    mkdirSync(destParent, { recursive: true });
+  }
   cpSync(srcStaticDir, destStaticDir, { recursive: true, force: true });
   console.log('Static files copied successfully.');
 }
@@ -22,8 +26,12 @@ if (existsSync(srcStaticDir)) {
 const srcPublicDir = join(__dirname, 'public');
 const destPublicDir = join(standaloneDir, 'public');
 
-if (existsSync(srcPublicDir) && !existsSync(destPublicDir)) {
+if (existsSync(srcPublicDir)) {
   console.log('Copying public directory to standalone output...');
+  const destPublicParent = dirname(destPublicDir);
+  if (!existsSync(destPublicParent)) {
+    mkdirSync(destPublicParent, { recursive: true });
+  }
   cpSync(srcPublicDir, destPublicDir, { recursive: true });
   console.log('Public directory copied successfully.');
 }
