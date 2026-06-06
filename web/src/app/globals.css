@@ -1,19 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f1e8;
-  --foreground: #171717;
-  --flipper-orange: #ff7a00;
-  --flipper-screen: #ff9d2e;
-  --momentum-cyan: #00a88a;
-  --font-geist-sans: Arial, Helvetica, sans-serif;
-  --font-geist-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  color-scheme: light;
+  --background: #0a0a0f;
+  --foreground: #fafafa;
+  --card-bg: #12121a;
+  --card-border: #27273a;
+  --accent-primary: #f97316;
+  --accent-primary-hover: #ea580c;
+  --accent-secondary: #06b6d4;
+  --accent-success: #10b981;
+  --accent-warning: #f59e0b;
+  --text-muted: #a1a1aa;
+  --text-secondary: #71717a;
+  --flipper-screen: #ffb74d;
+  --flipper-screen-bg: #1a1a2e;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --font-geist-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-geist-mono: "SF Mono", "Fira Code", "Fira Mono", Menlo, Monaco, Consolas, monospace;
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card-bg);
+  --color-border: var(--card-border);
+  --color-accent: var(--accent-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -26,7 +40,7 @@ html {
   background: var(--background);
   color: var(--foreground);
   scroll-behavior: smooth;
-  -webkit-tap-highlight-color: rgba(251, 146, 60, 0.25);
+  -webkit-tap-highlight-color: rgba(249, 115, 22, 0.3);
 }
 
 body {
@@ -35,11 +49,32 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans);
   text-rendering: optimizeLegibility;
+  line-height: 1.6;
 }
 
 ::selection {
-  background: rgba(255, 122, 0, 0.26);
-  color: #171717;
+  background: rgba(249, 115, 22, 0.4);
+  color: #ffffff;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--card-bg);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
 @media (prefers-reduced-motion: reduce) {

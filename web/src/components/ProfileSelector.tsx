@@ -27,14 +27,14 @@ function profileCategory(profile: Profile): string {
 function categoryTone(category: string, selected: boolean) {
   const tones: Record<string, string> = {
     dev: selected
-      ? "border-[#009f84] bg-[#e7fbf5]"
-      : "border-black/10 bg-white hover:border-[#009f84]/45",
+      ? "border-accent-success bg-accent-success/10"
+      : "border-border bg-card hover:border-accent-success/45",
     cloud: selected
-      ? "border-[#2563eb] bg-[#eff6ff]"
-      : "border-black/10 bg-white hover:border-[#2563eb]/45",
+      ? "border-accent-secondary bg-accent-secondary/10"
+      : "border-border bg-card hover:border-accent-secondary/45",
     system: selected
-      ? "border-[#ff7a00] bg-[#fff3df]"
-      : "border-black/10 bg-white hover:border-[#ff7a00]/45",
+      ? "border-accent bg-accent/10"
+      : "border-border bg-card hover:border-accent/45",
   };
   return tones[category] ?? tones.dev;
 }
@@ -69,11 +69,11 @@ export function ProfileSelector({
   }, [activeFilter, profiles, query]);
 
   return (
-    <section className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
+    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-[#171717]">Profiles</h2>
-          <p className="text-sm text-[#6b7280]">
+          <h2 className="text-lg font-semibold text-foreground">Profiles</h2>
+          <p className="text-sm text-muted-foreground">
             {selectedIds.length} of {profiles.length} included
           </p>
         </div>
@@ -84,21 +84,21 @@ export function ProfileSelector({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search profiles"
-              className="h-10 w-full rounded-md border border-black/10 bg-[#f9fafb] px-3 text-sm text-[#171717] outline-none ring-0 placeholder:text-[#9ca3af] focus:border-[#ff7a00] sm:w-64"
+              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent/20"
             />
           )}
           <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
             <button
               type="button"
               onClick={onSelectAll}
-              className="h-9 rounded-md border border-black/10 px-3 text-sm font-semibold text-[#171717] transition hover:border-[#ff7a00]/50"
+              className="h-9 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition hover:border-accent/50 hover:bg-accent/10"
             >
               Select all
             </button>
             <button
               type="button"
               onClick={onClear}
-              className="h-9 rounded-md border border-black/10 px-3 text-sm font-semibold text-[#6b7280] transition hover:border-[#ff7a00]/50 hover:text-[#171717]"
+              className="h-9 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-muted-foreground transition hover:border-accent/50 hover:text-foreground"
             >
               Clear
             </button>
@@ -112,10 +112,10 @@ export function ProfileSelector({
             key={filter}
             type="button"
             onClick={() => setActiveFilter(filter)}
-            className={`h-9 rounded-md border px-3 text-sm capitalize transition ${
+            className={`h-9 rounded-lg border px-3 text-sm capitalize transition ${
               activeFilter === filter
-                ? "border-[#171717] bg-[#171717] text-white"
-                : "border-black/10 bg-[#f9fafb] text-[#4b5563] hover:border-black/25"
+                ? "border-accent bg-accent text-white shadow-md"
+                : "border-border bg-background text-muted-foreground hover:border-foreground/25"
             }`}
           >
             {filter}
@@ -134,30 +134,30 @@ export function ProfileSelector({
               key={profileId}
               onMouseEnter={() => previewOnHover && onPreview?.(profileId)}
               onFocus={() => onPreview?.(profileId)}
-              className={`grid min-h-24 cursor-pointer grid-cols-[auto_1fr_auto] gap-3 rounded-lg border p-4 text-left transition ${categoryTone(category, selected)} ${
-                active ? "ring-2 ring-[#171717]/15" : ""
+              className={`group grid min-h-24 cursor-pointer grid-cols-[auto_1fr_auto] gap-3 rounded-xl border p-4 text-left transition-all ${categoryTone(category, selected)} ${
+                active ? "ring-2 ring-accent/30 shadow-lg" : "shadow-sm hover:shadow-md"
               }`}
             >
               <input
                 type="checkbox"
                 checked={selected}
                 onChange={() => onToggle(profileId)}
-                className="mt-1 h-4 w-4 rounded border-black/20 accent-[#ff7a00]"
+                className="mt-1 h-4 w-4 rounded border-border accent-accent"
               />
               <span className="min-w-0">
-                <span className="block font-semibold text-[#171717]">{profile.name}</span>
-                <span className="mt-1 block text-sm leading-5 text-[#6b7280]">
+                <span className="block font-semibold text-foreground">{profile.name}</span>
+                <span className="mt-1 block text-sm leading-5 text-muted-foreground">
                   {profile.description}
                 </span>
               </span>
-              <span className="self-start rounded-md border border-black/10 bg-white/80 px-2 py-1 text-xs font-semibold text-[#4b5563]">
+              <span className="self-start rounded-lg border border-border bg-background/80 px-2 py-1 text-xs font-semibold text-muted-foreground group-hover:text-foreground">
                 {getProfileCommands(profile).length}
               </span>
             </label>
           );
         })}
         {!filteredProfiles.length && (
-          <div className="rounded-lg border border-dashed border-black/15 bg-[#f9fafb] p-4 text-sm text-[#6b7280]">
+          <div className="rounded-xl border border-dashed border-border bg-background p-4 text-sm text-muted-foreground">
             No profiles match that search.
           </div>
         )}

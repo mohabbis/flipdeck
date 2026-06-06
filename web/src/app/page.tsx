@@ -44,28 +44,34 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f1e8] text-[#171717]">
-      <section className="border-b border-black/10 bg-[#f5f1e8]">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:px-8">
+    <main className="min-h-screen bg-background text-foreground">
+      {/* Hero Section */}
+      <section className="border-b border-border bg-gradient-to-b from-background to-card">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:px-8">
           <div className="flex flex-col justify-between gap-8 py-2">
-            <div className="space-y-7">
+            <div className="space-y-6">
               <header className="flex flex-wrap items-center justify-between gap-3 text-sm">
-                <a href="https://github.com/mohabbis/flipdeck" className="font-semibold text-[#171717]">
+                <a
+                  href="https://github.com/mohabbis/flipdeck"
+                  className="group flex items-center gap-2 font-bold text-xl text-foreground transition-colors hover:text-accent"
+                >
+                  <span className="text-accent">⚡</span>
                   FlipDeck
                 </a>
-                <span className="rounded-md border border-black/10 bg-white/65 px-3 py-1 font-medium text-[#4b5563]">
+                <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
                   Railway installer
                 </span>
               </header>
 
               <div>
-                <p className="mb-4 inline-flex rounded-md border border-[#ff7a00]/30 bg-[#fff5e8] px-3 py-1 text-sm font-semibold text-[#9a4a00]">
+                <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-sm font-semibold text-accent">
+                  <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent"></span>
                   USB HID command deck for Flipper Zero
                 </p>
-                <h1 className="max-w-3xl text-5xl font-semibold tracking-normal text-[#111111] sm:text-6xl lg:text-7xl">
-                  Flip<span className="text-[#ff6b00]">Deck</span>
+                <h1 className="max-w-3xl bg-gradient-to-r from-foreground via-foreground to-accent bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-6xl lg:text-7xl">
+                  Flip<span className="text-accent">Deck</span>
                 </h1>
-                <p className="mt-5 max-w-2xl text-lg leading-8 text-[#374151]">
+                <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
                   Build a Flipper-ready SD card pack from trusted developer profiles, inspect every
                   command, and download a qFlipper-friendly ZIP.
                 </p>
@@ -74,22 +80,28 @@ export default function Home() {
               <SmartInstallButton selectedIds={selectedIds} selectedCount={selectedCommandCount} />
             </div>
 
-            <dl className="grid gap-3 border-t border-black/10 pt-5 sm:grid-cols-3">
-              <div>
-                <dt className="text-sm font-medium text-[#6b7280]">Included profiles</dt>
-                <dd className="mt-1 font-mono text-3xl font-semibold text-[#171717]">
+            <dl className="grid grid-cols-3 gap-4 rounded-xl border border-border bg-card/50 p-4 backdrop-blur-sm">
+              <div className="text-center sm:text-left">
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Profiles
+                </dt>
+                <dd className="mt-1 font-mono text-3xl font-bold text-foreground">
                   {selectedIds.length}/{profiles.length}
                 </dd>
               </div>
-              <div>
-                <dt className="text-sm font-medium text-[#6b7280]">Selected commands</dt>
-                <dd className="mt-1 font-mono text-3xl font-semibold text-[#171717]">
+              <div className="text-center sm:text-left">
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Commands
+                </dt>
+                <dd className="mt-1 font-mono text-3xl font-bold text-accent">
                   {selectedCommandCount}
                 </dd>
               </div>
-              <div>
-                <dt className="text-sm font-medium text-[#6b7280]">Available commands</dt>
-                <dd className="mt-1 font-mono text-3xl font-semibold text-[#171717]">
+              <div className="text-center sm:text-left">
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Available
+                </dt>
+                <dd className="mt-1 font-mono text-3xl font-bold text-foreground">
                   {totalCommands}
                 </dd>
               </div>
@@ -100,7 +112,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:px-8">
+      {/* Main Content */}
+      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:px-8">
         <div className="space-y-6">
           <ProfileSelector
             profiles={profiles}
@@ -116,18 +129,27 @@ export default function Home() {
             previewOnHover
           />
 
-          <section className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-              <h2 className="text-lg font-semibold text-[#171717]">qFlipper Handoff</h2>
-              <span className="text-sm text-[#6b7280]">ZIP contains apps_data/flipdeck</span>
+          {/* Installation Steps */}
+          <section className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+            <div className="border-b border-border bg-gradient-to-r from-card to-card/80 px-4 py-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">🚀 qFlipper Handoff</h2>
+                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                  ZIP contains apps_data/flipdeck
+                </span>
+              </div>
             </div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
               {installSteps.map((step, index) => (
-                <div key={step} className="border-l-2 border-[#ff7a00] bg-[#fff8ed] px-3 py-2">
-                  <div className="font-mono text-xs font-semibold text-[#9a4a00]">
+                <div
+                  key={step}
+                  className="group relative bg-card p-4 transition-colors hover:bg-card/80"
+                >
+                  <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-primary-hover font-mono text-xs font-bold text-white shadow-md">
                     {String(index + 1).padStart(2, "0")}
                   </div>
-                  <div className="mt-1 text-sm font-semibold text-[#171717]">{step}</div>
+                  <div className="text-sm font-semibold text-foreground">{step}</div>
+                  <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-accent to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
                 </div>
               ))}
             </div>
@@ -136,16 +158,21 @@ export default function Home() {
 
         <aside className="space-y-6">
           <CommandAudit commands={selectedCommands} />
-          <section className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#171717]">Active Profile JSON</h2>
-            <p className="mt-1 text-sm text-[#6b7280]">{activeProfile?.name}</p>
-            <a
-              href={`/profiles/${activeProfile?.id}.json`}
-              download
-              className="mt-4 inline-flex h-10 items-center rounded-md border border-black/10 px-3 text-sm font-semibold text-[#171717] transition hover:border-[#ff7a00]/50 hover:text-[#9a4a00]"
-            >
-              Download profile JSON
-            </a>
+          <section className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+            <div className="border-b border-border bg-gradient-to-r from-card to-card/80 px-4 py-3">
+              <h2 className="text-lg font-semibold text-foreground">📄 Active Profile JSON</h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">{activeProfile?.name}</p>
+            </div>
+            <div className="p-4">
+              <a
+                href={`/profiles/${activeProfile?.id}.json`}
+                download
+                className="group flex items-center justify-between rounded-lg border border-border bg-card/50 px-4 py-3 text-sm font-medium text-foreground transition-all hover:border-accent/50 hover:bg-accent/10 hover:text-accent"
+              >
+                <span>Download profile JSON</span>
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </a>
+            </div>
           </section>
         </aside>
       </section>

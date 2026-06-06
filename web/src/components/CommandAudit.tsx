@@ -9,39 +9,43 @@ export function CommandAudit({ commands }: CommandAuditProps) {
   const risks = auditCommands(commands);
 
   return (
-    <section className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-4">
+    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+      <div className="flex items-center justify-between gap-4 border-b border-border bg-gradient-to-r from-card to-card/80 px-4 py-3">
         <div>
-          <h2 className="text-lg font-semibold text-[#171717]">Pack Safety</h2>
-          <p className="text-sm text-[#6b7280]">{commands.length} commands checked</p>
+          <h2 className="text-lg font-semibold text-foreground">🛡️ Pack Safety</h2>
+          <p className="text-sm text-muted-foreground">{commands.length} commands checked</p>
         </div>
         <span
-          className={`rounded-md border px-2 py-1 text-xs font-semibold ${
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${
             risks.length
-              ? "border-[#ff7a00]/30 bg-[#fff3df] text-[#9a4a00]"
-              : "border-[#00a88a]/30 bg-[#e7fbf5] text-[#006b59]"
+              ? "border border-accent-warning/30 bg-accent-warning/10 text-accent-warning"
+              : "border border-accent-success/30 bg-accent-success/10 text-accent-success"
           }`}
         >
-          {risks.length ? `${risks.length} warning${risks.length > 1 ? "s" : ""}` : "clear"}
+          {risks.length ? `${risks.length} warning${risks.length > 1 ? "s" : ""}` : "✓ All clear"}
         </span>
       </div>
 
-      <div className="mt-4 space-y-2">
-        {risks.length ? (
-          risks.map((risk) => (
-            <div
-              key={`${risk.command}-${risk.label}`}
-              className="rounded-md border border-[#ff7a00]/25 bg-[#fff3df] p-3"
-            >
-              <div className="text-sm font-medium text-[#7c2d12]">{risk.label}</div>
-              <div className="mt-1 break-all font-mono text-xs text-[#9a4a00]">{risk.command}</div>
+      <div className="p-4">
+        <div className="space-y-2">
+          {risks.length ? (
+            risks.map((risk) => (
+              <div
+                key={`${risk.command}-${risk.label}`}
+                className="overflow-hidden rounded-lg border border-accent-warning/25 bg-accent-warning/10 p-3"
+              >
+                <div className="text-sm font-medium text-accent-warning">{risk.label}</div>
+                <div className="mt-1 break-all font-mono text-xs text-accent-warning/80">
+                  {risk.command}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-lg border border-accent-success/25 bg-accent-success/10 p-3 text-sm text-accent-success">
+              ✓ No high-risk shell patterns detected in the selected pack.
             </div>
-          ))
-        ) : (
-          <div className="rounded-md border border-[#00a88a]/25 bg-[#e7fbf5] p-3 text-sm text-[#006b59]">
-            No high-risk shell patterns detected in the selected pack.
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </section>
   );
