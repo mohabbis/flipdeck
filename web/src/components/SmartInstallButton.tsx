@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import { SerialInstaller } from "@/components/SerialInstaller";
 
 interface NavigatorWithUsb extends Navigator {
   usb?: {
@@ -11,8 +12,6 @@ interface NavigatorWithUsb extends Navigator {
 interface SmartInstallButtonProps {
   selectedIds: string[];
   selectedCount?: number;
-  onDeviceDetected?: () => void;
-  fallbackToInstructions?: boolean;
 }
 
 function subscribeWebUsb() {
@@ -27,32 +26,22 @@ function getServerWebUsbSnapshot() {
   return false;
 }
 
-export function SmartInstallButton({
-  selectedIds,
-  selectedCount = 0,
-  onDeviceDetected,
-  fallbackToInstructions = true,
-}: SmartInstallButtonProps) {
+export function SmartInstallButton({ selectedIds, selectedCount = 0 }: SmartInstallButtonProps) {
   const webUsbAvailable = useSyncExternalStore(
     subscribeWebUsb,
     getWebUsbSnapshot,
     getServerWebUsbSnapshot
   );
-  const [status, setStatus] = useState("Ready to download");
+  const [detectStatus, setDetectStatus] = useState<string | null>(null);
 
-  async function connectDevice() {
+  async function detectDevice() {
     const usb = (navigator as NavigatorWithUsb).usb;
-    if (!usb) {
-      setStatus("WebUSB unavailable here; use the qFlipper ZIP fallback below.");
-      return;
-    }
-
+    if (!usb) return;
     try {
       await usb.requestDevice({ filters: [] });
-      setStatus("Flipper detected. Continue with the installer pack and copy it through qFlipper.");
-      onDeviceDetected?.();
+      setDetectStatus("Flipper detected over USB.");
     } catch {
-      setStatus("Connection cancelled");
+      setDetectStatus(null);
     }
   }
 
@@ -63,44 +52,49 @@ export function SmartInstallButton({
 
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/80 p-4 shadow-lg">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">📦 Install Pack</h2>
-          <p className="text-sm text-muted-foreground">
-            {hasSelection
-              ? `${selectedIds.length} profile${selectedIds.length === 1 ? "" : "s"} and ${selectedCount} command${selectedCount === 1 ? "" : "s"} selected`
-              : "Select at least one profile"}
+      {/* Direct serial install — leads the UX */}
+      <div className="mb-4">
+        <h2 className="mb-1 text-lg font-semibold text-foreground">⚡ Install to Flipper</h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          {hasSelection
+            ? `${selectedIds.length} profile${selectedIds.length === 1 ? "" : "s"} · ${selectedCount} command${selectedCount === 1 ? "" : "s"} selected`
+            : "Select at least one profile to install"}
+        </p>
+        <SerialInstaller selectedIds={selectedIds} />
+      </div>
+
+      {/* ZIP fallback */}
+      <div className="border-t border-border pt-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
+            Or download a ZIP and copy via qFlipper SD card browser
           </p>
-          <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">{status}</p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            onClick={connectDevice}
-            className="h-11 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={!webUsbAvailable}
-          >
-            Detect Flipper over USB
-          </button>
-          {downloadHref ? (
-            <a
-              href={downloadHref}
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-gradient-to-r from-accent to-accent-primary-hover px-5 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:shadow-accent/30 hover:scale-105"
-            >
-              Download Install Pack
-            </a>
-          ) : (
-            <span className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-lg bg-background/50 px-5 text-sm font-semibold text-muted-foreground">
-              Download Install Pack
-            </span>
-          )}
+          <div className="flex gap-2">
+            {webUsbAvailable && (
+              <button
+                type="button"
+                onClick={detectDevice}
+                title="Detect Flipper over WebUSB"
+                className="h-8 rounded-lg border border-border bg-background px-3 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+              >
+                {detectStatus ?? "Detect via WebUSB"}
+              </button>
+            )}
+            {downloadHref ? (
+              <a
+                href={downloadHref}
+                className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:border-accent/50 hover:text-accent"
+              >
+                Download ZIP
+              </a>
+            ) : (
+              <span className="inline-flex h-8 cursor-not-allowed items-center justify-center rounded-lg border border-border bg-background/50 px-4 text-xs font-semibold text-muted-foreground">
+                Download ZIP
+              </span>
+            )}
+          </div>
         </div>
       </div>
-      {fallbackToInstructions && (
-        <p className="mt-3 text-xs leading-5 text-muted-foreground">
-          WebUSB support varies by browser. The ZIP works offline with qFlipper SD card copy.
-        </p>
-      )}
     </section>
   );
 }
