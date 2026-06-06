@@ -154,19 +154,38 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
 
   if (phase.kind === "success") {
     return (
-      <div className="flex items-center justify-between rounded-lg border border-accent-success/30 bg-accent-success/10 px-4 py-3">
-        <div>
+      <div className="space-y-3">
+        <div className="rounded-lg border border-accent-success/30 bg-accent-success/10 px-4 py-3">
           <p className="font-semibold text-accent-success">
-            ✓ {phase.count} profile{phase.count !== 1 ? "s" : ""} installed
+            ✓ {phase.count} profile{phase.count !== 1 ? "s" : ""} copied to Flipper SD card
           </p>
-          <p className="text-xs text-muted-foreground">Launch FlipDeck from Apps on your Flipper</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Profiles are in <code className="font-mono">/apps_data/flipdeck/profiles/</code>
+          </p>
         </div>
-        <button
-          onClick={retry}
-          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-        >
-          Disconnect
-        </button>
+        <div className="rounded-lg border border-accent-warning/30 bg-accent-warning/10 px-4 py-3">
+          <p className="font-semibold text-accent-warning">→ One more step: install the FlipDeck app</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The app itself is a separate <code className="font-mono">.fap</code> file.
+            Download it and drop it into{" "}
+            <code className="font-mono">apps/Tools/</code> via qFlipper SD card browser.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <a
+              href="/flipdeck.fap"
+              download="flipdeck.fap"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-gradient-to-r from-accent to-accent-primary-hover px-3 text-xs font-semibold text-white shadow shadow-accent/20"
+            >
+              Download flipdeck.fap
+            </a>
+            <button
+              onClick={retry}
+              className="h-8 rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              Disconnect
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

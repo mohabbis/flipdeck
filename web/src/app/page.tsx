@@ -8,10 +8,10 @@ import { SmartInstallButton } from "@/components/SmartInstallButton";
 import { getProfileCommands, normalizeProfile, profileFiles } from "@/lib/profiles";
 
 const installSteps = [
-  "Plug in Flipper",
-  "Keep microSD inserted",
-  "Install to Flipper",
-  "Launch FlipDeck",
+  "Plug in Flipper via USB",
+  "Connect & install profiles",
+  "Drop flipdeck.fap into apps/Tools/",
+  "Launch FlipDeck from Apps",
 ];
 
 export default function Home() {
@@ -133,9 +133,9 @@ export default function Home() {
           <section className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
             <div className="border-b border-border bg-gradient-to-r from-card to-card/80 px-4 py-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">🚀 qFlipper Handoff</h2>
+                <h2 className="text-lg font-semibold text-foreground">🚀 How to Install</h2>
                 <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                  ZIP contains apps_data/flipdeck
+                  profiles + app
                 </span>
               </div>
             </div>
