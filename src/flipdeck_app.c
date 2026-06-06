@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-#include <furi_core/string.h>
 
 static FlipDeckApp* g_app_ctx = NULL;
 
@@ -21,6 +20,7 @@ static void flipdeck_load_settings(void);
 static void flipdeck_load_categories(void);
 
 bool flipdeck_app_init(void* furi_void) {
+    UNUSED(furi_void);
     FURI_LOG_I("FlipDeck", "Initializing FlipDeck application");
     
     // Allocate app context
@@ -73,6 +73,7 @@ static void flipdeck_load_categories(void) {
 }
 
 void flipdeck_app_free(void* furi_void) {
+    UNUSED(furi_void);
     FURI_LOG_I("FlipDeck", "Shutting down FlipDeck application");
     
     if(g_app_ctx) {
@@ -83,7 +84,7 @@ void flipdeck_app_free(void* furi_void) {
 }
 
 void flipdeck_app_loop(void* furi_void) {
-    furi_t furi = furi_void;
+    UNUSED(furi_void);
     
     // Poll USB connection status
     g_app_ctx->usb_connected = usb_hid_is_connected();
@@ -93,27 +94,27 @@ void flipdeck_app_loop(void* furi_void) {
             break;
             
         case FlipDeckState_CategoryBrowser:
-            flipdeck_ui_handle_category_browser(furi);
+            flipdeck_ui_handle_category_browser();
             break;
             
         case FlipDeckState_ActionBrowser:
-            flipdeck_ui_handle_action_browser(furi);
+            flipdeck_ui_handle_action_browser();
             break;
             
         case FlipDeckState_ActionDetail:
-            flipdeck_ui_handle_confirm(furi);
+            flipdeck_ui_handle_confirm();
             break;
             
         case FlipDeckState_SendConfirm:
-            flipdeck_ui_handle_confirm(furi);
+            flipdeck_ui_handle_confirm();
             break;
             
         case FlipDeckState_LongSnippetWarning:
-            flipdeck_ui_handle_long_snippet_warning(furi);
+            flipdeck_ui_handle_long_snippet_warning();
             break;
             
         case FlipDeckState_Settings:
-            flipdeck_ui_handle_settings(furi);
+            flipdeck_ui_handle_settings();
             break;
     }
 }

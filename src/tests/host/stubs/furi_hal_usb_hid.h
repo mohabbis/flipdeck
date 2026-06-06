@@ -81,3 +81,13 @@ static inline void furi_hal_usb_hid_send_keyboard_report(furi_hal_usb_hid_keyboa
     (void)r;
 }
 static inline bool furi_hal_usb_is_enabled(void) { return false; }
+static inline bool furi_hal_hid_is_connected(void) { return false; }
+static inline bool furi_hal_hid_kb_press(uint16_t button) {
+    (void)button;
+    return true;
+}
+static inline bool furi_hal_hid_kb_release(uint16_t button) {
+    (void)button;
+    return true;
+}
+static inline bool furi_hal_hid_kb_release_all(void) { return true; }

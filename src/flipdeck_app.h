@@ -44,7 +44,7 @@ typedef struct {
 } FlipDeckSettings;
 
 /** App context containing all state */
-struct FlipDeckApp {
+typedef struct FlipDeckApp {
     FlipDeckState state;
     uint32_t category_count;
     uint32_t current_category_index;
@@ -53,7 +53,7 @@ struct FlipDeckApp {
     bool usb_connected;
     FlipDeckSettings settings;
     char current_category_id[32];
-};
+} FlipDeckApp;
 
 /**
  * @brief Initialize the FlipDeck application
@@ -73,5 +73,8 @@ void flipdeck_app_free(void* furi_void);
  * @param furi_void Pointer to Furi object
  */
 void flipdeck_app_loop(void* furi_void);
+
+FlipDeckApp* flipdeck_app_get_context(void);
+void flipdeck_app_set_state(FlipDeckState new_state);
 
 #endif // FLIPDECK_APP_H

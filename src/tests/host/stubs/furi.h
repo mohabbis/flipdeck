@@ -45,4 +45,10 @@ static inline uint32_t furi_stream_write(FuriFs* fs, const void* buf, uint32_t s
 static inline bool furi_fs_read_directory(FuriFs* dir, char* name, size_t size) {
     (void)dir; (void)name; (void)size; return false;
 }
+static inline void* furi_record_open(const char* name) {
+    (void)name; return NULL;
+}
+static inline void furi_record_close(const char* name) {
+    (void)name;
+}
 static inline void furi_delay_ms(uint32_t ms) { (void)ms; }

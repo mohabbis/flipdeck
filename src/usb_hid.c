@@ -101,7 +101,7 @@ static uint16_t modifier_name_to_code(const char* name) {
 }
 
 bool usb_hid_is_connected(void) {
-    s_usb_connected = furi_hal_usb_is_enabled();
+    s_usb_connected = furi_hal_hid_is_connected();
     return s_usb_connected;
 }
 
@@ -135,15 +135,9 @@ bool usb_hid_send_key(const char* keyName) {
         return false;
     }
     
-    // Create and send keyboard report
-    furi_hal_usb_hid_keyboard_report_t report = {0};
-    report.keys[0] = key;
-    
-    furi_hal_usb_hid_send_keyboard_report(&report);
+    furi_hal_hid_kb_press(key);
     furi_delay_ms(50);  // Press duration
-    
-    // Release key
-    furi_hal_usb_hid_send_keyboard_report(&report);
+    furi_hal_hid_kb_release(key);
     furi_delay_ms(10);
     
     return true;
@@ -178,22 +172,9 @@ bool usb_hid_send_key_combo(const char* combo) {
         return false;
     }
     
-    // Send with modifiers
-    furi_hal_usb_hid_keyboard_report_t report = {0};
-    report.modifiers = modifiers;
-    report.keys[0] = key;
-    
-    furi_hal_usb_hid_send_keyboard_report(&report);
+    furi_hal_hid_kb_press(modifiers | key);
     furi_delay_ms(50);
-    
-    // Release
-    report.modifiers = 0;
-    report.keys[0] = 0;
-    furi_hal_usb_hid_send_keyboard_report(&report);
+    furi_hal_hid_kb_release_all();
     
     return true;
-}
-
-void usb_hid_send_report(furi_hal_usb_hid_keyboard_report_t* report) {
-    furi_hal_usb_hid_send_keyboard_report(report);
 }

@@ -9,14 +9,53 @@
 #include <furi_hal.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <storage/storage.h>
 #include <inttypes.h>
-#include <furi_core/string.h>
-#include <furi_core/fs.h>
-#include <furi_core/storage.h>
 
-#define PROFILE_BASE_PATH "/stor0800/flipdeck/profiles"
-#define SETTINGS_PATH "/stor0800/flipdeck/settings.json"
+#define FLIPDECK_DATA_PATH "/ext/apps_data/flipdeck"
+#define PROFILE_BASE_PATH FLIPDECK_DATA_PATH "/profiles"
+#define SETTINGS_PATH FLIPDECK_DATA_PATH "/settings.json"
+
+static void storage_ensure_flipdeck_dirs(Storage* storage) {
+    storage_common_mkdir(storage, "/ext/apps_data");
+    storage_common_mkdir(storage, FLIPDECK_DATA_PATH);
+    storage_common_mkdir(storage, PROFILE_BASE_PATH);
+}
+
+static bool read_text_file(const char* path, char* buffer, size_t buffer_size) {
+    Storage* storage = furi_record_open(RECORD_STORAGE);
+    File* file = storage_file_alloc(storage);
+    bool ok = false;
+
+    if(storage_file_open(file, path, FSAM_READ, FSOM_OPEN_EXISTING)) {
+        size_t bytes_read = storage_file_read(file, buffer, buffer_size - 1);
+        buffer[bytes_read] = '\0';
+        ok = true;
+    }
+
+    storage_file_close(file);
+    storage_file_free(file);
+    furi_record_close(RECORD_STORAGE);
+    return ok;
+}
+
+static bool write_text_file(const char* path, const char* content) {
+    Storage* storage = furi_record_open(RECORD_STORAGE);
+    storage_ensure_flipdeck_dirs(storage);
+
+    File* file = storage_file_alloc(storage);
+    bool ok = false;
+
+    if(storage_file_open(file, path, FSAM_WRITE, FSOM_CREATE_ALWAYS)) {
+        ok = storage_file_write(file, content, strlen(content)) == strlen(content);
+    }
+
+    storage_file_close(file);
+    storage_file_free(file);
+    furi_record_close(RECORD_STORAGE);
+    return ok;
+}
 
 // Simple string helpers for JSON parsing (no external library)
 static char* find_json_string(char* json, const char* key, char* output, size_t max_len) {
@@ -72,17 +111,20 @@ bool profile_manager_load_all_categories(FlipDeckProfileCategory* categories, ui
     
     *count = 0;
     
-    // Ensure directory exists
-    furi_mkdir(PROFILE_BASE_PATH);
-    
-    FuriFs* dir = furi_open(PROFILE_BASE_PATH, FuriFlagRead | FuriFlagDirectory, false);
-    if(!dir) {
+    Storage* storage = furi_record_open(RECORD_STORAGE);
+    storage_ensure_flipdeck_dirs(storage);
+
+    File* dir = storage_file_alloc(storage);
+    if(!storage_dir_open(dir, PROFILE_BASE_PATH)) {
         FURI_LOG_W("FlipDeck", "Profiles directory not found");
+        storage_dir_close(dir);
+        storage_file_free(dir);
+        furi_record_close(RECORD_STORAGE);
         return false;
     }
     
     char filename[64];
-    while(furi_fs_read_directory(dir, filename, sizeof(filename)) && *count < FLIPDECK_MAX_CATEGORIES) {
+    while(storage_dir_read(dir, NULL, filename, sizeof(filename)) && *count < FLIPDECK_MAX_CATEGORIES) {
         if(strstr(filename, ".json")) {
             char category_id[32];
             strncpy(category_id, filename, sizeof(category_id) - 1);
@@ -99,7 +141,9 @@ bool profile_manager_load_all_categories(FlipDeckProfileCategory* categories, ui
         }
     }
     
-    furi_close(dir);
+    storage_dir_close(dir);
+    storage_file_free(dir);
+    furi_record_close(RECORD_STORAGE);
     FURI_LOG_I("FlipDeck", "Loaded %" PRIu32 " categories", *count);
     return *count > 0;
 }
@@ -110,16 +154,12 @@ bool profile_manager_load_category(const char* category_id, FlipDeckProfileCateg
     char path[128];
     snprintf(path, sizeof(path), "%s/%s.json", PROFILE_BASE_PATH, category_id);
     
-    FuriFs* file = furi_open(path, FuriFlagRead, false);
-    if(!file) {
+    // Read file content
+    char buffer[2048];
+    if(!read_text_file(path, buffer, sizeof(buffer))) {
         FURI_LOG_E("FlipDeck", "Category file not found: %s", path);
         return false;
     }
-    
-    // Read file content
-    char buffer[2048];
-    uint32_t bytes_read = furi_stream_read(file, buffer, sizeof(buffer) - 1);
-    buffer[bytes_read] = '\0';
     
     // Parse JSON
     find_json_string(buffer, "name", category->name, sizeof(category->name));
@@ -128,7 +168,10 @@ bool profile_manager_load_category(const char* category_id, FlipDeckProfileCateg
     
     // Find actions array
     category->action_count = 0;
-    char* actions_start = strstr(buffer, "\"actions\"");
+    char* actions_start = strstr(buffer, "\"commands\"");
+    if(!actions_start) {
+        actions_start = strstr(buffer, "\"actions\"");
+    }
     if(actions_start) {
         char* arr_start = strchr(actions_start, '[');
         char* arr_end = strrchr(buffer, ']');
@@ -159,7 +202,11 @@ bool profile_manager_load_category(const char* category_id, FlipDeckProfileCateg
                 find_json_string(action_json, "value", category->actions[category->action_count].value,
                     sizeof(category->actions[category->action_count].value));
                 category->actions[category->action_count].type = parse_action_type(action_json);
-                category->actions[category->action_count].confirm = find_json_bool(action_json, "confirm", true);
+                category->actions[category->action_count].confirm =
+                    find_json_bool(
+                        action_json,
+                        "confirmation_required",
+                        find_json_bool(action_json, "confirm", true));
                 
                 category->action_count++;
                 pos = action_end + 1;
@@ -167,7 +214,6 @@ bool profile_manager_load_category(const char* category_id, FlipDeckProfileCateg
         }
     }
     
-    furi_close(file);
     FURI_LOG_I("FlipDeck", "Loaded category '%s' with %" PRIu32 " actions", category->name, category->action_count);
     return true;
 }
@@ -223,15 +269,10 @@ bool profile_manager_save_category(FlipDeckProfileCategory* category) {
     
     offset += snprintf(json + offset, sizeof(json) - offset, "  ]\n}\n");
     
-    // Write to file
-    FuriFs* file = furi_open(path, FuriFlagWrite | FuriFlagCreate, true);
-    if(!file) {
+    if(!write_text_file(path, json)) {
         FURI_LOG_E("FlipDeck", "Failed to open file for writing: %s", path);
         return false;
     }
-    
-    furi_stream_write(file, json, strlen(json));
-    furi_close(file);
     
     FURI_LOG_I("FlipDeck", "Saved category '%s' to %s", category->name, path);
     return true;
@@ -242,51 +283,57 @@ bool profile_manager_list_categories(char category_ids[][32], uint32_t* count) {
     
     *count = 0;
     
-    // Ensure directory exists
-    if(furi_mkdir(PROFILE_BASE_PATH) != FuriStatusOK) {
-        // Directory might already exist
-    }
-    
-    FuriFs* dir = furi_open(PROFILE_BASE_PATH, FuriFlagRead | FuriFlagDirectory, false);
-    if(!dir) {
+    Storage* storage = furi_record_open(RECORD_STORAGE);
+    storage_ensure_flipdeck_dirs(storage);
+
+    File* dir = storage_file_alloc(storage);
+    if(!storage_dir_open(dir, PROFILE_BASE_PATH)) {
         // Create default categories including new profiles
         const char* defaults[] = {"git", "node", "python", "docker", "system", "snippets", "aws", "vscode", "presentation"};
         for(int i = 0; i < 9; i++) {
-            strncpy(category_ids[*count], defaults[i], 31);
+            if(category_ids) {
+                strncpy(category_ids[*count], defaults[i], 31);
+                category_ids[*count][31] = '\0';
+            }
             (*count)++;
         }
+        storage_dir_close(dir);
+        storage_file_free(dir);
+        furi_record_close(RECORD_STORAGE);
         return true;
     }
     
     char filename[64];
-    while(furi_fs_read_directory(dir, filename, sizeof(filename)) && *count < FLIPDECK_MAX_CATEGORIES) {
+    while(storage_dir_read(dir, NULL, filename, sizeof(filename)) && *count < FLIPDECK_MAX_CATEGORIES) {
         if(strstr(filename, ".json")) {
-            strncpy(category_ids[*count], filename, 31);
+            if(category_ids) {
+                strncpy(category_ids[*count], filename, 31);
+                category_ids[*count][31] = '\0';
+            }
             size_t len = strlen(filename);
             if(len > 5 && strcmp(filename + len - 5, ".json") == 0) {
-                category_ids[*count][len - 5] = '\0';
+                if(category_ids) {
+                    category_ids[*count][len - 5] = '\0';
+                }
             }
             (*count)++;
         }
     }
     
-    furi_close(dir);
+    storage_dir_close(dir);
+    storage_file_free(dir);
+    furi_record_close(RECORD_STORAGE);
     return *count > 0;
 }
 
 bool profile_manager_load_settings(FlipDeckSettings* settings) {
     FURI_LOG_I("FlipDeck", "Loading settings");
     
-    FuriFs* file = furi_open(SETTINGS_PATH, FuriFlagRead, false);
-    if(!file) {
+    char buffer[512];
+    if(!read_text_file(SETTINGS_PATH, buffer, sizeof(buffer))) {
         FURI_LOG_W("FlipDeck", "No settings file found");
         goto default_settings;
     }
-    
-    char buffer[512];
-    uint32_t bytes_read = furi_stream_read(file, buffer, sizeof(buffer) - 1);
-    buffer[bytes_read] = '\0';
-    furi_close(file);
     
     // Parse settings with defaults
     settings->send_delay_ms = 100;
@@ -336,18 +383,10 @@ bool profile_manager_save_settings(FlipDeckSettings* settings) {
         settings->send_delay_ms,
         settings->startup_category);
     
-    // Ensure directory exists
-    furi_mkdir("/ext/flipdeck");
-    
-    // Write to file
-    FuriFs* file = furi_open(SETTINGS_PATH, FuriFlagWrite | FuriFlagCreate, true);
-    if(!file) {
+    if(!write_text_file(SETTINGS_PATH, json)) {
         FURI_LOG_E("FlipDeck", "Failed to open settings file for writing");
         return false;
     }
-    
-    furi_stream_write(file, json, strlen(json));
-    furi_close(file);
     
     FURI_LOG_I("FlipDeck", "Settings saved successfully");
     return true;

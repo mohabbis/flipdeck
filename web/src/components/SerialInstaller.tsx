@@ -63,7 +63,17 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
     setPhase({ kind: "installing", message: "Starting…", fraction: 0 });
 
     try {
-      await flipper.current.install(profiles, snippets, settingsJson, (message, fraction) => {
+      setPhase({ kind: "installing", message: "Downloading flipdeck.fap…", fraction: 0 });
+      const appResponse = await fetch("/flipdeck.fap");
+      if (!appResponse.ok) {
+        throw new FlipperSerialError(
+          "flipdeck.fap is not available yet. Download the ZIP or try again after the app build finishes."
+        );
+      }
+
+      const appBinary = new Uint8Array(await appResponse.arrayBuffer());
+
+      await flipper.current.install(profiles, snippets, settingsJson, appBinary, (message, fraction) => {
         setPhase({ kind: "installing", message, fraction });
       });
       setPhase({ kind: "success", count: profiles.length });
@@ -157,24 +167,18 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
       <div className="space-y-3">
         <div className="rounded-lg border border-accent-success/30 bg-accent-success/10 px-4 py-3">
           <p className="font-semibold text-accent-success">
-            ✓ {phase.count} profile{phase.count !== 1 ? "s" : ""} copied to Flipper SD card
+            ✓ FlipDeck installed with {phase.count} profile{phase.count !== 1 ? "s" : ""}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Profiles are in <code className="font-mono">/apps_data/flipdeck/profiles/</code>
+            App: <code className="font-mono">/apps/Tools/flipdeck.fap</code> · Profiles:{" "}
+            <code className="font-mono">/apps_data/flipdeck/profiles/</code>
           </p>
         </div>
-        <div className="rounded-lg border border-accent-warning/30 bg-accent-warning/10 px-4 py-3">
-          <p className="font-semibold text-accent-warning">→ One more step: install the FlipDeck app</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            The app itself is a separate <code className="font-mono">.fap</code> file.
-            Download it and drop it into{" "}
-            <code className="font-mono">apps/Tools/</code> via qFlipper SD card browser.
-          </p>
-          <div className="mt-2 flex gap-2">
+        <div className="flex gap-2">
             <a
               href="/flipdeck.fap"
               download="flipdeck.fap"
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-gradient-to-r from-accent to-accent-primary-hover px-3 text-xs font-semibold text-white shadow shadow-accent/20"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
             >
               Download flipdeck.fap
             </a>
@@ -184,7 +188,6 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
             >
               Disconnect
             </button>
-          </div>
         </div>
       </div>
     );
