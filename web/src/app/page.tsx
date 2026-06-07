@@ -9,9 +9,9 @@ import { getProfileCommands, normalizeProfile, profileFiles } from "@/lib/profil
 
 const installSteps = [
   "Plug in Flipper via USB",
-  "Connect & install profiles",
-  "Drop flipdeck.fap into apps/Tools/",
-  "Launch FlipDeck from Apps",
+  "Connect & pick your profiles",
+  "One click installs the app + profiles",
+  "Launch FlipDeck from Apps → Tools",
 ];
 
 export default function Home() {
@@ -72,8 +72,9 @@ export default function Home() {
                   Flip<span className="text-accent">Deck</span>
                 </h1>
                 <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-                  Build a Flipper-ready SD card pack from trusted developer profiles, inspect every
-                  command, and download a qFlipper-friendly ZIP.
+                  Pick trusted developer profiles, inspect every command, then connect your Flipper
+                  over USB and install the app and profiles directly from your browser — no
+                  qFlipper or SD card juggling required.
                 </p>
               </div>
 
@@ -135,7 +136,7 @@ export default function Home() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-foreground">🚀 How to Install</h2>
                 <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                  profiles + app
+                  one-click via browser
                 </span>
               </div>
             </div>
