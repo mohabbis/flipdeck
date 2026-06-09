@@ -1,7 +1,0 @@
-[deploy]
-numReplicas = 1
-sleepApplication = false
-
-[deploy.healthcheck]
-path = "/api/health"
-timeout = 30

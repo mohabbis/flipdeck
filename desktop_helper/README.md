@@ -139,10 +139,10 @@ Print a profile preview URL and QR code.
 
 ```bash
 flipdeck profile share ./profiles/git.json
-flipdeck profile share ./profiles/git.json --url https://flipdeck-production.up.railway.app/preview
+flipdeck profile share ./profiles/git.json --url https://flipdeck.vercel.app/preview
 ```
 
-The default share base URL is `https://flipdeck-production.up.railway.app/preview`. You can also set `shareBaseUrl` in `~/.flipdeck/config.json`.
+The default share base URL is `https://flipdeck.vercel.app/preview`. You can also set `shareBaseUrl` in `~/.flipdeck/config.json`.
 
 ### `profile:sync --push`
 
@@ -171,7 +171,7 @@ User config is stored at `~/.flipdeck/config.json`:
 ```json
 {
   "gistId": "0123456789abcdef",
-  "shareBaseUrl": "https://flipdeck-production.up.railway.app/preview"
+  "shareBaseUrl": "https://flipdeck.vercel.app/preview"
 }
 ```
 
