@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GET } from "../app/api/health/route";
 
 describe("GET /api/health", () => {
-  it("returns healthy JSON for Railway health checks", async () => {
+  it("returns healthy JSON", async () => {
     const res = GET();
 
     expect(res.status).toBe(200);

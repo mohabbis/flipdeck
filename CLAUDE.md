@@ -139,4 +139,4 @@ All commands require explicit OK confirmation on the Flipper before USB send.
 
 ## Deployment
 
-Railway reads `nixpacks.toml` at the repo root: installs Node.js, runs `cd web && npm ci && npm run build`, then starts with `cd web && npm run start`. The `start` script binds to `0.0.0.0` for Railway's port routing.
+Vercel deploys the `web/` directory. The root directory in the Vercel project is set to `web`; Vercel runs `npm run build` and deploys the output as serverless functions. No `vercel.json` is required — configuration is managed in the Vercel dashboard.

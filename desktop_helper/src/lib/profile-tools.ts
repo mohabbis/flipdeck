@@ -233,7 +233,7 @@ export function registerProfileCommands(program: Command, profilesDir: string) {
         const filePath = requireProfilePath(file);
         const loadedProfile = loadProfileFile(filePath);
         const config = readConfig();
-        const baseUrl = options.url ?? config.shareBaseUrl ?? "https://flipdeck-production.up.railway.app/preview";
+        const baseUrl = options.url ?? config.shareBaseUrl ?? "https://flipdeck.vercel.app/preview";
         const url = `${baseUrl}/${encodeURIComponent(loadedProfile.id)}`;
         console.log(url);
         qrcode.generate(url, { small: true });
