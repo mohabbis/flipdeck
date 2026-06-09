@@ -67,3 +67,20 @@ export function normalizeProfile(profile: Profile, fileName: string): Profile {
     },
   };
 }
+
+/**
+ * Canonical v2 profile for the Flipper device: normalized commands, no
+ * metadata or leftover v1 `actions` key. The C app's JSON parser locates the
+ * end of the commands array with the last `]` in the file, so any trailing
+ * array (e.g. metadata.categories) or duplicate actions/commands keys break it.
+ */
+export function getDeviceProfile(profile: Profile, fileName: string): Profile {
+  const id = getProfileId(fileName, profile);
+  return {
+    name: profile.name,
+    id,
+    description: profile.description ?? "",
+    icon: profile.icon ?? id,
+    commands: getProfileCommands(profile),
+  };
+}

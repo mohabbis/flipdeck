@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { FlipperSerial, FlipperSerialError, isWebSerialSupported } from "@/lib/flipper-serial";
 import { DEFAULT_SETTINGS, SNIPPETS } from "@/lib/install-data";
-import { profileFiles, getProfileId } from "@/lib/profiles";
+import { profileFiles, getProfileId, getDeviceProfile } from "@/lib/profiles";
 
 type Phase =
   | { kind: "idle" }
@@ -43,7 +43,7 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
     const selected = profileFiles
       .map(({ fileName, profile }) => ({
         id: getProfileId(fileName, profile),
-        profile,
+        profile: getDeviceProfile(profile, fileName),
         fileName,
       }))
       .filter(({ id }) => selectedIds.includes(id));

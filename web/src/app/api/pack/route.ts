@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import JSZip from "jszip";
-import { profileFiles } from "@/lib/profiles";
+import { getDeviceProfile, getProfileId, profileFiles } from "@/lib/profiles";
 
 const APP_ROOT = "apps_data/flipdeck";
 
@@ -16,10 +16,7 @@ const settings = {
 function profilesForIds(ids: string[]) {
   if (!ids.length) return profileFiles;
   const selected = new Set(ids);
-  return profileFiles.filter(({ fileName, profile }) => {
-    const id = profile.id ?? fileName.replace(/\.json$/, "");
-    return selected.has(id);
-  });
+  return profileFiles.filter(({ fileName, profile }) => selected.has(getProfileId(fileName, profile)));
 }
 
 async function buildPack(ids: string[]) {
@@ -39,7 +36,10 @@ async function buildPack(ids: string[]) {
   );
 
   for (const { fileName, profile } of selectedProfiles) {
-    zip.file(`${APP_ROOT}/profiles/${fileName}`, `${JSON.stringify(profile, null, 2)}\n`);
+    zip.file(
+      `${APP_ROOT}/profiles/${fileName}`,
+      `${JSON.stringify(getDeviceProfile(profile, fileName), null, 2)}\n`
+    );
   }
 
   zip.file(`${APP_ROOT}/settings.json`, `${JSON.stringify(settings, null, 2)}\n`);
