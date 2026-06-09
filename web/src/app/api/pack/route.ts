@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import JSZip from "jszip";
-import { normalizeProfile, profileFiles } from "@/lib/profiles";
+import { profileFiles } from "@/lib/profiles";
 
 const APP_ROOT = "apps_data/flipdeck";
 
@@ -14,14 +14,12 @@ const settings = {
 };
 
 function profilesForIds(ids: string[]) {
-  const normalized = profileFiles.map(({ fileName, profile }) => ({
-    fileName,
-    profile: normalizeProfile(profile, fileName),
-  }));
-
-  if (!ids.length) return normalized;
+  if (!ids.length) return profileFiles;
   const selected = new Set(ids);
-  return normalized.filter(({ profile }) => profile.id && selected.has(profile.id));
+  return profileFiles.filter(({ fileName, profile }) => {
+    const id = profile.id ?? fileName.replace(/\.json$/, "");
+    return selected.has(id);
+  });
 }
 
 async function buildPack(ids: string[]) {
