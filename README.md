@@ -32,7 +32,7 @@ The web installer is designed to feel like a device install: keep the microSD ca
 1. **Leave the microSD card inserted in your Flipper Zero.**
 2. **Plug in and unlock your Flipper Zero** with USB.
 3. **Open qFlipper** and choose the Flipper SD card / file browser view.
-4. **Open the deployed FlipDeck web app** (Railway, Vercel, or local).
+4. **Open the deployed FlipDeck web app** (Vercel or local).
 5. **Click `Download Flipper install pack`**. The ZIP already contains the correct `apps_data/flipdeck` folder layout.
 6. **Extract the ZIP and drag `apps_data` onto the Flipper SD card root in qFlipper**. Merge/replace the FlipDeck files if prompted.
 7. **Launch FlipDeck** from the Flipper apps menu, choose a profile, review the command, and press OK.
@@ -47,9 +47,9 @@ Manual fallback if you are copying files yourself:
 
 Developer-only fallback for local testing: build the `.fap`, mount the Flipper microSD card in an external reader, copy the `.fap` into `/apps/Tools/`, verify the file exists, eject the card, and insert it back into the Flipper.
 
-### Deploying the web installer on Railway
+### Deploying the web installer on Vercel
 
-This repository includes `nixpacks.toml` for Railway. Point Railway at the repository root; it will install, build, and start the app from `web/` using the standalone Next.js server.
+Deploy from the repository root on Vercel. Set the root directory to `web`, build command to `npm run build`, and output directory to `.next`.
 
 ## Getting Started
 

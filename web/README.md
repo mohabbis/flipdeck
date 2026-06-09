@@ -45,17 +45,11 @@ npm run build
 npm run start
 ```
 
-`npm run start` runs the standalone Next.js server and binds to `0.0.0.0`, which is suitable for Railway.
+`npm run start` runs the standalone Next.js server and binds to `0.0.0.0`.
 
-## Railway deployment
+## Vercel deployment
 
-Deploy from the repository root. The root `nixpacks.toml` runs:
-
-```bash
-cd web && npm ci
-cd web && npm run build
-cd web && npm run start
-```
+Deploy from the repository root. Set the root directory to `web` in your Vercel project settings. The build command is `npm run build` and the output directory is `.next`.
 
 ## Tests
 
