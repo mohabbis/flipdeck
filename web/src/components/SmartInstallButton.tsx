@@ -83,7 +83,7 @@ export function SmartInstallButton({ selectedIds, selectedCount = 0 }: SmartInst
             {downloadHref ? (
               <a
                 href={downloadHref}
-                className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:border-accent/50 hover:text-accent"
+                className="f1-speed-btn inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:border-accent/50 hover:text-accent"
               >
                 Download ZIP
               </a>

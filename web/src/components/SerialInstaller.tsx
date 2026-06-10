@@ -101,7 +101,7 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
     return (
       <button
         onClick={connect}
-        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-5 text-sm font-semibold text-accent transition hover:bg-accent/20"
+        className="f1-speed-btn inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-5 text-sm font-semibold text-accent transition hover:bg-accent/20"
       >
         <span>⚡</span>
         Connect Flipper &amp; Install Directly
@@ -135,7 +135,7 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
           <button
             onClick={install}
             disabled={selectedIds.length === 0}
-            className="h-9 rounded-lg bg-gradient-to-r from-accent to-accent-primary-hover px-4 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition hover:shadow-accent/30 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+            className="f1-speed-btn h-9 rounded-lg bg-gradient-to-r from-accent to-accent-primary-hover px-4 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition hover:shadow-accent/30 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Install {selectedIds.length} profile{selectedIds.length !== 1 ? "s" : ""} to Flipper
           </button>
