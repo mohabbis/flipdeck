@@ -11,6 +11,7 @@ export interface FlipDeckAction {
   delay_ms?: number;
   description?: string;
   confirmation_required?: boolean;
+  target?: "usb_hid" | "wifi_uart";
 }
 
 export interface Profile {

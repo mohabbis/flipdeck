@@ -25,6 +25,12 @@ typedef enum {
     FlipDeckActionType_KeyCombo,
 } FlipDeckActionType;
 
+/** Destination for an action's output */
+typedef enum {
+    FlipDeckActionTarget_Usb,
+    FlipDeckActionTarget_WifiUart,
+} FlipDeckActionTarget;
+
 /**
  * @brief Single action within a profile
  */
@@ -33,6 +39,7 @@ typedef struct {
     FlipDeckActionType type;
     char value[FLIPDECK_MAX_COMMAND_LENGTH];
     bool confirm;
+    FlipDeckActionTarget target;
 } FlipDeckAction;
 
 /**
@@ -104,5 +111,19 @@ bool profile_manager_validate_action(FlipDeckAction* action);
  * @return true if value is safe
  */
 bool profile_manager_is_value_safe(const char* value);
+
+/**
+ * @brief Parse the "type" field of an action's JSON object
+ * @param json Mini JSON object for a single action
+ * @return Parsed action type, defaulting to FlipDeckActionType_Text
+ */
+FlipDeckActionType parse_action_type(char* json);
+
+/**
+ * @brief Parse the "target" field of an action's JSON object
+ * @param json Mini JSON object for a single action
+ * @return Parsed action target, defaulting to FlipDeckActionTarget_Usb
+ */
+FlipDeckActionTarget parse_action_target(char* json);
 
 #endif // PROFILE_MANAGER_H

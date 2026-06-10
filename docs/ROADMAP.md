@@ -38,7 +38,7 @@
 ## Phase 5: Optional Extensions
 
 - [ ] Momentum firmware integration
-- [ ] WiFi dev board support for network commands
+- [x] WiFi dev board support for network commands
 - [ ] Bluetooth HID support
 - [ ] QR code profile import
 - [ ] Voice command triggering

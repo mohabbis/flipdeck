@@ -36,6 +36,7 @@ describe('GET /api/profiles/download', () => {
             'snippets.json',
             'system.json',
             'vscode.json',
+            'wifi-devboard.json',
         ]);
 
         const gitProfile = JSON.parse(await zip.file('git.json')!.async('string'));

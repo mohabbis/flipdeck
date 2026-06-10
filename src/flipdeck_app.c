@@ -6,6 +6,7 @@
 #include "flipdeck_app.h"
 #include "flipdeck_ui.h"
 #include "profile_manager.h"
+#include "uart_bridge.h"
 #include "usb_hid.h"
 #include <furi.h>
 #include <furi_hal.h>
@@ -44,7 +45,10 @@ bool flipdeck_app_init(void* furi_void) {
     
     // Check USB connection
     g_app_ctx->usb_connected = usb_hid_is_connected();
-    
+
+    // Initialize UART bridge to the WiFi dev board
+    uart_bridge_init();
+
     // Create UI
     flipdeck_ui_init(g_app_ctx);
     
@@ -78,6 +82,7 @@ void flipdeck_app_free(void* furi_void) {
     
     if(g_app_ctx) {
         flipdeck_ui_free();
+        uart_bridge_deinit();
         free(g_app_ctx);
         g_app_ctx = NULL;
     }

@@ -5,6 +5,7 @@
 
 #include "flipdeck_ui.h"
 #include "profile_manager.h"
+#include "uart_bridge.h"
 #include "usb_hid.h"
 #include <gui/elements.h>
 #include <gui/gui.h>
@@ -319,11 +320,17 @@ static void flipdeck_ui_input_long_snippet_warning(FlipDeckUi* ui_ctx, InputEven
     if(event->type != InputTypeShort) return;
 
     switch(event->key) {
-        case InputKeyOk:
-            usb_hid_send_string(ui_ctx->current_category.actions[app->selected_action_index].value);
+        case InputKeyOk: {
+            FlipDeckAction* action = &ui_ctx->current_category.actions[app->selected_action_index];
+            if(action->target == FlipDeckActionTarget_WifiUart) {
+                uart_bridge_send_string(action->value);
+            } else {
+                usb_hid_send_string(action->value);
+            }
             snprintf(app->status_message, sizeof(app->status_message), "Sent!");
             app->state = FlipDeckState_ActionBrowser;
             break;
+        }
         case InputKeyBack:
             app->state = FlipDeckState_ActionBrowser;
             break;
@@ -345,7 +352,11 @@ static void flipdeck_ui_send_action(FlipDeckUi* ui_ctx, FlipDeckAction* action) 
             ui_ctx->app_ctx->state = FlipDeckState_LongSnippetWarning;
             return;
         }
-        usb_hid_send_string(action->value);
+        if(action->target == FlipDeckActionTarget_WifiUart) {
+            uart_bridge_send_string(action->value);
+        } else {
+            usb_hid_send_string(action->value);
+        }
     } else if(action->type == FlipDeckActionType_Key) {
         usb_hid_send_key(action->value);
     } else if(action->type == FlipDeckActionType_KeyCombo) {

@@ -1,0 +1,71 @@
+{
+  "name": "WiFi Devboard",
+  "id": "wifi-devboard",
+  "description": "Passive scan & info commands for the Flipper WiFi Dev Board (ESP32-S2/Marauder)",
+  "icon": "wifi",
+  "commands": [
+    {
+      "label": "Help",
+      "type": "text",
+      "value": "help\n",
+      "confirmation_required": false,
+      "target": "wifi_uart"
+    },
+    {
+      "label": "Device Info",
+      "type": "text",
+      "value": "info\n",
+      "confirmation_required": false,
+      "target": "wifi_uart"
+    },
+    {
+      "label": "Scan WiFi APs",
+      "type": "text",
+      "value": "scanap\n",
+      "confirmation_required": true,
+      "target": "wifi_uart"
+    },
+    {
+      "label": "Stop Scan",
+      "type": "text",
+      "value": "stopscan\n",
+      "confirmation_required": false,
+      "target": "wifi_uart"
+    },
+    {
+      "label": "List Detected SSIDs",
+      "type": "text",
+      "value": "ssid -l\n",
+      "confirmation_required": false,
+      "target": "wifi_uart"
+    },
+    {
+      "label": "Set Channel 6",
+      "type": "text",
+      "value": "channel -s 6\n",
+      "confirmation_required": true,
+      "target": "wifi_uart"
+    },
+    {
+      "label": "AT Firmware Version",
+      "type": "text",
+      "value": "AT+GMR\n",
+      "confirmation_required": false,
+      "target": "wifi_uart"
+    },
+    {
+      "label": "AT List Access Points",
+      "type": "text",
+      "value": "AT+CWLAP\n",
+      "confirmation_required": true,
+      "target": "wifi_uart"
+    },
+    {
+      "label": "Reboot Devboard",
+      "type": "text",
+      "value": "reboot\n",
+      "confirmation_required": true,
+      "target": "wifi_uart"
+    }
+  ]
+}
