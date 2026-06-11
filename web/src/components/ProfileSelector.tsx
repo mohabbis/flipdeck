@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Profile } from "@/types/flipdeck";
-import { getProfileCommands } from "@/lib/profiles";
+import { getProfileCommands, primaryCategory } from "@/lib/profiles";
 
 interface ProfileSelectorProps {
   profiles: Profile[];
@@ -18,10 +18,7 @@ interface ProfileSelectorProps {
 }
 
 function profileCategory(profile: Profile): string {
-  const id = profile.id ?? "";
-  if (["aws", "docker"].includes(id)) return "cloud";
-  if (["system", "presentation"].includes(id)) return "system";
-  return "dev";
+  return primaryCategory(profile.id ?? "");
 }
 
 function categoryTone(category: string, selected: boolean) {
@@ -35,6 +32,9 @@ function categoryTone(category: string, selected: boolean) {
     system: selected
       ? "border-accent bg-accent/10"
       : "border-border bg-card hover:border-accent/45",
+    wifi: selected
+      ? "border-sky-400 bg-sky-400/10"
+      : "border-border bg-card hover:border-sky-400/45",
   };
   return tones[category] ?? tones.dev;
 }
@@ -48,7 +48,7 @@ export function ProfileSelector({
   onSelectAll,
   onClear,
   search = true,
-  filters = ["dev", "cloud", "system"],
+  filters = ["dev", "cloud", "system", "wifi"],
   previewOnHover = true,
 }: ProfileSelectorProps) {
   const [query, setQuery] = useState("");

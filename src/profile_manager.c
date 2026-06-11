@@ -97,13 +97,21 @@ static bool find_json_bool(char* json, const char* key, bool default_val) {
     return default_val;
 }
 
-static FlipDeckActionType parse_action_type(char* json) {
+FlipDeckActionType parse_action_type(char* json) {
     char type_str[16];
     if(find_json_string(json, "type", type_str, sizeof(type_str))) {
         if(strcmp(type_str, "key_combo") == 0) return FlipDeckActionType_KeyCombo;
         if(strcmp(type_str, "key") == 0) return FlipDeckActionType_Key;
     }
     return FlipDeckActionType_Text;
+}
+
+FlipDeckActionTarget parse_action_target(char* json) {
+    char target_str[16];
+    if(find_json_string(json, "target", target_str, sizeof(target_str))) {
+        if(strcmp(target_str, "wifi_uart") == 0) return FlipDeckActionTarget_WifiUart;
+    }
+    return FlipDeckActionTarget_Usb;
 }
 
 bool profile_manager_load_all_categories(FlipDeckProfileCategory* categories, uint32_t* count) {
@@ -207,7 +215,8 @@ bool profile_manager_load_category(const char* category_id, FlipDeckProfileCateg
                         action_json,
                         "confirmation_required",
                         find_json_bool(action_json, "confirm", true));
-                
+                category->actions[category->action_count].target = parse_action_target(action_json);
+
                 category->action_count++;
                 pos = action_end + 1;
             }
@@ -260,10 +269,13 @@ bool profile_manager_save_category(FlipDeckProfileCategory* category) {
         }
         escaped_label[el] = '\0';
         
+        const char* target_str = action->target == FlipDeckActionTarget_WifiUart ? "wifi_uart" : "usb_hid";
+
         offset += snprintf(json + offset, sizeof(json) - offset,
-            "    {\"label\": \"%s\", \"type\": \"%s\", \"value\": \"%s\", \"confirm\": %s}%s\n",
+            "    {\"label\": \"%s\", \"type\": \"%s\", \"value\": \"%s\", \"confirm\": %s, \"target\": \"%s\"}%s\n",
             escaped_label, type_str, escaped_value,
             action->confirm ? "true" : "false",
+            target_str,
             (i < category->action_count - 1) ? "," : "");
     }
     

@@ -12,12 +12,15 @@ export const profileIcons = [
     "system",
     "snippets",
     "presentation",
+    "wifi",
 ] as const;
 
 export const commandTypes = ["text", "key", "key_combo"] as const;
+export const commandTargets = ["usb_hid", "wifi_uart"] as const;
 
 const profileIconSchema = z.enum(profileIcons);
 const commandTypeSchema = z.enum(commandTypes);
+const commandTargetSchema = z.enum(commandTargets);
 
 const commandSchema = z.object({
     label: z.string().min(1, "Command label is required").max(40, "Command label must be 40 characters or fewer"),
@@ -26,6 +29,7 @@ const commandSchema = z.object({
     delay_ms: z.number().int().min(0).max(5000).default(100),
     description: z.string().max(120, "Command description must be 120 characters or fewer").optional(),
     confirmation_required: z.boolean().default(true),
+    target: commandTargetSchema.default("usb_hid"),
 });
 
 const legacyActionSchema = z.object({
@@ -33,6 +37,7 @@ const legacyActionSchema = z.object({
     type: commandTypeSchema,
     value: z.string().min(1),
     confirm: z.boolean().default(true),
+    target: commandTargetSchema.default("usb_hid"),
 });
 
 const rawProfileSchema = z
@@ -57,6 +62,7 @@ const rawProfileSchema = z
 
 export type ProfileIcon = (typeof profileIcons)[number];
 export type CommandType = (typeof commandTypes)[number];
+export type CommandTarget = (typeof commandTargets)[number];
 
 export interface ProfileCommand {
     label: string;
@@ -65,6 +71,7 @@ export interface ProfileCommand {
     delay_ms: number;
     description?: string;
     confirmation_required: boolean;
+    target: CommandTarget;
 }
 
 export interface NormalizedProfile {
@@ -136,6 +143,7 @@ function toCommands(profile: z.infer<typeof rawProfileSchema>): ProfileCommand[]
         value: action.value,
         delay_ms: 100,
         confirmation_required: action.confirm,
+        target: action.target,
     }));
 }
 

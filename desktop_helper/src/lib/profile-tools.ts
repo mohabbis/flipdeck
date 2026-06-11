@@ -105,6 +105,7 @@ async function promptForProfile(): Promise<NormalizedProfile> {
                 value,
                 delay_ms: 100,
                 confirmation_required: confirmAnswer !== "n",
+                target: "usb_hid",
             });
         } while ((await rl.question("Add another command? [y/N]: ")).trim().toLowerCase() === "y");
 

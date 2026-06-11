@@ -10,6 +10,7 @@ import pythonProfile from "../../public/profiles/python.json";
 import snippetsProfile from "../../public/profiles/snippets.json";
 import systemProfile from "../../public/profiles/system.json";
 import vscodeProfile from "../../public/profiles/vscode.json";
+import wifiDevboardProfile from "../../public/profiles/wifi-devboard.json";
 
 export interface ProfileFile {
   fileName: string;
@@ -26,6 +27,7 @@ export const profileFiles: ProfileFile[] = [
   { fileName: "snippets.json", profile: snippetsProfile as Profile },
   { fileName: "system.json", profile: systemProfile as Profile },
   { fileName: "vscode.json", profile: vscodeProfile as Profile },
+  { fileName: "wifi-devboard.json", profile: wifiDevboardProfile as Profile },
 ];
 
 export function getProfilesById(): Record<string, Profile> {
@@ -49,10 +51,7 @@ export function getProfileCommands(profile: Profile) {
 export function normalizeProfile(profile: Profile, fileName: string): Profile {
   const id = getProfileId(fileName, profile);
   const commands = getProfileCommands(profile);
-  const categories = [
-    ["aws", "docker"].includes(id) ? "cloud" : "dev",
-    ["system", "presentation"].includes(id) ? "system" : "",
-  ].filter(Boolean);
+  const categories = [primaryCategory(id)];
 
   return {
     ...profile,
@@ -62,10 +61,17 @@ export function normalizeProfile(profile: Profile, fileName: string): Profile {
     commands,
     metadata: {
       command_count: commands.length,
-      categories: categories.length ? categories : ["dev"],
+      categories,
       risk_count: auditCommands(commands).length,
     },
   };
+}
+
+export function primaryCategory(id: string): string {
+  if (id === "wifi-devboard") return "wifi";
+  if (["aws", "docker"].includes(id)) return "cloud";
+  if (["system", "presentation"].includes(id)) return "system";
+  return "dev";
 }
 
 /**

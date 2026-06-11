@@ -26,7 +26,8 @@ function renderList(profile: Profile, selectedIndex: number): string {
     const index = start + i;
     const cursor = index === selectedIndex ? ">" : " ";
     const label = `${cursor} ${command.label}`.slice(0, 24).padEnd(24);
-    const type = command.type === "key_combo" ? "combo" : command.type;
+    const type =
+      command.target === "wifi_uart" ? "wifi" : command.type === "key_combo" ? "combo" : command.type;
     return `${label}${type.padStart(8).slice(0, 8)}`;
   });
 

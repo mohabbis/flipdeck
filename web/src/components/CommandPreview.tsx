@@ -130,8 +130,15 @@ export function CommandPreview({ profile }: CommandPreviewProps) {
                 <span className="block truncate text-sm font-medium text-foreground">{command.label}</span>
                 <span className="block truncate font-mono text-xs text-muted-foreground">{command.value}</span>
               </span>
-              <span className="self-center rounded-full border border-accent-success/30 bg-accent-success/15 px-2 py-1 text-xs font-semibold text-accent-success">
-                {command.type}
+              <span className="flex items-center gap-1.5 self-center">
+                {command.target === "wifi_uart" && (
+                  <span className="rounded-full border border-sky-400/30 bg-sky-400/15 px-2 py-1 text-xs font-semibold text-sky-400">
+                    WiFi UART
+                  </span>
+                )}
+                <span className="rounded-full border border-accent-success/30 bg-accent-success/15 px-2 py-1 text-xs font-semibold text-accent-success">
+                  {command.type}
+                </span>
               </span>
             </div>
           ))}

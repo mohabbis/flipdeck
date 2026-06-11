@@ -87,7 +87,8 @@ API routes:
       "type": "text",
       "value": "git status\n",
       "delay_ms": 100,
-      "confirmation_required": true
+      "confirmation_required": true,
+      "target": "usb_hid"
     }
   ]
 }
@@ -95,7 +96,9 @@ API routes:
 
 v1 used `"actions"` (with `"confirm"` instead of `"confirmation_required"`). `normalizeProfile()` in `lib/profiles.ts` handles the migration transparently. The `extends` field enables profile inheritance (base profile commands are prepended). `getDeviceProfile()` returns the raw, normalized-but-unflattened profile written to the Flipper over serial — keep this in sync with what `profile_manager.c` expects to parse on-device.
 
-Profile categories are derived from the profile `id`: `["aws", "docker"]` → "cloud"; `["system", "presentation"]` → "system"; everything else → "dev".
+Each command has an optional `target` field (`"usb_hid"` | `"wifi_uart"`, default `"usb_hid"`) that selects whether the command is sent as a USB HID keystroke to the host computer or as a UART line to the Flipper WiFi Dev Board.
+
+Profile categories are derived from the profile `id` via `primaryCategory()` in `lib/profiles.ts`: `"wifi-devboard"` → "wifi"; `["aws", "docker"]` → "cloud"; `["system", "presentation"]` → "system"; everything else → "dev".
 
 ### Flipper Zero app state machine
 
@@ -103,9 +106,10 @@ The C app in `/src/` is a state machine with these states: `Idle`, `CategoryBrow
 
 Key modules:
 - `flipdeck_app.c` — main loop, USB polling (50ms), state transitions
-- `flipdeck_ui.c` — 128×64 LCD rendering, button input handling
-- `profile_manager.c` — JSON parsing from SD card, safety validation before USB send
+- `flipdeck_ui.c` — 128×64 LCD rendering, button input handling, dispatches each action to USB HID or the UART bridge based on `action->target`
+- `profile_manager.c` — JSON parsing from SD card, safety validation before send
 - `usb_hid.c` — USB HID keyboard report generation
+- `uart_bridge.c` — UART bridge to the Flipper WiFi Dev Board (GPIO pins 13/14, 115200 baud) for `target: "wifi_uart"` commands
 - `settings.c` — JSON settings serialization
 
 Memory constraint: 4096-byte stack limit. Use fixed-size buffers; avoid deep call stacks.

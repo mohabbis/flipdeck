@@ -27,6 +27,7 @@ describe('GET /api/profiles', () => {
             'snippets',
             'system',
             'vscode',
+            'wifi-devboard',
         ]);
     });
 

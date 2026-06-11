@@ -126,7 +126,7 @@ export default function Home() {
               setSelectedIds(profiles.map((profile) => profile.id ?? profile.name.toLowerCase()))
             }
             onClear={() => setSelectedIds([])}
-            filters={["dev", "cloud", "system"]}
+            filters={["dev", "cloud", "system", "wifi"]}
             previewOnHover
           />
 

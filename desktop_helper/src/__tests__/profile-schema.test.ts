@@ -38,6 +38,7 @@ describe("profile schema", () => {
                 value: "git status\n",
                 delay_ms: 100,
                 confirmation_required: true,
+                target: "usb_hid",
             },
         ]);
         expect(profile.actions[0]).toMatchObject({
@@ -77,6 +78,7 @@ describe("profile schema", () => {
                 value: "CTRL+SHIFT+P",
                 delay_ms: 100,
                 confirmation_required: false,
+                target: "usb_hid",
             },
             {
                 label: "Terminal",
@@ -84,6 +86,7 @@ describe("profile schema", () => {
                 value: "CTRL+`",
                 delay_ms: 100,
                 confirmation_required: true,
+                target: "usb_hid",
             },
         ]);
         expect(profile.actions).toEqual([
