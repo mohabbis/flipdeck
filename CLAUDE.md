@@ -64,13 +64,16 @@ Profiles are JSON files in `/web/public/profiles/` (copied from `/sd_card/apps_d
   → React components in app/page.tsx                         (ProfileSelector → CommandPreview → CommandAudit → SmartInstallButton)
 ```
 
-State lives entirely in `page.tsx` as `useState`/`useMemo` hooks. There is no global state manager — `selectedId` is passed as props/callbacks. The `SmartInstallButton` detects WebUSB availability to switch between direct install and ZIP download.
+State lives entirely in `page.tsx` as `useState`/`useMemo` hooks. There is no global state manager — `selectedId` is passed as props/callbacks.
+
+`SmartInstallButton` always renders `SerialInstaller`, which drives a direct install over the **Web Serial API** (`lib/flipper-serial.ts`, `FlipperSerial` class — opens the Flipper's CLI serial port at 230400 baud and issues storage RPC commands to write `flipdeck.fap`, selected profiles via `getDeviceProfile()`, snippets, and `settings.json` directly to the SD card). `isWebSerialSupported()` gates whether this UI is shown; `SmartInstallButton` separately probes WebUSB (`navigator.usb.requestDevice`) just to show a "Flipper detected" hint, not for installs. Users without Web Serial support fall back to the ZIP download (`/api/pack`).
 
 API routes:
 - `GET /api/profiles` — JSON array of all profiles
 - `GET /api/profiles/download?profile=<id>` — single profile download
 - `GET /api/pack?profile=git&profile=node` — ZIP with selected profiles
 - `GET /api/install-bundle/download` — full install ZIP (all profiles + snippets + settings.json + README-FIRST.txt)
+- `GET /api/health` — liveness check, returns `{ ok, service, timestamp }`
 
 ### Profile schema (v2 canonical, v1 still accepted)
 
@@ -90,7 +93,7 @@ API routes:
 }
 ```
 
-v1 used `"actions"` (with `"confirm"` instead of `"confirmation_required"`). `normalizeProfile()` in `lib/profiles.ts` handles the migration transparently. The `extends` field enables profile inheritance (base profile commands are prepended).
+v1 used `"actions"` (with `"confirm"` instead of `"confirmation_required"`). `normalizeProfile()` in `lib/profiles.ts` handles the migration transparently. The `extends` field enables profile inheritance (base profile commands are prepended). `getDeviceProfile()` returns the raw, normalized-but-unflattened profile written to the Flipper over serial — keep this in sync with what `profile_manager.c` expects to parse on-device.
 
 Profile categories are derived from the profile `id`: `["aws", "docker"]` → "cloud"; `["system", "presentation"]` → "system"; everything else → "dev".
 
@@ -111,6 +114,8 @@ Memory constraint: 4096-byte stack limit. Use fixed-size buffers; avoid deep cal
 
 Commander.js app with subcommands under `flipdeck profile <subcommand>`:
 `validate`, `new`, `edit`, `preview`, `audit`, `migrate`, `share`, `sync`
+
+Subcommands are registered via `registerProfileCommands()` in `src/lib/profile-tools.ts`; shared profile logic (loading, normalization, schema) lives in `src/lib/profile-tools.ts` and `src/lib/schema.ts`, while `src/validation.ts` holds `DANGEROUS_PATTERNS` and `validateProfile()`.
 
 Validation pipeline: JSON parse → Zod schema (`lib/schema.ts`) → normalize v1→v2 → resolve `extends` → audit against `DANGEROUS_PATTERNS`.
 
@@ -136,6 +141,7 @@ All commands require explicit OK confirmation on the Flipper before USB send.
 - **Prettier config:** 100-char line width, no trailing commas (`desktop_helper/.prettierrc.json`).
 - **C naming:** PascalCase for types with `_t` suffix, `snake_case` for functions and variables (Flipper Zero SDK convention).
 - **Profile files live in two places:** `sd_card/apps_data/flipdeck/profiles/` is the source of truth for device profiles; `web/public/profiles/` is a copy populated at build time by `web/scripts/copy-profiles.mjs`.
+- **Repo-level docs:** `docs/flight_manual.md` (end-user guide) and `docs/ROADMAP.md` (planned work) live at the repo root; `scripts/prebuild-packs.js` pre-generates downloadable packs.
 
 ## Deployment
 
