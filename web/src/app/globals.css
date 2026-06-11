@@ -90,6 +90,106 @@ body {
   background: var(--text-secondary);
 }
 
+/* F1-inspired motion & texture accents */
+
+@keyframes lights-out {
+  0%, 8% { background-color: var(--card-border); box-shadow: none; }
+  16%, 92% { background-color: #ef4444; box-shadow: 0 0 8px 1px rgba(239, 68, 68, 0.8); }
+  100% { background-color: var(--card-border); box-shadow: none; }
+}
+
+@keyframes speed-sweep {
+  from { transform: translateX(-150%) skewX(-20deg); }
+  to { transform: translateX(250%) skewX(-20deg); }
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  50% { opacity: 0.4; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+}
+
+.f1-checker {
+  background-image:
+    repeating-conic-gradient(
+      rgba(250, 250, 250, 0.06) 0% 25%,
+      transparent 0% 50%
+    );
+  background-size: 24px 24px;
+  mask-image: linear-gradient(to bottom, black, transparent 70%);
+}
+
+.f1-stripes {
+  background-image:
+    repeating-linear-gradient(
+      115deg,
+      var(--accent-primary) 0px,
+      var(--accent-primary) 3px,
+      transparent 3px,
+      transparent 64px
+    ),
+    repeating-linear-gradient(
+      115deg,
+      var(--accent-secondary) 64px,
+      var(--accent-secondary) 67px,
+      transparent 67px,
+      transparent 128px
+    );
+  opacity: 0.08;
+}
+
+.f1-lights {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.f1-lights span {
+  display: block;
+  height: 8px;
+  width: 8px;
+  border-radius: 9999px;
+  background-color: var(--card-border);
+  animation: lights-out 3.5s ease-in-out 1 both;
+}
+
+.f1-lights span:nth-child(1) { animation-delay: 0s; }
+.f1-lights span:nth-child(2) { animation-delay: 0.15s; }
+.f1-lights span:nth-child(3) { animation-delay: 0.3s; }
+.f1-lights span:nth-child(4) { animation-delay: 0.45s; }
+.f1-lights span:nth-child(5) { animation-delay: 0.6s; }
+
+.f1-live-dot {
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  border-radius: 9999px;
+  background-color: #ef4444;
+  animation: pulse-live 1.6s ease-in-out infinite;
+}
+
+.f1-speed-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.f1-speed-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 35%;
+  background: linear-gradient(
+    115deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  transform: translateX(-150%) skewX(-20deg);
+  pointer-events: none;
+}
+
+.f1-speed-btn:hover::after {
+  animation: speed-sweep 0.7s ease-in-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

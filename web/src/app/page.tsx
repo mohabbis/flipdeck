@@ -46,8 +46,10 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       {/* Hero Section */}
-      <section className="border-b border-border bg-gradient-to-b from-background to-card">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:px-8">
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-background to-card">
+        <div className="f1-checker pointer-events-none absolute inset-0" aria-hidden="true" />
+        <div className="f1-stripes pointer-events-none absolute inset-0" aria-hidden="true" />
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:px-8">
           <div className="flex flex-col justify-between gap-8 py-2">
             <div className="space-y-6">
               <header className="flex flex-wrap items-center justify-between gap-3 text-sm">
@@ -64,12 +66,24 @@ export default function Home() {
               </header>
 
               <div>
-                <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-sm font-semibold text-accent">
-                  <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent"></span>
-                  USB HID command deck for Flipper Zero
-                </p>
-                <h1 className="max-w-3xl bg-gradient-to-r from-foreground via-foreground to-accent bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-6xl lg:text-7xl">
-                  Flip<span className="text-accent">Deck</span>
+                <div className="mb-4 flex flex-wrap items-center gap-3">
+                  <p className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-sm font-semibold text-accent">
+                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent"></span>
+                    USB HID command deck for Flipper Zero
+                  </p>
+                  <span className="f1-lights" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </span>
+                </div>
+                <h1 className="max-w-3xl bg-gradient-to-r from-foreground via-foreground to-accent bg-clip-text text-5xl font-black uppercase tracking-tight text-transparent sm:text-6xl lg:text-7xl">
+                  Flip
+                  <span className="italic" style={{ WebkitTextFillColor: "var(--accent-primary)" }}>
+                    Deck
+                  </span>
                 </h1>
                 <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
                   Pick trusted developer profiles, inspect every command, then connect your Flipper
@@ -82,11 +96,17 @@ export default function Home() {
             </div>
 
             <dl className="grid grid-cols-3 gap-4 rounded-xl border border-border bg-card/50 p-4 backdrop-blur-sm">
+              <div className="col-span-3 mb-1 flex items-center gap-2">
+                <span className="f1-live-dot" aria-hidden="true"></span>
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  Live telemetry
+                </span>
+              </div>
               <div className="text-center sm:text-left">
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Profiles
                 </dt>
-                <dd className="mt-1 font-mono text-3xl font-bold text-foreground">
+                <dd className="mt-1 font-mono text-3xl font-bold tabular-nums text-foreground">
                   {selectedIds.length}/{profiles.length}
                 </dd>
               </div>
@@ -94,7 +114,7 @@ export default function Home() {
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Commands
                 </dt>
-                <dd className="mt-1 font-mono text-3xl font-bold text-accent">
+                <dd className="mt-1 font-mono text-3xl font-bold tabular-nums text-accent">
                   {selectedCommandCount}
                 </dd>
               </div>
@@ -102,7 +122,7 @@ export default function Home() {
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Available
                 </dt>
-                <dd className="mt-1 font-mono text-3xl font-bold text-foreground">
+                <dd className="mt-1 font-mono text-3xl font-bold tabular-nums text-foreground">
                   {totalCommands}
                 </dd>
               </div>
@@ -134,8 +154,8 @@ export default function Home() {
           <section className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
             <div className="border-b border-border bg-gradient-to-r from-card to-card/80 px-4 py-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">🚀 How to Install</h2>
-                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                <h2 className="text-lg font-bold uppercase tracking-wide text-foreground">🚀 How to Install</h2>
+                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-bold uppercase tracking-[0.15em] text-accent">
                   one-click via browser
                 </span>
               </div>
@@ -146,10 +166,10 @@ export default function Home() {
                   key={step}
                   className="group relative bg-card p-4 transition-colors hover:bg-card/80"
                 >
-                  <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-primary-hover font-mono text-xs font-bold text-white shadow-md">
+                  <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-primary-hover font-mono text-sm font-black italic text-white shadow-md">
                     {String(index + 1).padStart(2, "0")}
                   </div>
-                  <div className="text-sm font-semibold text-foreground">{step}</div>
+                  <div className="text-sm font-semibold uppercase tracking-wide text-foreground">{step}</div>
                   <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-accent to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
                 </div>
               ))}
