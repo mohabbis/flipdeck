@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -33,4 +35,15 @@ jobs:
           git add web/public/flipdeck.fap
           git diff --cached --quiet && exit 0
           git commit -m "build: rebuild flipdeck.fap"
-          git push
+
+          for attempt in 1 2 3; do
+            git pull --rebase origin master
+            if git push origin HEAD:master; then
+              exit 0
+            fi
+            echo "Push failed on attempt ${attempt}; retrying after rebasing."
+            sleep 5
+          done
+
+          echo "Failed to push rebuilt .fap after 3 attempts."
+          exit 1
