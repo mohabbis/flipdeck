@@ -7,6 +7,8 @@ interface CommandAuditProps {
 
 export function CommandAudit({ commands }: CommandAuditProps) {
   const risks = auditCommands(commands);
+  const criticalRisks = risks.filter((risk) => risk.severity === "critical");
+  const warningRisks = risks.filter((risk) => risk.severity === "warning");
 
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
@@ -17,30 +19,52 @@ export function CommandAudit({ commands }: CommandAuditProps) {
         </div>
         <span
           className={`rounded-full px-3 py-1 text-xs font-semibold ${
-            risks.length
-              ? "border border-accent-warning/30 bg-accent-warning/10 text-accent-warning"
-              : "border border-accent-success/30 bg-accent-success/10 text-accent-success"
+            criticalRisks.length
+              ? "border border-red-500/30 bg-red-500/10 text-red-400"
+              : warningRisks.length
+                ? "border border-accent-warning/30 bg-accent-warning/10 text-accent-warning"
+                : "border border-accent-success/30 bg-accent-success/10 text-accent-success"
           }`}
         >
-          {risks.length ? `${risks.length} warning${risks.length > 1 ? "s" : ""}` : "✓ All clear"}
+          {criticalRisks.length
+            ? `${criticalRisks.length} blocked`
+            : warningRisks.length
+              ? `${warningRisks.length} warning${warningRisks.length > 1 ? "s" : ""}`
+              : "✓ All clear"}
         </span>
       </div>
 
       <div className="p-4">
         <div className="space-y-2">
-          {risks.length ? (
-            risks.map((risk) => (
-              <div
-                key={`${risk.command}-${risk.label}`}
-                className="overflow-hidden rounded-lg border border-accent-warning/25 bg-accent-warning/10 p-3"
-              >
-                <div className="text-sm font-medium text-accent-warning">{risk.label}</div>
-                <div className="mt-1 break-all font-mono text-xs text-accent-warning/80">
-                  {risk.command}
-                </div>
+          {criticalRisks.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              These commands match patterns that are never safe to send automatically. Deselect
+              the profile containing them to continue — they can&apos;t be installed.
+            </p>
+          )}
+          {criticalRisks.map((risk) => (
+            <div
+              key={`${risk.command}-${risk.label}`}
+              className="overflow-hidden rounded-lg border border-red-500/30 bg-red-500/10 p-3"
+            >
+              <div className="text-sm font-medium text-red-400">🚫 {risk.label}</div>
+              <div className="mt-1 break-all font-mono text-xs text-red-400/80">
+                {risk.command}
               </div>
-            ))
-          ) : (
+            </div>
+          ))}
+          {warningRisks.map((risk) => (
+            <div
+              key={`${risk.command}-${risk.label}`}
+              className="overflow-hidden rounded-lg border border-accent-warning/25 bg-accent-warning/10 p-3"
+            >
+              <div className="text-sm font-medium text-accent-warning">⚠️ {risk.label}</div>
+              <div className="mt-1 break-all font-mono text-xs text-accent-warning/80">
+                {risk.command}
+              </div>
+            </div>
+          ))}
+          {!risks.length && (
             <div className="rounded-lg border border-accent-success/25 bg-accent-success/10 p-3 text-sm text-accent-success">
               ✓ No high-risk shell patterns detected in the selected pack.
             </div>

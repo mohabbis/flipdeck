@@ -12,6 +12,7 @@ interface NavigatorWithUsb extends Navigator {
 interface SmartInstallButtonProps {
   selectedIds: string[];
   selectedCount?: number;
+  blocked?: boolean;
 }
 
 function subscribeWebUsb() {
@@ -26,7 +27,11 @@ function getServerWebUsbSnapshot() {
   return false;
 }
 
-export function SmartInstallButton({ selectedIds, selectedCount = 0 }: SmartInstallButtonProps) {
+export function SmartInstallButton({
+  selectedIds,
+  selectedCount = 0,
+  blocked = false,
+}: SmartInstallButtonProps) {
   const webUsbAvailable = useSyncExternalStore(
     subscribeWebUsb,
     getWebUsbSnapshot,
@@ -48,7 +53,7 @@ export function SmartInstallButton({ selectedIds, selectedCount = 0 }: SmartInst
   const params = new URLSearchParams();
   for (const id of selectedIds) params.append("profile", id);
   const hasSelection = selectedIds.length > 0;
-  const downloadHref = hasSelection ? `/api/pack?${params.toString()}` : undefined;
+  const downloadHref = hasSelection && !blocked ? `/api/pack?${params.toString()}` : undefined;
 
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/80 p-4 shadow-lg">
@@ -60,7 +65,14 @@ export function SmartInstallButton({ selectedIds, selectedCount = 0 }: SmartInst
             ? `${selectedIds.length} profile${selectedIds.length === 1 ? "" : "s"} · ${selectedCount} command${selectedCount === 1 ? "" : "s"} selected`
             : "Select at least one profile to install"}
         </p>
-        <SerialInstaller selectedIds={selectedIds} />
+        {blocked ? (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            🚫 Install blocked — a selected profile contains a command flagged as unsafe. Check
+            &quot;Pack Safety&quot; below and deselect it to continue.
+          </div>
+        ) : (
+          <SerialInstaller selectedIds={selectedIds} />
+        )}
       </div>
 
       {/* ZIP fallback */}
