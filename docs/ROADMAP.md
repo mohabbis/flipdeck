@@ -21,7 +21,7 @@
 
 ## Phase 3: USB Enhancements
 
-- [ ] Key combination support (Ctrl, Alt, Shift, Win)
+- [x] Key combination support (Ctrl, Alt, Shift, Win)
 - [ ] Key press/release timing control
 - [ ] Delay configuration per profile
 - [ ] USB connection auto-detection

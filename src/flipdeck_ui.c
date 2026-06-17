@@ -182,7 +182,20 @@ static void flipdeck_ui_draw_category_browser(Canvas* canvas, FlipDeckUi* ui_ctx
 
 static void flipdeck_ui_draw_action_browser(Canvas* canvas, FlipDeckUi* ui_ctx) {
     FlipDeckApp* app = ui_ctx->app_ctx;
-    flipdeck_ui_draw_header(canvas, ui_ctx->current_category.name);
+
+    char title[80];
+    if(app->settings.show_icons && ui_ctx->current_category.icon[0] != '\0') {
+        snprintf(
+            title,
+            sizeof(title),
+            "[%s] %s",
+            ui_ctx->current_category.icon,
+            ui_ctx->current_category.name);
+    } else {
+        strncpy(title, ui_ctx->current_category.name, sizeof(title) - 1);
+        title[sizeof(title) - 1] = '\0';
+    }
+    flipdeck_ui_draw_header(canvas, title);
 
     canvas_set_font(canvas, FontSecondary);
     for(uint32_t i = 0; i < ui_ctx->current_category.action_count && i < 4; i++) {

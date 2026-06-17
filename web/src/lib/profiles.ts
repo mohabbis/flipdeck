@@ -51,27 +51,37 @@ export function getProfileCommands(profile: Profile) {
 export function normalizeProfile(profile: Profile, fileName: string): Profile {
   const id = getProfileId(fileName, profile);
   const commands = getProfileCommands(profile);
-  const categories = [primaryCategory(id)];
+  const category = resolveCategory(profile, id);
 
   return {
     ...profile,
     id,
     description: profile.description ?? "",
     icon: profile.icon ?? id,
+    category,
+    tags: profile.tags ?? [],
     commands,
     metadata: {
       command_count: commands.length,
-      categories,
+      categories: [category],
       risk_count: auditCommands(commands).length,
     },
   };
 }
 
+/**
+ * Hardcoded fallback for profiles that don't set an explicit `category`
+ * field, kept for backwards compatibility with existing profile JSON.
+ */
 export function primaryCategory(id: string): string {
   if (id === "wifi-devboard") return "wifi";
   if (["aws", "docker"].includes(id)) return "cloud";
   if (["system", "presentation"].includes(id)) return "system";
   return "dev";
+}
+
+export function resolveCategory(profile: Profile, id: string): string {
+  return profile.category ?? primaryCategory(id);
 }
 
 /**

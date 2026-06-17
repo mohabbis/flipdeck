@@ -64,11 +64,14 @@
 #define HID_KEYBOARD_UP_ARROW 82
 #endif
 
+/* Real firmware places modifiers in the upper byte of the uint16_t button
+ * value (HID_KEYBOARD_* keycodes occupy the lower byte, 0-255), so these
+ * must not collide with keycode values. */
 #ifndef KEY_MOD_LEFT_CTRL
-#define KEY_MOD_LEFT_CTRL 1
-#define KEY_MOD_LEFT_SHIFT 2
-#define KEY_MOD_LEFT_ALT 4
-#define KEY_MOD_LEFT_GUI 8
+#define KEY_MOD_LEFT_CTRL (1 << 8)
+#define KEY_MOD_LEFT_SHIFT (1 << 9)
+#define KEY_MOD_LEFT_ALT (1 << 10)
+#define KEY_MOD_LEFT_GUI (1 << 11)
 #endif
 
 typedef struct {

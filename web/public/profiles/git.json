@@ -2,6 +2,9 @@
   "name": "Git",
   "id": "git",
   "description": "Git workflow shortcuts",
+  "icon": "git",
+  "category": "dev",
+  "tags": ["version-control"],
   "actions": [
     {
       "label": "Git Status",

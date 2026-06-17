@@ -77,22 +77,33 @@ static void test_unknown_keys(void) {
 /* ---------- modifier_name_to_code ---------- */
 
 static void test_modifiers(void) {
-    EXPECT_EQ(modifier_name_to_code("CTRL"),      1, "CTRL -> 1");
-    EXPECT_EQ(modifier_name_to_code("LEFTCTRL"),  1, "LEFTCTRL -> 1");
-    EXPECT_EQ(modifier_name_to_code("SHIFT"),     2, "SHIFT -> 2");
-    EXPECT_EQ(modifier_name_to_code("LEFTSHIFT"), 2, "LEFTSHIFT -> 2");
-    EXPECT_EQ(modifier_name_to_code("ALT"),       4, "ALT -> 4");
-    EXPECT_EQ(modifier_name_to_code("LEFTALT"),   4, "LEFTALT -> 4");
-    EXPECT_EQ(modifier_name_to_code("GUI"),       8, "GUI -> 8");
-    EXPECT_EQ(modifier_name_to_code("CMD"),       8, "CMD -> 8");
-    EXPECT_EQ(modifier_name_to_code("WIN"),       8, "WIN -> 8");
-    EXPECT_EQ(modifier_name_to_code("LEFTGUI"),   8, "LEFTGUI -> 8");
+    EXPECT_EQ(modifier_name_to_code("CTRL"),      KEY_MOD_LEFT_CTRL,  "CTRL -> KEY_MOD_LEFT_CTRL");
+    EXPECT_EQ(modifier_name_to_code("LEFTCTRL"),  KEY_MOD_LEFT_CTRL,  "LEFTCTRL -> KEY_MOD_LEFT_CTRL");
+    EXPECT_EQ(modifier_name_to_code("SHIFT"),     KEY_MOD_LEFT_SHIFT, "SHIFT -> KEY_MOD_LEFT_SHIFT");
+    EXPECT_EQ(modifier_name_to_code("LEFTSHIFT"), KEY_MOD_LEFT_SHIFT, "LEFTSHIFT -> KEY_MOD_LEFT_SHIFT");
+    EXPECT_EQ(modifier_name_to_code("ALT"),       KEY_MOD_LEFT_ALT,   "ALT -> KEY_MOD_LEFT_ALT");
+    EXPECT_EQ(modifier_name_to_code("LEFTALT"),   KEY_MOD_LEFT_ALT,   "LEFTALT -> KEY_MOD_LEFT_ALT");
+    EXPECT_EQ(modifier_name_to_code("GUI"),       KEY_MOD_LEFT_GUI,   "GUI -> KEY_MOD_LEFT_GUI");
+    EXPECT_EQ(modifier_name_to_code("CMD"),       KEY_MOD_LEFT_GUI,   "CMD -> KEY_MOD_LEFT_GUI");
+    EXPECT_EQ(modifier_name_to_code("WIN"),       KEY_MOD_LEFT_GUI,   "WIN -> KEY_MOD_LEFT_GUI");
+    EXPECT_EQ(modifier_name_to_code("LEFTGUI"),   KEY_MOD_LEFT_GUI,   "LEFTGUI -> KEY_MOD_LEFT_GUI");
 }
 
 static void test_modifiers_case_insensitive(void) {
-    EXPECT_EQ(modifier_name_to_code("ctrl"),  1, "ctrl (lower) -> 1");
-    EXPECT_EQ(modifier_name_to_code("Shift"), 2, "Shift (mixed) -> 2");
-    EXPECT_EQ(modifier_name_to_code("alt"),   4, "alt (lower) -> 4");
+    EXPECT_EQ(modifier_name_to_code("ctrl"),  KEY_MOD_LEFT_CTRL,  "ctrl (lower) -> KEY_MOD_LEFT_CTRL");
+    EXPECT_EQ(modifier_name_to_code("Shift"), KEY_MOD_LEFT_SHIFT, "Shift (mixed) -> KEY_MOD_LEFT_SHIFT");
+    EXPECT_EQ(modifier_name_to_code("alt"),   KEY_MOD_LEFT_ALT,   "alt (lower) -> KEY_MOD_LEFT_ALT");
+}
+
+static void test_modifiers_dont_collide_with_keycodes(void) {
+    /* Regression test: modifiers must live outside the 0-255 keycode range,
+     * since usb_hid_send_key_combo ORs them into the same uint16_t button
+     * value sent to furi_hal_hid_kb_press(). A narrower (uint8_t) modifier
+     * accumulator would silently truncate these to 0. */
+    EXPECT_TRUE(modifier_name_to_code("CTRL") > 0xFF, "CTRL modifier bit is above the keycode byte");
+    EXPECT_TRUE(modifier_name_to_code("SHIFT") > 0xFF, "SHIFT modifier bit is above the keycode byte");
+    EXPECT_TRUE(modifier_name_to_code("ALT") > 0xFF, "ALT modifier bit is above the keycode byte");
+    EXPECT_TRUE(modifier_name_to_code("GUI") > 0xFF, "GUI modifier bit is above the keycode byte");
 }
 
 static void test_modifiers_unknown(void) {
@@ -153,6 +164,7 @@ int main(void) {
     test_modifiers();
     test_modifiers_case_insensitive();
     test_modifiers_unknown();
+    test_modifiers_dont_collide_with_keycodes();
 
     printf("[usb_hid_send_key_combo parsing]\n");
     test_combo_unknown_key_returns_false();

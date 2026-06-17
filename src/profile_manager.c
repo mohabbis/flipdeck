@@ -169,10 +169,19 @@ bool profile_manager_load_category(const char* category_id, FlipDeckProfileCateg
         return false;
     }
     
+    // Clear stale data before parsing: find_json_string() leaves its output
+    // buffer untouched when a key is absent, and `category` is reused across
+    // multiple loads (it lives in a long-lived global, not a fresh stack
+    // frame), so a field missing from this profile's JSON must not inherit
+    // a previous profile's value.
+    memset(category, 0, sizeof(*category));
+
     // Parse JSON
     find_json_string(buffer, "name", category->name, sizeof(category->name));
     find_json_string(buffer, "id", category->id, sizeof(category->id));
     find_json_string(buffer, "description", category->description, sizeof(category->description));
+    find_json_string(buffer, "category", category->category, sizeof(category->category));
+    find_json_string(buffer, "icon", category->icon, sizeof(category->icon));
     
     // Find actions array
     category->action_count = 0;

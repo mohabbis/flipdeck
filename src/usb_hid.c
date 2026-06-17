@@ -155,7 +155,7 @@ bool usb_hid_send_key_combo(const char* combo) {
     strncpy(work, combo, sizeof(work) - 1);
     work[sizeof(work) - 1] = '\0';
     
-    uint8_t modifiers = 0;
+    uint16_t modifiers = 0;
     char* key_part = work;
     char* plus = strchr(key_part, '+');
 

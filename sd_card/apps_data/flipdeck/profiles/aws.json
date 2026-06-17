@@ -2,6 +2,9 @@
   "name": "AWS CLI",
   "id": "aws",
   "description": "AWS command line tools",
+  "icon": "aws",
+  "category": "cloud",
+  "tags": ["cloud", "infra"],
   "actions": [
     {
       "label": "EC2 Instances",

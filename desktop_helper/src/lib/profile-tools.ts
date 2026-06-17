@@ -91,6 +91,9 @@ async function promptForProfile(): Promise<NormalizedProfile> {
         const description = (await rl.question("Description: ")).trim();
         const iconAnswer = (await rl.question(`Icon (${profileIcons.join(", ")}): `)).trim();
         const icon: ProfileIcon = profileIcons.includes(iconAnswer as ProfileIcon) ? (iconAnswer as ProfileIcon) : "system";
+        const category = (await rl.question("Category (dev/cloud/system/wifi) [dev]: ")).trim() || undefined;
+        const tagsAnswer = (await rl.question("Tags (comma-separated, optional): ")).trim();
+        const tags = tagsAnswer ? tagsAnswer.split(",").map((tag) => tag.trim()).filter(Boolean) : undefined;
         const commands: NormalizedProfile["commands"] = [];
 
         do {
@@ -109,7 +112,7 @@ async function promptForProfile(): Promise<NormalizedProfile> {
             });
         } while ((await rl.question("Add another command? [y/N]: ")).trim().toLowerCase() === "y");
 
-        return normalizeProfile({ name, id, description, icon, commands }, `${id}.json`);
+        return normalizeProfile({ name, id, description, icon, category, tags, commands }, `${id}.json`);
     } finally {
         rl.close();
     }

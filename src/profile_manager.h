@@ -49,6 +49,8 @@ typedef struct {
     char id[32];
     char name[64];
     char description[128];
+    char category[24];
+    char icon[16];
     uint32_t action_count;
     FlipDeckAction actions[FLIPDECK_MAX_ACTIONS_PER_CATEGORY];
 } FlipDeckProfileCategory;
