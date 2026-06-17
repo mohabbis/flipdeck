@@ -6,6 +6,7 @@ import { CommandPreview } from "@/components/CommandPreview";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { SmartInstallButton } from "@/components/SmartInstallButton";
 import { getProfileCommands, normalizeProfile, profileFiles } from "@/lib/profiles";
+import { auditCommands } from "@/lib/safety-check";
 
 const installSteps = [
   "Plug in Flipper via USB",
@@ -33,6 +34,7 @@ export default function Home() {
   const selectedCommands = selectedProfiles.flatMap((profile) => getProfileCommands(profile));
   const totalCommands = profiles.reduce((sum, profile) => sum + getProfileCommands(profile).length, 0);
   const selectedCommandCount = selectedCommands.length;
+  const hasCriticalRisk = auditCommands(selectedCommands).some((risk) => risk.severity === "critical");
 
   function toggleProfile(profileId: string) {
     setActiveProfileId(profileId);
@@ -90,9 +92,19 @@ export default function Home() {
                   over USB and install the app and profiles directly from your browser — no
                   qFlipper or SD card juggling required.
                 </p>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  New here? A <strong className="text-foreground">profile</strong> is a set of
+                  commands (like <code className="rounded bg-card px-1 py-0.5">git status</code>)
+                  that your Flipper Zero can type into a computer over USB with one button press.
+                  Check the boxes below for the workflows you want, then install.
+                </p>
               </div>
 
-              <SmartInstallButton selectedIds={selectedIds} selectedCount={selectedCommandCount} />
+              <SmartInstallButton
+                selectedIds={selectedIds}
+                selectedCount={selectedCommandCount}
+                blocked={hasCriticalRisk}
+              />
             </div>
 
             <dl className="grid grid-cols-3 gap-4 rounded-xl border border-border bg-card/50 p-4 backdrop-blur-sm">
