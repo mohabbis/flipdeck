@@ -19,6 +19,8 @@ export interface Profile {
   id?: string;
   description?: string;
   icon?: string;
+  category?: string;
+  tags?: string[];
   extends?: string;
   actions?: FlipDeckAction[];
   commands?: FlipDeckAction[];

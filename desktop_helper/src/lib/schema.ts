@@ -47,6 +47,8 @@ const rawProfileSchema = z
         extends: z.string().min(1).max(120).optional(),
         description: z.string().max(120, "Profile description must be 120 characters or fewer").optional().default(""),
         icon: profileIconSchema.optional(),
+        category: z.string().min(1).max(24).optional(),
+        tags: z.array(z.string().min(1).max(24)).max(8, "Profiles may have at most 8 tags").optional(),
         commands: z.array(commandSchema).optional(),
         actions: z.array(legacyActionSchema).optional(),
     })
@@ -79,6 +81,8 @@ export interface NormalizedProfile {
     id: string;
     description: string;
     icon: ProfileIcon;
+    category: string;
+    tags: string[];
     extends?: string;
     commands: ProfileCommand[];
     actions: Array<{
@@ -135,6 +139,18 @@ function defaultIconForId(id: string): ProfileIcon {
     return profileIcons.includes(id as ProfileIcon) ? (id as ProfileIcon) : "system";
 }
 
+/**
+ * Mirrors web/src/lib/profiles.ts primaryCategory() so profiles without an
+ * explicit `category` field group the same way in both the web installer
+ * and desktop CLI output.
+ */
+function defaultCategoryForId(id: string): string {
+    if (id === "wifi-devboard") return "wifi";
+    if (["aws", "docker"].includes(id)) return "cloud";
+    if (["system", "presentation"].includes(id)) return "system";
+    return "dev";
+}
+
 function toCommands(profile: z.infer<typeof rawProfileSchema>): ProfileCommand[] {
     if (profile.commands) return profile.commands;
     return (profile.actions ?? []).map((action) => ({
@@ -157,6 +173,8 @@ export function normalizeProfile(raw: unknown, fileName = "profile.json"): Norma
         id,
         description: parsed.description,
         icon: parsed.icon ?? defaultIconForId(id),
+        category: parsed.category ?? defaultCategoryForId(id),
+        tags: parsed.tags ?? [],
         extends: parsed.extends,
         commands,
         actions: commands.map((command) => ({
@@ -227,6 +245,8 @@ export async function formatProfile(profile: NormalizedProfile): Promise<string>
         id: profile.id,
         description: profile.description,
         icon: profile.icon,
+        category: profile.category,
+        tags: profile.tags.length ? profile.tags : undefined,
         commands: profile.commands,
     };
     const source = JSON.stringify(serializable, null, 2);

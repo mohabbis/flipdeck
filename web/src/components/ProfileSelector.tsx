@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Profile } from "@/types/flipdeck";
-import { getProfileCommands, primaryCategory } from "@/lib/profiles";
+import { getProfileCommands, resolveCategory } from "@/lib/profiles";
 
 interface ProfileSelectorProps {
   profiles: Profile[];
@@ -18,7 +18,24 @@ interface ProfileSelectorProps {
 }
 
 function profileCategory(profile: Profile): string {
-  return primaryCategory(profile.id ?? "");
+  return resolveCategory(profile, profile.id ?? "");
+}
+
+const ICON_GLYPHS: Record<string, string> = {
+  git: "\u{1F500}",
+  docker: "\u{1F433}",
+  node: "\u{2B22}",
+  python: "\u{1F40D}",
+  aws: "☁️",
+  vscode: "\u{1F4BB}",
+  system: "⚙️",
+  snippets: "\u{1F4CB}",
+  presentation: "\u{1F4FA}",
+  wifi: "\u{1F4F6}",
+};
+
+function profileGlyph(profile: Profile): string {
+  return ICON_GLYPHS[profile.icon ?? ""] ?? "\u{1F4E6}";
 }
 
 function categoryTone(category: string, selected: boolean) {
@@ -145,10 +162,27 @@ export function ProfileSelector({
                 className="mt-1 h-4 w-4 rounded border-border accent-accent"
               />
               <span className="min-w-0">
-                <span className="block font-semibold text-foreground">{profile.name}</span>
+                <span className="block font-semibold text-foreground">
+                  <span aria-hidden="true" className="mr-1.5">
+                    {profileGlyph(profile)}
+                  </span>
+                  {profile.name}
+                </span>
                 <span className="mt-1 block text-sm leading-5 text-muted-foreground">
                   {profile.description}
                 </span>
+                {!!profile.tags?.length && (
+                  <span className="mt-2 flex flex-wrap gap-1.5">
+                    {profile.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-border bg-background px-2 py-0.5 text-xs text-muted-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </span>
+                )}
               </span>
               <span className="self-start rounded-lg border border-border bg-background/80 px-2 py-1 text-xs font-semibold text-muted-foreground group-hover:text-foreground">
                 {getProfileCommands(profile).length}
