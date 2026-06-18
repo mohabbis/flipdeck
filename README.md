@@ -27,15 +27,33 @@ FlipDeck transforms your Flipper Zero into a programmable command deck. Store fr
 
 ## Installation for Flipper Zero users
 
-The web installer is designed to feel like a device install: keep the microSD card inside the Flipper, plug the Flipper in over USB, download one ZIP, and copy one folder through qFlipper.
+The web installer has two paths. Use whichever your browser supports — both end up with the
+same files on the SD card.
 
-1. **Leave the microSD card inserted in your Flipper Zero.**
-2. **Plug in and unlock your Flipper Zero** with USB.
-3. **Open qFlipper** and choose the Flipper SD card / file browser view.
-4. **Open the deployed FlipDeck web app** (Vercel or local).
-5. **Click `Download Flipper install pack`**. The ZIP already contains the correct `apps_data/flipdeck` folder layout.
-6. **Extract the ZIP and drag `apps_data` onto the Flipper SD card root in qFlipper**. Merge/replace the FlipDeck files if prompted.
-7. **Launch FlipDeck** from the Flipper apps menu, choose a profile, review the command, and press OK.
+### Option A: Direct install (Chrome/Edge, no SD card removal)
+
+1. **Leave the microSD card inserted in your Flipper Zero** and plug it in over USB.
+2. **Open the deployed FlipDeck web app** (Vercel or local) in Chrome or Edge.
+3. **Check the boxes** for the profiles you want.
+4. **Click "Connect Flipper & Install Directly"**, then pick your Flipper in the browser's
+   serial-port prompt.
+5. **Click "Install N profiles to Flipper"**. The browser writes `flipdeck.fap`, the selected
+   profiles, snippets, and `settings.json` straight to the SD card over USB — no qFlipper, no
+   ejecting the card.
+6. **Launch FlipDeck** from the Flipper apps menu (Apps → Tools), choose a profile, review the
+   command, and press OK.
+
+This only works in Chromium-based browsers (Web Serial API support). If the button shows
+"Direct install unavailable", use Option B instead.
+
+### Option B: ZIP download + qFlipper (any browser)
+
+1. **Open the web app**, check the profiles you want, and click **Download ZIP**.
+2. **Plug in and unlock your Flipper Zero**, then open **qFlipper**'s SD card / file browser view.
+3. **Extract the ZIP and drag `apps_data` onto the Flipper SD card root in qFlipper**.
+   Merge/replace the FlipDeck files if prompted.
+4. **Launch FlipDeck** from the Flipper apps menu, choose a profile, review the command, and
+   press OK.
 
 Manual fallback if you are copying files yourself:
 ```
@@ -71,25 +89,26 @@ Profiles are stored as JSON files in `/apps_data/flipdeck/profiles/` on the SD c
 
 ### Profile JSON Format
 
-Profiles now use an **actions** array with explicit action types:
+Profiles use a **commands** array with explicit action types (this is the canonical v2 format —
+older profiles using `actions`/`confirm` are still read and migrated automatically):
 
 ```json
 {
   "name": "Node",
   "id": "node",
   "description": "Node.js development commands",
-  "actions": [
+  "commands": [
     {
       "label": "Run dev server",
       "type": "text",
       "value": "npm run dev\n",
-      "confirm": true
+      "confirmation_required": true
     },
     {
       "label": "Run tests",
       "type": "text",
       "value": "npm test\n",
-      "confirm": true
+      "confirmation_required": true
     }
   ]
 }
@@ -110,7 +129,7 @@ Profiles now use an **actions** array with explicit action types:
 {
   "name": "Git",
   "id": "git",
-  "actions": [
+  "commands": [
     {"label": "Git Status", "type": "text", "value": "git status\n"},
     {"label": "Git Push", "type": "text", "value": "git push origin\n"}
   ]
@@ -122,7 +141,7 @@ Profiles now use an **actions** array with explicit action types:
 {
   "name": "VSCode",
   "id": "vscode",
-  "actions": [
+  "commands": [
     {"label": "Command Palette", "type": "key_combo", "value": "CTRL+SHIFT+P"},
     {"label": "Terminal", "type": "key_combo", "value": "CTRL+`"}
   ]
@@ -158,16 +177,17 @@ Profiles now use an **actions** array with explicit action types:
 └── settings.json        # User preferences
 ```
 
-### Action Format
+### Command Format
 
-Each action supports three types:
+Each command supports three types:
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `label` | string | Display name on Flipper |
 | `type` | enum | `text`, `key`, or `key_combo` |
 | `value` | string | The command/data to send |
-| `confirm` | bool | Require confirmation before sending |
+| `confirmation_required` | bool | Require confirmation before sending |
+| `target` | enum | `usb_hid` (default) or `wifi_uart` — where the command is sent |
 
 ## Safety
 
@@ -177,11 +197,16 @@ FlipDeck is designed with safety as a priority:
 - ⚠️ **No automatic execution** — Requires explicit confirmation by default
 - ⚠️ **No credential storage** — The Flipper never stores GitHub tokens or passwords
 - ⚠️ **No destructive defaults** — Example commands are safe
-- ⚠️ **Blocked dangerous commands** — System rejects `rm -rf`, `sudo`, `curl | sh`, and credential patterns
+- ⚠️ **Blocked dangerous commands** — Destructive patterns are rejected outright; risky-but-common
+  ones are flagged instead of blocked
 
-**Blocked Command Patterns:**
-- `rm -rf`, `sudo`, `curl | sh`, `mkfs`, `dd if=`, fork bombs
-- Any command containing: `PASSWORD`, `TOKEN`, `API_KEY`, `SECRET`, `PRIVATE_KEY`
+The full rule set lives in [`safety-rules.json`](safety-rules.json) at the repo root and is shared
+(and tested for parity) across the web installer, desktop helper, and Flipper app:
+
+**Blocked (critical):** `rm -rf`, real `curl`/`wget … | sh`/`bash` pipes, `mkfs`, `dd if=`,
+fork bombs, raw disk redirects (`> /dev/sd*`)
+**Flagged but allowed (warning):** `sudo`, `chmod 777`, `chown root`, and credential-looking
+assignments (`PASSWORD=`, `TOKEN=`, `API_KEY=`, `SECRET=`, `PRIVATE_KEY=`)
 
 **Always review your profiles in a text editor before storing them in FlipDeck.**
 

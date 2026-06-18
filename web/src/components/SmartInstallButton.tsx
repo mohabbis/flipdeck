@@ -81,15 +81,15 @@ export function SmartInstallButton({
           <p className="text-xs text-muted-foreground">
             Or download a ZIP and copy via qFlipper SD card browser
           </p>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             {webUsbAvailable && (
               <button
                 type="button"
                 onClick={detectDevice}
-                title="Detect Flipper over WebUSB"
+                title="Just checks the cable is plugged in — use the install button above to actually install"
                 className="h-8 rounded-lg border border-border bg-background px-3 text-xs font-medium text-muted-foreground transition hover:text-foreground"
               >
-                {detectStatus ?? "Detect via WebUSB"}
+                {detectStatus ?? "Plugged in? Check cable"}
               </button>
             )}
             {downloadHref ? (
