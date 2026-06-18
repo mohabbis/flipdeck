@@ -27,43 +27,30 @@ FlipDeck transforms your Flipper Zero into a programmable command deck. Store fr
 
 ## Installation for Flipper Zero users
 
-The web installer has two paths. Use whichever your browser supports — both end up with the
-same files on the SD card.
+### Fastest: direct install (Chrome/Edge)
 
-### Option A: Direct install (Chrome/Edge, no SD card removal)
+1. Plug in your Flipper Zero (SD card stays inserted).
+2. Open the FlipDeck web app, check the profiles you want.
+3. Click **Connect Flipper & Stage Pack**, pick your Flipper in the browser prompt.
+4. Click **Stage N profiles to Flipper**.
+5. On the Flipper: Apps → Tools → FlipDeck, pick a profile, press OK to send.
 
-1. **Leave the microSD card inserted in your Flipper Zero** and plug it in over USB.
-2. **Open the deployed FlipDeck web app** (Vercel or local) in Chrome or Edge.
-3. **Check the boxes** for the profiles you want.
-4. **Click "Connect Flipper & Install Directly"**, then pick your Flipper in the browser's
-   serial-port prompt.
-5. **Click "Install N profiles to Flipper"**. The browser writes `flipdeck.fap`, the selected
-   profiles, snippets, and `settings.json` straight to the SD card over USB — no qFlipper, no
-   ejecting the card.
-6. **Launch FlipDeck** from the Flipper apps menu (Apps → Tools), choose a profile, review the
-   command, and press OK.
+No button? You're not on a Chromium browser — use the ZIP method below.
 
-This only works in Chromium-based browsers (Web Serial API support). If the button shows
-"Direct install unavailable", use Option B instead.
+### Any browser: ZIP + qFlipper
 
-### Option B: ZIP download + qFlipper (any browser)
+1. Check the profiles you want, click **Download ZIP**.
+2. Open qFlipper's SD card view, drag the ZIP's `apps_data` folder onto the SD card root
+   (merge/replace if prompted).
+3. On the Flipper: Apps → Tools → FlipDeck, pick a profile, press OK to send.
 
-1. **Open the web app**, check the profiles you want, and click **Download ZIP**.
-2. **Plug in and unlock your Flipper Zero**, then open **qFlipper**'s SD card / file browser view.
-3. **Extract the ZIP and drag `apps_data` onto the Flipper SD card root in qFlipper**.
-   Merge/replace the FlipDeck files if prompted.
-4. **Launch FlipDeck** from the Flipper apps menu, choose a profile, review the command, and
-   press OK.
-
-Manual fallback if you are copying files yourself:
+Manual layout, if copying files by hand:
 ```
 /apps_data/flipdeck/
 ├── settings.json
 ├── profiles/
 └── snippets/
 ```
-
-Developer-only fallback for local testing: build the `.fap`, mount the Flipper microSD card in an external reader, copy the `.fap` into `/apps/Tools/`, verify the file exists, eject the card, and insert it back into the Flipper.
 
 ### Deploying the web installer on Vercel
 
