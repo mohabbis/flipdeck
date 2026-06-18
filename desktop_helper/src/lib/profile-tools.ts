@@ -71,11 +71,12 @@ function printValidation(filePath: string): NormalizedProfile {
     const audit = validateProfile({ actions: result.profile.actions });
     for (const issue of audit.issues) {
         const kind = issue.kind === "dangerous" ? "dangerous command" : "possible credential";
-        console.error(`! ${kind} in "${issue.label}": matched "${issue.pattern}"`);
+        const tag = issue.severity === "critical" ? "BLOCKED" : "warning";
+        console.error(`! [${tag}] ${kind} in "${issue.label}": matched /${issue.pattern}/`);
     }
 
     if (!audit.safe) {
-        console.error("✗ Profile schema is valid, but safety audit found risky commands.");
+        console.error("✗ Profile schema is valid, but safety audit found commands that are blocked.");
         process.exit(1);
     }
 

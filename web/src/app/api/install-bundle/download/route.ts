@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
-import { profileFiles } from "@/lib/profiles";
+import { getProfileCommands, profileFiles } from "@/lib/profiles";
 import { DEFAULT_SETTINGS, SNIPPETS } from "@/lib/install-data";
+import { auditCommands, auditSnippets, hasCriticalRisk } from "@/lib/safety-check";
 
 const APP_ROOT = "apps_data/flipdeck";
 
@@ -9,6 +10,22 @@ const settings = DEFAULT_SETTINGS;
 const snippets = SNIPPETS;
 
 export async function GET() {
+  const risks = [
+    ...profileFiles.flatMap(({ profile }) => auditCommands(getProfileCommands(profile))),
+    ...auditSnippets(snippets),
+  ];
+  if (hasCriticalRisk(risks)) {
+    return NextResponse.json(
+      {
+        error: "Install bundle rejected: bundled content contains commands blocked by the FlipDeck safety policy.",
+        blocked: risks
+          .filter((risk) => risk.severity === "critical")
+          .map((risk) => ({ rule: risk.label, command: risk.command, value: risk.value })),
+      },
+      { status: 422 }
+    );
+  }
+
   const zip = new JSZip();
 
   zip.file(

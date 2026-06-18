@@ -6,7 +6,8 @@ import { CommandPreview } from "@/components/CommandPreview";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { SmartInstallButton } from "@/components/SmartInstallButton";
 import { getProfileCommands, normalizeProfile, profileFiles } from "@/lib/profiles";
-import { auditCommands } from "@/lib/safety-check";
+import { auditCommands, auditSnippets, hasCriticalRisk } from "@/lib/safety-check";
+import { SNIPPETS } from "@/lib/install-data";
 
 const installSteps = [
   "Plug in Flipper via USB",
@@ -34,7 +35,10 @@ export default function Home() {
   const selectedCommands = selectedProfiles.flatMap((profile) => getProfileCommands(profile));
   const totalCommands = profiles.reduce((sum, profile) => sum + getProfileCommands(profile).length, 0);
   const selectedCommandCount = selectedCommands.length;
-  const hasCriticalRisk = auditCommands(selectedCommands).some((risk) => risk.severity === "critical");
+  const packHasCriticalRisk = hasCriticalRisk([
+    ...auditCommands(selectedCommands),
+    ...auditSnippets(SNIPPETS)
+  ]);
 
   function toggleProfile(profileId: string) {
     setActiveProfileId(profileId);
@@ -103,7 +107,7 @@ export default function Home() {
               <SmartInstallButton
                 selectedIds={selectedIds}
                 selectedCount={selectedCommandCount}
-                blocked={hasCriticalRisk}
+                blocked={packHasCriticalRisk}
               />
             </div>
 
@@ -190,7 +194,7 @@ export default function Home() {
         </div>
 
         <aside className="space-y-6">
-          <CommandAudit commands={selectedCommands} />
+          <CommandAudit commands={selectedCommands} snippets={SNIPPETS} />
           <section className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
             <div className="border-b border-border bg-gradient-to-r from-card to-card/80 px-4 py-3">
               <h2 className="text-lg font-semibold text-foreground">📄 Active Profile JSON</h2>

@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import JSZip from "jszip";
-import { getDeviceProfile, getProfileId, profileFiles } from "@/lib/profiles";
+import { getDeviceProfile, getProfileCommands, getProfileId, profileFiles } from "@/lib/profiles";
+import { auditCommands, hasCriticalRisk, type CommandRisk } from "@/lib/safety-check";
 
 const APP_ROOT = "apps_data/flipdeck";
+
+/**
+ * Server-side safety gate: never serialize a profile that contains a critical
+ * command, even if the request bypasses the UI. Returns the offending risks
+ * (empty when the selection is safe to ship).
+ */
+function criticalRisksFor(selected: ReturnType<typeof profilesForIds>): CommandRisk[] {
+  const risks = selected.flatMap(({ profile }) => auditCommands(getProfileCommands(profile)));
+  return hasCriticalRisk(risks) ? risks.filter((risk) => risk.severity === "critical") : [];
+}
 
 const settings = {
   confirm_before_send: true,
@@ -47,10 +58,21 @@ async function buildPack(ids: string[]) {
   return zip.generateAsync({ type: "arraybuffer" });
 }
 
-export async function GET(request: NextRequest) {
-  const ids = request.nextUrl.searchParams.getAll("profile");
-  const zipContent = await buildPack(ids);
+function blockedResponse(risks: CommandRisk[]): NextResponse {
+  return NextResponse.json(
+    {
+      error: "Pack rejected: selection contains commands blocked by the FlipDeck safety policy.",
+      blocked: risks.map((risk) => ({ rule: risk.label, command: risk.command, value: risk.value })),
+    },
+    { status: 422 }
+  );
+}
 
+async function packResponse(ids: string[]): Promise<NextResponse> {
+  const critical = criticalRisksFor(profilesForIds(ids));
+  if (critical.length) return blockedResponse(critical);
+
+  const zipContent = await buildPack(ids);
   return new NextResponse(Buffer.from(zipContent), {
     headers: {
       "Content-Type": "application/zip",
@@ -59,14 +81,11 @@ export async function GET(request: NextRequest) {
   });
 }
 
+export async function GET(request: NextRequest) {
+  return packResponse(request.nextUrl.searchParams.getAll("profile"));
+}
+
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => ({}))) as { profiles?: string[] };
-  const zipContent = await buildPack(body.profiles ?? []);
-
-  return new NextResponse(Buffer.from(zipContent), {
-    headers: {
-      "Content-Type": "application/zip",
-      "Content-Disposition": "attachment; filename=flipdeck-custom-pack.zip",
-    },
-  });
+  return packResponse(body.profiles ?? []);
 }

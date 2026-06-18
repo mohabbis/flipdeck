@@ -206,10 +206,20 @@ bool profile_manager_load_category(const char* category_id, FlipDeckProfileCateg
                 if(pos >= action_end) break;
                 action_start = pos;
                 
-                // Create a mini JSON for this action
+                // Create a mini JSON for this action. Fail safe: if the action
+                // does not fit, skip it entirely rather than truncating and then
+                // validating a partial command (which could drop the dangerous
+                // tail of a string past the buffer).
                 char action_json[512];
                 uint32_t action_len = action_end - action_start + 1;
-                if(action_len >= sizeof(action_json)) action_len = sizeof(action_json) - 1;
+                if(action_len >= sizeof(action_json)) {
+                    FURI_LOG_W(
+                        "FlipDeck",
+                        "Skipping oversized action (%" PRIu32 " bytes)",
+                        action_len);
+                    pos = action_end + 1;
+                    continue;
+                }
                 strncpy(action_json, action_start, action_len);
                 action_json[action_len] = '\0';
                 
@@ -420,53 +430,72 @@ bool profile_manager_save_settings(FlipDeckSettings* settings) {
  */
 bool profile_manager_is_value_safe(const char* value) {
     if(!value) return false;
-    
-    // List of dangerous patterns to block
-    const char* dangerous_patterns[] = {
-        "rm -rf",           // Recursive delete
-        "sudo",             // Superuser
-        "curl | sh",        // Remote script execution
-        "wget | sh",        // Remote script execution
-        "curl.ssh",         // SSH through curl
-        "mkfs",             // Format filesystem
-        "dd if=",           // Disk operations
-        ":(){ :|:& };:",    // Fork bomb
-        "> /dev/sd",        // Disk write
-        "chmod 777",        // Insecure permissions
-        "chown root",       // Root ownership
+
+    // Uppercase copy so every pattern is matched case-insensitively, mirroring
+    // the canonical safety-rules.json (every rule uses the 'i' flag). Keep this
+    // function's blocking behavior in sync with that file: only "critical"
+    // severities block; "warning" severities are logged but allowed.
+    char upper_value[FLIPDECK_MAX_COMMAND_LENGTH];
+    uint32_t len = 0;
+    for(; value[len] && len < sizeof(upper_value) - 1; len++) {
+        upper_value[len] = toupper((unsigned char)value[len]);
+    }
+    upper_value[len] = '\0';
+
+    // Critical patterns — block the command.
+    const char* critical_patterns[] = {
+        "RM -RF",           // Recursive delete
+        "MKFS",             // Format filesystem
+        "DD IF=",           // Raw disk write
+        "> /DEV/SD",        // Raw disk redirect
+        ":(){ :|:& };:",    // Fork bomb (no letters; case-insensitive copy is identical)
         NULL
     };
-    
-    for(int i = 0; dangerous_patterns[i]; i++) {
-        if(strstr(value, dangerous_patterns[i])) {
-            FURI_LOG_W("FlipDeck", "Blocked dangerous command: %s", dangerous_patterns[i]);
+    for(int i = 0; critical_patterns[i]; i++) {
+        if(strstr(upper_value, critical_patterns[i])) {
+            FURI_LOG_W("FlipDeck", "Blocked critical command: %s", critical_patterns[i]);
             return false;
         }
     }
-    
-    // Check for credential-related keys
-    const char* credential_patterns[] = {
-        "PASSWORD",
-        "TOKEN",
-        "API_KEY",
-        "SECRET",
-        "PRIVATE_KEY",
+
+    // Remote shell pipe: (curl|wget) ... | (sh|bash). Approximates the regex
+    // "(curl|wget).*\\|\\s*(sh|bash)" — catches real one-liners like
+    // "curl -fsSL https://x | bash" that a literal "curl | sh" match misses.
+    bool has_fetch = strstr(upper_value, "CURL") || strstr(upper_value, "WGET");
+    bool has_pipe_shell = strstr(upper_value, "| SH") || strstr(upper_value, "|SH") ||
+                          strstr(upper_value, "| BASH") || strstr(upper_value, "|BASH");
+    if(has_fetch && has_pipe_shell) {
+        FURI_LOG_W("FlipDeck", "Blocked remote shell pipe");
+        return false;
+    }
+
+    // Warning patterns — surfaced in the log but allowed (the user still has to
+    // confirm OK on-device before the command is sent).
+    const char* warning_patterns[] = {
+        "SUDO",         // Privilege escalation
+        "CHMOD 777",    // Loose permissions
+        "CHOWN ROOT",   // Ownership change to root
         NULL
     };
-    
-    char upper_value[256];
-    for(uint32_t i = 0; value[i] && i < sizeof(upper_value) - 1; i++) {
-        upper_value[i] = toupper(value[i]);
-    }
-    upper_value[sizeof(upper_value) - 1] = '\0';
-    
-    for(int i = 0; credential_patterns[i]; i++) {
-        if(strstr(upper_value, credential_patterns[i])) {
-            FURI_LOG_W("FlipDeck", "Blocked credential-related command");
-            return false;
+    for(int i = 0; warning_patterns[i]; i++) {
+        if(strstr(upper_value, warning_patterns[i])) {
+            FURI_LOG_W("FlipDeck", "Warning: command matched %s", warning_patterns[i]);
         }
     }
-    
+
+    // Credential assignments (NAME=...) — warn only.
+    if(strchr(upper_value, '=')) {
+        const char* credential_patterns[] = {
+            "PASSWORD", "TOKEN", "API_KEY", "SECRET", "PRIVATE_KEY", NULL
+        };
+        for(int i = 0; credential_patterns[i]; i++) {
+            if(strstr(upper_value, credential_patterns[i])) {
+                FURI_LOG_W("FlipDeck", "Warning: possible credential assignment");
+                break;
+            }
+        }
+    }
+
     return true;
 }
 
