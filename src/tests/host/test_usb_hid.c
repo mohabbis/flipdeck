@@ -74,6 +74,32 @@ static void test_unknown_keys(void) {
     EXPECT_EQ(key_name_to_code(""),        0, "empty string -> 0");
 }
 
+
+static void test_text_character_chords(void) {
+    HidKeyChord chord;
+    EXPECT_TRUE(char_to_chord('A', &chord), "uppercase A maps");
+    EXPECT_EQ(chord.key, HID_KEYBOARD_A, "uppercase A key");
+    EXPECT_EQ(chord.modifiers, KEY_MOD_LEFT_SHIFT, "uppercase A shift modifier");
+
+    EXPECT_TRUE(char_to_chord('/', &chord), "slash maps");
+    EXPECT_EQ(chord.key, HID_KEYBOARD_SLASH, "slash key");
+    EXPECT_EQ(chord.modifiers, 0, "slash no modifier");
+
+    EXPECT_TRUE(char_to_chord('|', &chord), "pipe maps");
+    EXPECT_EQ(chord.key, HID_KEYBOARD_BACKSLASH, "pipe key");
+    EXPECT_EQ(chord.modifiers, KEY_MOD_LEFT_SHIFT, "pipe shift modifier");
+
+    EXPECT_TRUE(char_to_chord('\n', &chord), "newline maps");
+    EXPECT_EQ(chord.key, HID_KEYBOARD_RETURN, "newline return key");
+}
+
+static void test_shell_command_text_returns_true(void) {
+    s_usb_connected = true;
+    bool result = usb_hid_send_string("git commit -m \"fix: a_b/c | test\"\n");
+    EXPECT_TRUE(result, "shell command punctuation is typeable");
+    s_usb_connected = false;
+}
+
 /* ---------- modifier_name_to_code ---------- */
 
 static void test_modifiers(void) {
@@ -159,6 +185,10 @@ int main(void) {
 
     printf("[key_name_to_code: unknown]\n");
     test_unknown_keys();
+
+    printf("[text character mapping]\n");
+    test_text_character_chords();
+    test_shell_command_text_returns_true();
 
     printf("[modifier_name_to_code]\n");
     test_modifiers();

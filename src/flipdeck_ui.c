@@ -28,6 +28,8 @@ typedef struct {
     FlipDeckView current_view;
     char category_ids[FLIPDECK_MAX_CATEGORIES][32];
     FlipDeckProfileCategory current_category;
+    uint32_t category_scroll_offset;
+    uint32_t action_scroll_offset;
 } FlipDeckUi;
 
 static FlipDeckUi ui;
@@ -175,6 +177,19 @@ static void flipdeck_ui_draw_header(Canvas* canvas, const char* title) {
     canvas_draw_line(canvas, 0, 14, 128, 14);
 }
 
+static uint32_t flipdeck_ui_scroll_offset_for_selection(
+    uint32_t selected_index,
+    uint32_t current_offset,
+    uint32_t total_count,
+    uint32_t visible_rows) {
+    if(total_count <= visible_rows) return 0;
+    if(selected_index < current_offset) return selected_index;
+    if(selected_index >= current_offset + visible_rows) {
+        return selected_index - visible_rows + 1;
+    }
+    return current_offset;
+}
+
 static void flipdeck_ui_draw_category_browser(Canvas* canvas, FlipDeckUi* ui_ctx) {
     FlipDeckApp* app = ui_ctx->app_ctx;
     flipdeck_ui_draw_header(canvas, "FlipDeck");
@@ -182,12 +197,30 @@ static void flipdeck_ui_draw_category_browser(Canvas* canvas, FlipDeckUi* ui_ctx
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 92, 10, app->usb_connected ? "USB" : "NO USB");
 
-    for(uint32_t i = 0; i < app->category_count && i < 4; i++) {
-        int32_t y = 26 + (i * 10);
+    ui_ctx->category_scroll_offset = flipdeck_ui_scroll_offset_for_selection(
+        app->current_category_index,
+        ui_ctx->category_scroll_offset,
+        app->category_count,
+        4);
+
+    for(uint32_t row = 0; row < 4 && row + ui_ctx->category_scroll_offset < app->category_count; row++) {
+        uint32_t i = row + ui_ctx->category_scroll_offset;
+        int32_t y = 26 + (row * 10);
         if(i == app->current_category_index) {
             elements_frame(canvas, 0, y - 8, 124, 10);
         }
         canvas_draw_str(canvas, 5, y, ui_ctx->category_ids[i]);
+    }
+
+    if(app->category_count > 4) {
+        char range[16];
+        snprintf(
+            range,
+            sizeof(range),
+            "%lu/%lu",
+            (unsigned long)(app->current_category_index + 1),
+            (unsigned long)app->category_count);
+        canvas_draw_str(canvas, 96, 62, range);
     }
 
     elements_button_center(canvas, "Open");
@@ -212,12 +245,30 @@ static void flipdeck_ui_draw_action_browser(Canvas* canvas, FlipDeckUi* ui_ctx) 
     flipdeck_ui_draw_header(canvas, title);
 
     canvas_set_font(canvas, FontSecondary);
-    for(uint32_t i = 0; i < ui_ctx->current_category.action_count && i < 4; i++) {
-        int32_t y = 26 + (i * 10);
+    ui_ctx->action_scroll_offset = flipdeck_ui_scroll_offset_for_selection(
+        app->selected_action_index,
+        ui_ctx->action_scroll_offset,
+        ui_ctx->current_category.action_count,
+        4);
+
+    for(uint32_t row = 0; row < 4 && row + ui_ctx->action_scroll_offset < ui_ctx->current_category.action_count; row++) {
+        uint32_t i = row + ui_ctx->action_scroll_offset;
+        int32_t y = 26 + (row * 10);
         if(i == app->selected_action_index) {
             elements_frame(canvas, 0, y - 8, 124, 10);
         }
         canvas_draw_str(canvas, 5, y, ui_ctx->current_category.actions[i].label);
+    }
+
+    if(ui_ctx->current_category.action_count > 4) {
+        char range[16];
+        snprintf(
+            range,
+            sizeof(range),
+            "%lu/%lu",
+            (unsigned long)(app->selected_action_index + 1),
+            (unsigned long)ui_ctx->current_category.action_count);
+        canvas_draw_str(canvas, 96, 62, range);
     }
 
     elements_button_left(canvas, "Back");
@@ -283,6 +334,7 @@ static void flipdeck_ui_input_category_browser(FlipDeckUi* ui_ctx, InputEvent* e
             strncpy(app->current_category_id, ui_ctx->category_ids[app->current_category_index], 31);
             app->current_category_id[31] = '\0';
             app->selected_action_index = 0;
+            ui_ctx->action_scroll_offset = 0;
             app->state = FlipDeckState_ActionBrowser;
             break;
         case InputKeyRight:
@@ -320,6 +372,7 @@ static void flipdeck_ui_input_action_browser(FlipDeckUi* ui_ctx, InputEvent* eve
         case InputKeyBack:
             app->state = FlipDeckState_CategoryBrowser;
             app->selected_action_index = 0;
+            ui_ctx->action_scroll_offset = 0;
             break;
         default:
             break;
