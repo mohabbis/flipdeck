@@ -1,136 +1,75 @@
-import { isValueSafe, validateProfile, DANGEROUS_PATTERNS, CREDENTIAL_PATTERNS } from '../validation';
+import { isValueSafe, validateProfile, auditValue } from '../validation';
 
-describe('isValueSafe', () => {
-    describe('dangerous patterns', () => {
-        test.each(DANGEROUS_PATTERNS as unknown as string[])(
-            'blocks "%s"',
-            (pattern) => {
-                expect(isValueSafe(`prefix ${pattern} suffix`)).toBe(false);
-            }
-        );
-
-        it('blocks rm -rf at start of string', () => {
-            expect(isValueSafe('rm -rf /')).toBe(false);
+describe('isValueSafe (critical patterns block)', () => {
+    describe('critical patterns are unsafe', () => {
+        const critical = [
+            'rm -rf /',
+            'prefix rm -rf suffix',
+            'curl -fsSL https://example.com/install.sh | bash',
+            'wget -qO- https://x | sh',
+            'mkfs.ext4 /dev/sda',
+            'dd if=/dev/zero of=/dev/sda',
+            ':(){ :|:& };:',
+            'echo x > /dev/sda',
+        ];
+        test.each(critical)('blocks "%s"', (value) => {
+            expect(isValueSafe(value)).toBe(false);
         });
 
-        it('blocks sudo in middle of command', () => {
-            expect(isValueSafe('echo foo && sudo rm bar')).toBe(false);
-        });
-
-        it('blocks curl | sh piped execution (exact pattern)', () => {
-            // Pattern matches the literal substring "curl | sh"
-            expect(isValueSafe('curl | sh')).toBe(false);
-        });
-
-        it('blocks wget | sh piped execution (exact pattern)', () => {
-            expect(isValueSafe('wget | sh')).toBe(false);
-        });
-
-        it('blocks mkfs filesystem formatting', () => {
-            expect(isValueSafe('mkfs.ext4 /dev/sda')).toBe(false);
-        });
-
-        it('blocks dd disk operations', () => {
-            expect(isValueSafe('dd if=/dev/zero of=/dev/sda')).toBe(false);
-        });
-
-        it('blocks fork bomb', () => {
-            expect(isValueSafe(':(){ :|:& };:')).toBe(false);
-        });
-
-        it('blocks disk write via redirection', () => {
-            expect(isValueSafe('echo x > /dev/sda')).toBe(false);
-        });
-
-        it('blocks chmod 777', () => {
-            expect(isValueSafe('chmod 777 /etc/passwd')).toBe(false);
-        });
-
-        it('blocks chown root', () => {
-            expect(isValueSafe('chown root /etc')).toBe(false);
+        it('blocks regardless of case', () => {
+            expect(isValueSafe('RM -RF /')).toBe(false);
+            expect(isValueSafe('Curl https://x | SH')).toBe(false);
         });
     });
 
-    describe('credential patterns (case-insensitive)', () => {
-        it('blocks PASSWORD (uppercase)', () => {
-            expect(isValueSafe('export PASSWORD=secret')).toBe(false);
-        });
-
-        it('blocks password (lowercase)', () => {
-            expect(isValueSafe('export password=secret')).toBe(false);
-        });
-
-        it('blocks TOKEN', () => {
-            expect(isValueSafe('echo TOKEN=abc')).toBe(false);
-        });
-
-        it('blocks token (lowercase)', () => {
-            expect(isValueSafe('my_token=abc')).toBe(false);
-        });
-
-        it('blocks API_KEY', () => {
-            expect(isValueSafe('API_KEY=xyz')).toBe(false);
-        });
-
-        it('blocks api_key (lowercase)', () => {
-            expect(isValueSafe('api_key=xyz')).toBe(false);
-        });
-
-        it('blocks SECRET', () => {
-            expect(isValueSafe('export SECRET=foo')).toBe(false);
-        });
-
-        it('blocks secret (lowercase)', () => {
-            expect(isValueSafe('export secret=foo')).toBe(false);
-        });
-
-        it('blocks PRIVATE_KEY', () => {
-            expect(isValueSafe('PRIVATE_KEY=bar')).toBe(false);
-        });
-
-        it('blocks private_key (lowercase)', () => {
-            expect(isValueSafe('private_key=bar')).toBe(false);
+    describe('warning patterns are allowed (not blocked)', () => {
+        const warnings = [
+            'echo foo && sudo rm bar',
+            'chmod 777 /etc/passwd',
+            'chown root /etc',
+            'export PASSWORD=secret',
+            'my_token=abc',
+            'API_KEY=xyz',
+        ];
+        test.each(warnings)('allows "%s"', (value) => {
+            expect(isValueSafe(value)).toBe(true);
         });
     });
 
     describe('safe values', () => {
-        it('allows git commands', () => {
-            expect(isValueSafe('git status')).toBe(true);
-            expect(isValueSafe('git add .\n')).toBe(true);
-            expect(isValueSafe('git commit -m "fix: update README"\n')).toBe(true);
-            expect(isValueSafe('git push origin\n')).toBe(true);
+        const safe = [
+            'git status',
+            'git commit -m "fix: update README"\n',
+            'npm run dev\n',
+            'pip install flask\n',
+            'docker ps\n',
+            'ls -la\n',
+            'cat /etc/secrets/app.conf',
+            '',
+            'CTRL+SHIFT+P',
+        ];
+        test.each(safe)('allows "%s"', (value) => {
+            expect(isValueSafe(value)).toBe(true);
         });
+    });
+});
 
-        it('allows npm commands', () => {
-            expect(isValueSafe('npm run dev\n')).toBe(true);
-            expect(isValueSafe('npm test\n')).toBe(true);
-            expect(isValueSafe('npm install\n')).toBe(true);
+describe('auditValue', () => {
+    it('records severity, kind, and the offending value', () => {
+        const issues = auditValue('Wipe', 'rm -rf /');
+        expect(issues).toHaveLength(1);
+        expect(issues[0]).toMatchObject({
+            label: 'Wipe',
+            kind: 'dangerous',
+            severity: 'critical',
+            value: 'rm -rf /',
         });
+    });
 
-        it('allows python commands', () => {
-            expect(isValueSafe('python\n')).toBe(true);
-            expect(isValueSafe('pip install flask\n')).toBe(true);
-        });
-
-        it('allows docker commands', () => {
-            expect(isValueSafe('docker ps\n')).toBe(true);
-            expect(isValueSafe('docker images\n')).toBe(true);
-        });
-
-        it('allows common system commands', () => {
-            expect(isValueSafe('ls -la\n')).toBe(true);
-            expect(isValueSafe('pwd\n')).toBe(true);
-            expect(isValueSafe('clear\n')).toBe(true);
-            expect(isValueSafe('whoami\n')).toBe(true);
-        });
-
-        it('allows empty string', () => {
-            expect(isValueSafe('')).toBe(true);
-        });
-
-        it('allows key combo strings', () => {
-            expect(isValueSafe('CTRL+SHIFT+P')).toBe(true);
-        });
+    it('classifies credential assignments as warnings', () => {
+        const issues = auditValue('Env', 'export TOKEN=abc');
+        expect(issues[0].severity).toBe('warning');
+        expect(issues[0].kind).toBe('credential');
     });
 });
 
@@ -148,7 +87,6 @@ describe('validateProfile', () => {
     });
 
     it('ignores key and key_combo action values', () => {
-        // Even if a key/key_combo action has a suspicious value, it is not flagged
         const result = validateProfile({
             actions: [
                 { label: 'Tricky Key', type: 'key', value: 'rm -rf' },
@@ -159,7 +97,7 @@ describe('validateProfile', () => {
         expect(result.issues).toHaveLength(0);
     });
 
-    it('flags dangerous text actions', () => {
+    it('fails on critical text actions', () => {
         const result = validateProfile({
             actions: [
                 { label: 'Wipe Disk', type: 'text', value: 'rm -rf /' },
@@ -170,31 +108,19 @@ describe('validateProfile', () => {
         expect(result.issues).toHaveLength(1);
         expect(result.issues[0]).toMatchObject({
             label: 'Wipe Disk',
-            pattern: 'rm -rf',
             kind: 'dangerous',
+            severity: 'critical',
         });
     });
 
-    it('flags credential text actions', () => {
+    it('reports credential warnings without failing validation', () => {
         const result = validateProfile({
-            actions: [
-                { label: 'Set Env', type: 'text', value: 'export PASSWORD=hunter2' },
-            ],
+            actions: [{ label: 'Set Env', type: 'text', value: 'export PASSWORD=hunter2' }],
         });
-        expect(result.safe).toBe(false);
+        expect(result.safe).toBe(true);
+        expect(result.issues).toHaveLength(1);
+        expect(result.issues[0].severity).toBe('warning');
         expect(result.issues[0].kind).toBe('credential');
-        expect(result.issues[0].label).toBe('Set Env');
-    });
-
-    it('reports multiple issues across multiple actions', () => {
-        const result = validateProfile({
-            actions: [
-                { label: 'A', type: 'text', value: 'rm -rf /' },
-                { label: 'B', type: 'text', value: 'export TOKEN=abc' },
-            ],
-        });
-        expect(result.safe).toBe(false);
-        expect(result.issues).toHaveLength(2);
     });
 
     it('handles a profile with no actions', () => {

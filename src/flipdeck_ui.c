@@ -46,6 +46,20 @@ static void flipdeck_ui_input_settings(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_input_long_snippet_warning(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_send_action(FlipDeckUi* ui_ctx, FlipDeckAction* action);
 
+/* Returns the action at app_ctx->selected_action_index, or NULL if the index is
+ * stale/out of range for the currently loaded category. Callers must treat NULL
+ * as "nothing selected" rather than indexing the array directly. */
+static FlipDeckAction* flipdeck_ui_get_selected_action(FlipDeckUi* ui_ctx) {
+    uint32_t index = ui_ctx->app_ctx->selected_action_index;
+    if(index >= ui_ctx->current_category.action_count) {
+        FURI_LOG_W("FlipDeck", "Selected action index %lu out of range (count %lu)",
+            (unsigned long)index,
+            (unsigned long)ui_ctx->current_category.action_count);
+        return NULL;
+    }
+    return &ui_ctx->current_category.actions[index];
+}
+
 void flipdeck_ui_init(FlipDeckApp* app_ctx) {
     FURI_LOG_I("FlipDeck", "Initializing UI");
 
@@ -211,8 +225,11 @@ static void flipdeck_ui_draw_action_browser(Canvas* canvas, FlipDeckUi* ui_ctx) 
 }
 
 static void flipdeck_ui_draw_confirm(Canvas* canvas, FlipDeckUi* ui_ctx) {
-    FlipDeckAction* action =
-        &ui_ctx->current_category.actions[ui_ctx->app_ctx->selected_action_index];
+    FlipDeckAction* action = flipdeck_ui_get_selected_action(ui_ctx);
+    if(!action) {
+        ui_ctx->app_ctx->state = FlipDeckState_ActionBrowser;
+        return;
+    }
 
     flipdeck_ui_draw_header(canvas, "Send Command?");
     canvas_set_font(canvas, FontSecondary);
@@ -233,8 +250,11 @@ static void flipdeck_ui_draw_settings(Canvas* canvas, FlipDeckUi* ui_ctx) {
 }
 
 static void flipdeck_ui_draw_long_snippet_warning(Canvas* canvas, FlipDeckUi* ui_ctx) {
-    FlipDeckAction* action =
-        &ui_ctx->current_category.actions[ui_ctx->app_ctx->selected_action_index];
+    FlipDeckAction* action = flipdeck_ui_get_selected_action(ui_ctx);
+    if(!action) {
+        ui_ctx->app_ctx->state = FlipDeckState_ActionBrowser;
+        return;
+    }
 
     flipdeck_ui_draw_header(canvas, "Long Snippet");
     canvas_set_font(canvas, FontSecondary);
@@ -288,7 +308,8 @@ static void flipdeck_ui_input_action_browser(FlipDeckUi* ui_ctx, InputEvent* eve
             if(app->selected_action_index + 1 < action_count) app->selected_action_index++;
             break;
         case InputKeyOk: {
-            FlipDeckAction* action = &ui_ctx->current_category.actions[app->selected_action_index];
+            FlipDeckAction* action = flipdeck_ui_get_selected_action(ui_ctx);
+            if(!action) break;
             if(action->confirm || app->settings.confirm_before_send) {
                 app->state = FlipDeckState_SendConfirm;
             } else {
@@ -311,7 +332,7 @@ static void flipdeck_ui_input_confirm(FlipDeckUi* ui_ctx, InputEvent* event) {
 
     switch(event->key) {
         case InputKeyOk:
-            flipdeck_ui_send_action(ui_ctx, &ui_ctx->current_category.actions[app->selected_action_index]);
+            flipdeck_ui_send_action(ui_ctx, flipdeck_ui_get_selected_action(ui_ctx));
             app->state = FlipDeckState_ActionBrowser;
             break;
         case InputKeyBack:
@@ -334,7 +355,11 @@ static void flipdeck_ui_input_long_snippet_warning(FlipDeckUi* ui_ctx, InputEven
 
     switch(event->key) {
         case InputKeyOk: {
-            FlipDeckAction* action = &ui_ctx->current_category.actions[app->selected_action_index];
+            FlipDeckAction* action = flipdeck_ui_get_selected_action(ui_ctx);
+            if(!action) {
+                app->state = FlipDeckState_ActionBrowser;
+                break;
+            }
             if(action->target == FlipDeckActionTarget_WifiUart) {
                 uart_bridge_send_string(action->value);
             } else {

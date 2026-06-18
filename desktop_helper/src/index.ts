@@ -258,10 +258,11 @@ program
         const result = validateProfile(profile);
         for (const issue of result.issues) {
             const kindLabel = issue.kind === 'dangerous' ? 'Dangerous pattern' : 'Credential pattern';
-            console.error(`  ✗ ${kindLabel} in "${issue.label}": ${issue.pattern}`);
+            const marker = issue.severity === 'critical' ? '✗' : '!';
+            console.error(`  ${marker} [${issue.severity}] ${kindLabel} in "${issue.label}": /${issue.pattern}/`);
         }
         if (!result.safe) {
-            console.error('\n⚠ Validation failed - review these actions');
+            console.error('\n⚠ Validation failed - the commands above are blocked');
             process.exit(1);
         } else {
             console.log('✓ Profile is safe');

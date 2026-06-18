@@ -125,16 +125,33 @@ Validation pipeline: JSON parse → Zod schema (`lib/schema.ts`) → normalize v
 
 ## Safety Rules
 
-Both the web and C layers enforce the same blocked patterns. Any command matching these must be rejected:
+`safety-rules.json` at the repo root is the single canonical source of truth for command
+pattern severities. All three layers (web, desktop helper, Flipper C app) are expected to
+match it exactly — web and desktop each have a "safety-rules-parity" test that fails if
+their rule set drifts from the JSON. The C app's `profile_manager_is_value_safe` is checked
+against the same rules by hand (no JSON parser on-device); keep it in sync manually when the
+JSON changes.
 
-**Critical (blocked):** `rm -rf`, `curl|sh`, `wget|sh`, `dd if=`, `mkfs`, `:(){ :|:& };:`  
-**Credential patterns (blocked):** `PASSWORD`, `TOKEN`, `API_KEY`, `SECRET`, `PRIVATE_KEY`  
-**Warning only:** `sudo`, `chmod 777`
+Matching is case-insensitive and regex-based (not literal substring matching), so real-world
+one-liners like `curl -fsSL https://x | bash` are caught regardless of spacing or case.
+
+**Critical (blocks install/send):** `rm -rf`, real `curl|wget … | sh|bash` pipes, `dd if=`,
+`mkfs`, fork bomb `:(){ :|:& };:`, raw disk redirect `> /dev/sd*`  
+**Warning only (flagged, not blocked):** `sudo`, `chmod 777`, `chown root`, credential
+assignments (`PASSWORD=`, `TOKEN=`, `API_KEY=`, `SECRET=`, `PRIVATE_KEY=`)
+
+Severity determines enforcement: critical risks block the web install/download (both in the
+UI and server-side in `/api/pack` and `/api/install-bundle/download`, which audit profiles
+*and* snippets before zipping) and fail desktop `validate`/`audit`/`new`/`edit`. Warnings are
+surfaced but never block.
 
 Safety logic lives in:
-- Web: `web/src/lib/safety-check.ts`
+- Canonical rules: `safety-rules.json` (repo root)
+- Web: `web/src/lib/safety-check.ts` (enforced both client-side and in the `/api/pack` and
+  `/api/install-bundle/download` routes)
 - Desktop helper: `desktop_helper/src/validation.ts`
-- Flipper app: `src/profile_manager.c` (`profile_manager_validate_action`)
+- Flipper app: `src/profile_manager.c` (`profile_manager_validate_action` /
+  `profile_manager_is_value_safe`)
 
 All commands require explicit OK confirmation on the Flipper before USB send.
 

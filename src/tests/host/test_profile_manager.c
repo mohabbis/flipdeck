@@ -27,16 +27,21 @@ static void test_dangerous_rm_rf(void) {
     EXPECT_FALSE(profile_manager_is_value_safe("echo x && rm -rf ."), "blocks rm -rf in chain");
 }
 
-static void test_dangerous_sudo(void) {
-    EXPECT_FALSE(profile_manager_is_value_safe("sudo rm something"), "blocks sudo");
-    EXPECT_FALSE(profile_manager_is_value_safe("sudo"), "blocks bare sudo");
+static void test_warning_sudo(void) {
+    /* sudo is a warning, not a block - flagged but allowed through */
+    EXPECT_TRUE(profile_manager_is_value_safe("sudo rm something"), "allows sudo (warning only)");
+    EXPECT_TRUE(profile_manager_is_value_safe("sudo"), "allows bare sudo (warning only)");
 }
 
 static void test_dangerous_remote_exec(void) {
-    /* Pattern is matched as a literal substring — "curl | sh" not "curl <url> | sh" */
     EXPECT_FALSE(profile_manager_is_value_safe("curl | sh"), "blocks curl | sh (exact pattern)");
     EXPECT_FALSE(profile_manager_is_value_safe("wget | sh"), "blocks wget | sh (exact pattern)");
-    EXPECT_FALSE(profile_manager_is_value_safe("curl.ssh user@host"), "blocks curl.ssh");
+    EXPECT_FALSE(
+        profile_manager_is_value_safe("curl -fsSL https://example.com/install.sh | bash"),
+        "blocks real curl|bash one-liner");
+    EXPECT_FALSE(profile_manager_is_value_safe("CURL https://x | SH"), "blocks curl|sh case-insensitively");
+    /* "curl.ssh" has no pipe into a shell - it isn't a remote-exec pattern */
+    EXPECT_TRUE(profile_manager_is_value_safe("curl.ssh user@host"), "allows curl.ssh (no pipe to shell)");
 }
 
 static void test_dangerous_disk_ops(void) {
@@ -49,27 +54,33 @@ static void test_dangerous_fork_bomb(void) {
     EXPECT_FALSE(profile_manager_is_value_safe(":(){ :|:& };:"), "blocks fork bomb");
 }
 
-static void test_dangerous_permissions(void) {
-    EXPECT_FALSE(profile_manager_is_value_safe("chmod 777 /etc/passwd"), "blocks chmod 777");
-    EXPECT_FALSE(profile_manager_is_value_safe("chown root /etc"), "blocks chown root");
+static void test_dangerous_case_insensitive(void) {
+    EXPECT_FALSE(profile_manager_is_value_safe("RM -RF /"), "blocks RM -RF (uppercase)");
+    EXPECT_FALSE(profile_manager_is_value_safe("Rm -Rf /tmp"), "blocks Rm -Rf (mixed case)");
 }
 
-/* ---------- is_value_safe: credential patterns ---------- */
+static void test_warning_permissions(void) {
+    /* chmod 777 / chown root are warnings, not blocks */
+    EXPECT_TRUE(profile_manager_is_value_safe("chmod 777 /etc/passwd"), "allows chmod 777 (warning only)");
+    EXPECT_TRUE(profile_manager_is_value_safe("chown root /etc"), "allows chown root (warning only)");
+}
+
+/* ---------- is_value_safe: credential patterns (warning, not block) ---------- */
 
 static void test_credential_uppercase(void) {
-    EXPECT_FALSE(profile_manager_is_value_safe("export PASSWORD=secret"), "blocks PASSWORD");
-    EXPECT_FALSE(profile_manager_is_value_safe("echo TOKEN=abc"), "blocks TOKEN");
-    EXPECT_FALSE(profile_manager_is_value_safe("API_KEY=xyz"), "blocks API_KEY");
-    EXPECT_FALSE(profile_manager_is_value_safe("export SECRET=foo"), "blocks SECRET");
-    EXPECT_FALSE(profile_manager_is_value_safe("PRIVATE_KEY=bar"), "blocks PRIVATE_KEY");
+    EXPECT_TRUE(profile_manager_is_value_safe("export PASSWORD=secret"), "allows PASSWORD= (warning only)");
+    EXPECT_TRUE(profile_manager_is_value_safe("echo TOKEN=abc"), "allows TOKEN= (warning only)");
+    EXPECT_TRUE(profile_manager_is_value_safe("API_KEY=xyz"), "allows API_KEY= (warning only)");
+    EXPECT_TRUE(profile_manager_is_value_safe("export SECRET=foo"), "allows SECRET= (warning only)");
+    EXPECT_TRUE(profile_manager_is_value_safe("PRIVATE_KEY=bar"), "allows PRIVATE_KEY= (warning only)");
 }
 
 static void test_credential_lowercase(void) {
-    EXPECT_FALSE(profile_manager_is_value_safe("export password=secret"), "blocks password (lower)");
-    EXPECT_FALSE(profile_manager_is_value_safe("my_token=abc"), "blocks token (lower)");
-    EXPECT_FALSE(profile_manager_is_value_safe("api_key=xyz"), "blocks api_key (lower)");
-    EXPECT_FALSE(profile_manager_is_value_safe("export secret=foo"), "blocks secret (lower)");
-    EXPECT_FALSE(profile_manager_is_value_safe("private_key=bar"), "blocks private_key (lower)");
+    EXPECT_TRUE(profile_manager_is_value_safe("export password=secret"), "allows password= (lower, warning only)");
+    EXPECT_TRUE(profile_manager_is_value_safe("my_token=abc"), "allows token= (lower, warning only)");
+    EXPECT_TRUE(profile_manager_is_value_safe("api_key=xyz"), "allows api_key= (lower, warning only)");
+    EXPECT_TRUE(profile_manager_is_value_safe("export secret=foo"), "allows secret= (lower, warning only)");
+    EXPECT_TRUE(profile_manager_is_value_safe("private_key=bar"), "allows private_key= (lower, warning only)");
 }
 
 /* ---------- is_value_safe: safe values ---------- */
@@ -144,7 +155,7 @@ static void test_validate_text_dangerous(void) {
     memset(&cred, 0, sizeof(cred));
     cred.type = FlipDeckActionType_Text;
     strncpy(cred.value, "export PASSWORD=hunter2", sizeof(cred.value) - 1);
-    EXPECT_FALSE(profile_manager_validate_action(&cred), "Text action: PASSWORD blocked");
+    EXPECT_TRUE(profile_manager_validate_action(&cred), "Text action: PASSWORD allowed (warning only)");
 }
 
 static void test_validate_null(void) {
@@ -159,8 +170,8 @@ int main(void) {
     printf("[dangerous: rm -rf]\n");
     test_dangerous_rm_rf();
 
-    printf("[dangerous: sudo]\n");
-    test_dangerous_sudo();
+    printf("[warning: sudo]\n");
+    test_warning_sudo();
 
     printf("[dangerous: remote exec]\n");
     test_dangerous_remote_exec();
@@ -171,8 +182,11 @@ int main(void) {
     printf("[dangerous: fork bomb]\n");
     test_dangerous_fork_bomb();
 
-    printf("[dangerous: permissions]\n");
-    test_dangerous_permissions();
+    printf("[dangerous: case insensitivity]\n");
+    test_dangerous_case_insensitive();
+
+    printf("[warning: permissions]\n");
+    test_warning_permissions();
 
     printf("[credentials: uppercase]\n");
     test_credential_uppercase();
