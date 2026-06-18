@@ -59,7 +59,7 @@ export function SmartInstallButton({
     <section className="overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/80 p-4 shadow-lg">
       {/* Direct serial install — leads the UX */}
       <div className="mb-4">
-        <h2 className="mb-1 text-lg font-semibold text-foreground">⚡ Install to Flipper</h2>
+        <h2 className="mb-1 text-lg font-semibold text-foreground">⚡ Stage mission pack</h2>
         <p className="mb-3 text-sm text-muted-foreground">
           {hasSelection
             ? `${selectedIds.length} profile${selectedIds.length === 1 ? "" : "s"} · ${selectedCount} command${selectedCount === 1 ? "" : "s"} selected`
@@ -67,7 +67,7 @@ export function SmartInstallButton({
         </p>
         {blocked ? (
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            🚫 Install blocked — a selected profile contains a command flagged as unsafe. Check
+            🚫 Pack blocked — a selected profile contains a command flagged as unsafe. Check
             &quot;Pack Safety&quot; below and deselect it to continue.
           </div>
         ) : (
@@ -79,7 +79,7 @@ export function SmartInstallButton({
       <div className="border-t border-border pt-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
-            Or download a ZIP and copy via qFlipper SD card browser
+            Direct staging writes profiles first; the .fap binary is optional while compatibility stabilizes.
           </p>
           <div className="flex gap-2">
             {webUsbAvailable && (
@@ -97,11 +97,11 @@ export function SmartInstallButton({
                 href={downloadHref}
                 className="f1-speed-btn inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:border-accent/50 hover:text-accent"
               >
-                Download ZIP
+                Export ZIP
               </a>
             ) : (
               <span className="inline-flex h-8 cursor-not-allowed items-center justify-center rounded-lg border border-border bg-background/50 px-4 text-xs font-semibold text-muted-foreground">
-                Download ZIP
+                Export ZIP
               </span>
             )}
           </div>

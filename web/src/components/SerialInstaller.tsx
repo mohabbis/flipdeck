@@ -10,8 +10,16 @@ type Phase =
   | { kind: "connecting" }
   | { kind: "ready" }
   | { kind: "installing"; message: string; fraction: number }
-  | { kind: "success"; count: number }
+  | { kind: "success"; count: number; appInstalled: boolean }
   | { kind: "error"; message: string };
+
+async function fetchAppBinary(): Promise<Uint8Array | null> {
+  const appResponse = await fetch("/flipdeck.fap", { cache: "no-store" });
+  if (!appResponse.ok) return null;
+
+  const appBinary = new Uint8Array(await appResponse.arrayBuffer());
+  return appBinary.length > 1024 ? appBinary : null;
+}
 
 interface SerialInstallerProps {
   selectedIds: string[];
@@ -63,20 +71,13 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
     setPhase({ kind: "installing", message: "Starting…", fraction: 0 });
 
     try {
-      setPhase({ kind: "installing", message: "Downloading flipdeck.fap…", fraction: 0 });
-      const appResponse = await fetch("/flipdeck.fap");
-      if (!appResponse.ok) {
-        throw new FlipperSerialError(
-          "flipdeck.fap is not available yet. Download the ZIP or try again after the app build finishes."
-        );
-      }
-
-      const appBinary = new Uint8Array(await appResponse.arrayBuffer());
+      setPhase({ kind: "installing", message: "Checking app binary…", fraction: 0 });
+      const appBinary = await fetchAppBinary();
 
       await flipper.current.install(profiles, snippets, settingsJson, appBinary, (message, fraction) => {
         setPhase({ kind: "installing", message, fraction });
       });
-      setPhase({ kind: "success", count: profiles.length });
+      setPhase({ kind: "success", count: profiles.length, appInstalled: Boolean(appBinary) });
     } catch (err) {
       const msg = err instanceof FlipperSerialError ? err.message : "Installation failed";
       setPhase({ kind: "error", message: msg });
@@ -104,7 +105,7 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
         className="f1-speed-btn inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-5 text-sm font-semibold text-accent transition hover:bg-accent/20"
       >
         <span>⚡</span>
-        Connect Flipper &amp; Install Directly
+        Connect Flipper &amp; Stage Pack
       </button>
     );
   }
@@ -137,7 +138,7 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
             disabled={selectedIds.length === 0}
             className="f1-speed-btn h-9 rounded-lg bg-gradient-to-r from-accent to-accent-primary-hover px-4 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition hover:shadow-accent/30 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Install {selectedIds.length} profile{selectedIds.length !== 1 ? "s" : ""} to Flipper
+            Stage {selectedIds.length} profile{selectedIds.length !== 1 ? "s" : ""} to Flipper
           </button>
         </div>
       </div>
@@ -167,11 +168,15 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
       <div className="space-y-3">
         <div className="rounded-lg border border-accent-success/30 bg-accent-success/10 px-4 py-3">
           <p className="font-semibold text-accent-success">
-            ✓ FlipDeck installed with {phase.count} profile{phase.count !== 1 ? "s" : ""}
+            ✓ {phase.appInstalled ? "FlipDeck installed" : "Mission pack staged"} with {phase.count} profile{phase.count !== 1 ? "s" : ""}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            App: <code className="font-mono">/apps/Tools/flipdeck.fap</code> · Profiles:{" "}
-            <code className="font-mono">/apps_data/flipdeck/profiles/</code>
+            {phase.appInstalled ? (
+              <>App: <code className="font-mono">/apps/Tools/flipdeck.fap</code> · </>
+            ) : (
+              <>App binary skipped because the hosted .fap failed validation · </>
+            )}
+            Profiles: <code className="font-mono">/apps_data/flipdeck/profiles/</code>
           </p>
         </div>
         <div className="flex gap-2">
@@ -180,7 +185,7 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
               download="flipdeck.fap"
               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
             >
-              Download flipdeck.fap
+              Download experimental .fap
             </a>
             <button
               onClick={retry}

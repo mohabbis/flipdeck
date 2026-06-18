@@ -310,10 +310,10 @@ export class FlipperSerial {
     profiles: Array<{ id: string; json: string }>,
     snippets: Array<{ name: string; content: string }>,
     settingsJson: string,
-    appBinary: Uint8Array,
+    appBinary: Uint8Array | null,
     onProgress: ProgressCallback
   ): Promise<void> {
-    const total = 7 + profiles.length + (snippets.length ? 1 + snippets.length : 0);
+    const total = 4 + profiles.length + (snippets.length ? 1 + snippets.length : 0) + (appBinary ? 3 : 0);
     let step = 0;
     const tick = (msg: string) => onProgress(msg, step++ / total);
 
@@ -340,19 +340,21 @@ export class FlipperSerial {
       }
     }
 
-    tick("Starting binary transfer…");
-    await this.startRpcSession();
+    if (appBinary) {
+      tick("Starting binary transfer…");
+      await this.startRpcSession();
 
-    tick("Creating apps directory…");
-    await this.ensureDirRpc("/ext/apps");
+      tick("Creating apps directory…");
+      await this.ensureDirRpc("/ext/apps");
 
-    tick("Creating tools directory…");
-    await this.ensureDirRpc("/ext/apps/Tools");
+      tick("Creating tools directory…");
+      await this.ensureDirRpc("/ext/apps/Tools");
 
-    tick("Installing flipdeck.fap…");
-    await this.writeFileRpc("/ext/apps/Tools/flipdeck.fap", appBinary);
+      tick("Installing flipdeck.fap…");
+      await this.writeFileRpc("/ext/apps/Tools/flipdeck.fap", appBinary);
+    }
 
-    onProgress("Done!", 1);
+    onProgress(appBinary ? "Done!" : "Profiles staged. Install the app binary separately.", 1);
   }
 }
 

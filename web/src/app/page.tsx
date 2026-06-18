@@ -10,10 +10,25 @@ import { auditCommands, auditSnippets, hasCriticalRisk } from "@/lib/safety-chec
 import { SNIPPETS } from "@/lib/install-data";
 
 const installSteps = [
-  "Plug in Flipper via USB",
-  "Connect & pick your profiles",
-  "One click installs the app + profiles",
-  "Launch FlipDeck from Apps → Tools",
+  "Pick a mission profile",
+  "Audit every keystroke",
+  "Stage to Flipper or ZIP",
+  "Run only when context is safe",
+];
+
+const operatorLoops = [
+  {
+    title: "Recon",
+    body: "Profiles are small, readable playbooks for repeatable terminal moves: git triage, cloud probes, system checks, snippets, and recovery flows.",
+  },
+  {
+    title: "Control",
+    body: "Nothing is hidden. The browser shows the exact keystrokes and blocks destructive patterns before a pack can be generated.",
+  },
+  {
+    title: "Deploy",
+    body: "The web installer stages the mission pack first. The .fap binary is treated as experimental payload, not the single point of failure.",
+  },
 ];
 
 export default function Home() {
@@ -75,7 +90,7 @@ export default function Home() {
                 <div className="mb-4 flex flex-wrap items-center gap-3">
                   <p className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-sm font-semibold text-accent">
                     <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent"></span>
-                    USB HID command deck for Flipper Zero
+                  Operator playbooks for Flipper Zero
                   </p>
                   <span className="f1-lights" aria-hidden="true">
                     <span></span>
@@ -86,22 +101,39 @@ export default function Home() {
                   </span>
                 </div>
                 <h1 className="max-w-3xl bg-gradient-to-r from-foreground via-foreground to-accent bg-clip-text text-5xl font-black uppercase tracking-tight text-transparent sm:text-6xl lg:text-7xl">
-                  Flip
+                  Field
                   <span className="italic" style={{ WebkitTextFillColor: "var(--accent-primary)" }}>
-                    Deck
+                    Ops
                   </span>
                 </h1>
                 <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-                  Pick trusted developer profiles, inspect every command, then connect your Flipper
-                  over USB and install the app and profiles directly from your browser — no
-                  qFlipper or SD card juggling required.
+                  FlipDeck is being repositioned from a novelty macro pad into a tactical
+                  command-pack system: assemble known-safe workflows, inspect the exact payload,
+                  stage them to a Flipper, and use the device as an offline execution rail when
+                  speed and repeatability matter.
                 </p>
                 <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                  New here? A <strong className="text-foreground">profile</strong> is a set of
-                  commands (like <code className="rounded bg-card px-1 py-0.5">git status</code>)
-                  that your Flipper Zero can type into a computer over USB with one button press.
-                  Check the boxes below for the workflows you want, then install.
+                  The new <code className="rounded bg-card px-1 py-0.5">.fap</code> path is
+                  intentionally treated as experimental until it proves reliable across firmware
+                  versions. Profile staging and ZIP export remain first-class so the product still
+                  works when the binary payload fails.
                 </p>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                {operatorLoops.map((loop) => (
+                  <article
+                    key={loop.title}
+                    className="rounded-xl border border-border bg-background/55 p-4 shadow-sm"
+                  >
+                    <h2 className="font-mono text-xs font-black uppercase tracking-[0.22em] text-accent">
+                      {loop.title}
+                    </h2>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {loop.body}
+                    </p>
+                  </article>
+                ))}
               </div>
 
               <SmartInstallButton
@@ -115,7 +147,7 @@ export default function Home() {
               <div className="col-span-3 mb-1 flex items-center gap-2">
                 <span className="f1-live-dot" aria-hidden="true"></span>
                 <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  Live telemetry
+                  Pack telemetry
                 </span>
               </div>
               <div className="text-center sm:text-left">
@@ -170,9 +202,9 @@ export default function Home() {
           <section className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
             <div className="border-b border-border bg-gradient-to-r from-card to-card/80 px-4 py-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold uppercase tracking-wide text-foreground">🚀 How to Install</h2>
+                <h2 className="text-lg font-bold uppercase tracking-wide text-foreground">🚀 Operating loop</h2>
                 <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-bold uppercase tracking-[0.15em] text-accent">
-                  one-click via browser
+                  auditable by default
                 </span>
               </div>
             </div>
