@@ -8,20 +8,201 @@
 #include <furi_hal.h>
 #include <furi_hal_usb_hid.h>
 
+#ifndef HID_KEYBOARD_OPEN_BRACKET
+#define HID_KEYBOARD_OPEN_BRACKET 47
+#endif
+#ifndef HID_KEYBOARD_CLOSE_BRACKET
+#define HID_KEYBOARD_CLOSE_BRACKET 48
+#endif
+#ifndef HID_KEYBOARD_BACKSLASH
+#define HID_KEYBOARD_BACKSLASH 49
+#endif
+#ifndef HID_KEYBOARD_SEMICOLON
+#define HID_KEYBOARD_SEMICOLON 51
+#endif
+#ifndef HID_KEYBOARD_APOSTROPHE
+#define HID_KEYBOARD_APOSTROPHE 52
+#endif
+#ifndef HID_KEYBOARD_COMMA
+#define HID_KEYBOARD_COMMA 54
+#endif
+#ifndef HID_KEYBOARD_DOT
+#define HID_KEYBOARD_DOT 55
+#endif
+#ifndef HID_KEYBOARD_SLASH
+#define HID_KEYBOARD_SLASH 56
+#endif
+
 // USB HID state
 static bool s_usb_connected = false;
 
+typedef struct {
+    uint8_t key;
+    uint16_t modifiers;
+} HidKeyChord;
+
+static bool char_to_chord(char c, HidKeyChord* chord) {
+    if(!chord) return false;
+    chord->key = 0;
+    chord->modifiers = 0;
+
+    if(c >= 'a' && c <= 'z') {
+        chord->key = c - 'a' + HID_KEYBOARD_A;
+        return true;
+    }
+    if(c >= 'A' && c <= 'Z') {
+        chord->key = c - 'A' + HID_KEYBOARD_A;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    }
+    if(c >= '1' && c <= '9') {
+        chord->key = c - '1' + HID_KEYBOARD_1;
+        return true;
+    }
+    if(c == '0') {
+        chord->key = HID_KEYBOARD_0;
+        return true;
+    }
+
+    switch(c) {
+    case '\n':
+    case '\r':
+        chord->key = HID_KEYBOARD_RETURN;
+        return true;
+    case '\t':
+        chord->key = HID_KEYBOARD_TAB;
+        return true;
+    case ' ':
+        chord->key = HID_KEYBOARD_SPACEBAR;
+        return true;
+    case '-':
+        chord->key = HID_KEYBOARD_MINUS;
+        return true;
+    case '_':
+        chord->key = HID_KEYBOARD_MINUS;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '=':
+        chord->key = HID_KEYBOARD_EQUAL_SIGN;
+        return true;
+    case '+':
+        chord->key = HID_KEYBOARD_EQUAL_SIGN;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '[':
+        chord->key = HID_KEYBOARD_OPEN_BRACKET;
+        return true;
+    case '{':
+        chord->key = HID_KEYBOARD_OPEN_BRACKET;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case ']':
+        chord->key = HID_KEYBOARD_CLOSE_BRACKET;
+        return true;
+    case '}':
+        chord->key = HID_KEYBOARD_CLOSE_BRACKET;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '\\':
+        chord->key = HID_KEYBOARD_BACKSLASH;
+        return true;
+    case '|':
+        chord->key = HID_KEYBOARD_BACKSLASH;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case ';':
+        chord->key = HID_KEYBOARD_SEMICOLON;
+        return true;
+    case ':':
+        chord->key = HID_KEYBOARD_SEMICOLON;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '\'':
+        chord->key = HID_KEYBOARD_APOSTROPHE;
+        return true;
+    case '"':
+        chord->key = HID_KEYBOARD_APOSTROPHE;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '`':
+        chord->key = HID_KEYBOARD_GRAVE_ACCENT;
+        return true;
+    case '~':
+        chord->key = HID_KEYBOARD_GRAVE_ACCENT;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case ',':
+        chord->key = HID_KEYBOARD_COMMA;
+        return true;
+    case '<':
+        chord->key = HID_KEYBOARD_COMMA;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '.':
+        chord->key = HID_KEYBOARD_DOT;
+        return true;
+    case '>':
+        chord->key = HID_KEYBOARD_DOT;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '/':
+        chord->key = HID_KEYBOARD_SLASH;
+        return true;
+    case '?':
+        chord->key = HID_KEYBOARD_SLASH;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '!':
+        chord->key = HID_KEYBOARD_1;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '@':
+        chord->key = HID_KEYBOARD_2;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '#':
+        chord->key = HID_KEYBOARD_3;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '$':
+        chord->key = HID_KEYBOARD_4;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '%':
+        chord->key = HID_KEYBOARD_5;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '^':
+        chord->key = HID_KEYBOARD_6;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '&':
+        chord->key = HID_KEYBOARD_7;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '*':
+        chord->key = HID_KEYBOARD_8;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case '(':
+        chord->key = HID_KEYBOARD_9;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    case ')':
+        chord->key = HID_KEYBOARD_0;
+        chord->modifiers = KEY_MOD_LEFT_SHIFT;
+        return true;
+    default:
+        return false;
+    }
+}
+
 // Key name to HID keycode mapping (using HID_KEYBOARD_* constants from firmware)
 static uint16_t key_name_to_code(const char* name) {
-    // Support single characters directly (a-z, A-Z, 0-9)
-    if(strlen(name) == 1) {
-        char c = name[0];
-        if(c >= 'A' && c <= 'Z') return c - 'A' + HID_KEYBOARD_A;
-        if(c >= 'a' && c <= 'z') return c - 'a' + HID_KEYBOARD_A;
-        if(c >= '0' && c <= '9') return c - '0' + HID_KEYBOARD_0;
-        if(c == '`') return HID_KEYBOARD_GRAVE_ACCENT;
-        if(c == '-') return HID_KEYBOARD_MINUS;
-        if(c == '=') return HID_KEYBOARD_EQUAL_SIGN;
+    // Support single characters directly (US keyboard layout)
+    if(strlen(name) == 1 && !(name[0] >= 'A' && name[0] <= 'Z')) {
+        HidKeyChord chord;
+        if(char_to_chord(name[0], &chord)) return chord.modifiers | chord.key;
         return 0;
     }
     
@@ -114,10 +295,14 @@ bool usb_hid_send_string(const char* text) {
     FURI_LOG_I("FlipDeck", "Sending string: %s", text);
     
     for(uint32_t i = 0; text[i] != '\0'; i++) {
-        char single[2] = {text[i], '\0'};
-        if(!usb_hid_send_key(single)) {
+        HidKeyChord chord;
+        if(!char_to_chord(text[i], &chord)) {
+            FURI_LOG_W("FlipDeck", "Unsupported character: 0x%02X", (uint8_t)text[i]);
             return false;
         }
+        furi_hal_hid_kb_press(chord.modifiers | chord.key);
+        furi_delay_ms(5);
+        furi_hal_hid_kb_release_all();
         furi_delay_ms(5);
     }
     
@@ -129,7 +314,7 @@ bool usb_hid_send_key(const char* keyName) {
         return false;
     }
     
-    uint8_t key = key_name_to_code(keyName);
+    uint16_t key = key_name_to_code(keyName);
     if(key == 0) {
         FURI_LOG_W("FlipDeck", "Unknown key: %s", keyName);
         return false;
@@ -137,7 +322,7 @@ bool usb_hid_send_key(const char* keyName) {
     
     furi_hal_hid_kb_press(key);
     furi_delay_ms(50);  // Press duration
-    furi_hal_hid_kb_release(key);
+    furi_hal_hid_kb_release_all();
     furi_delay_ms(10);
     
     return true;
@@ -166,7 +351,7 @@ bool usb_hid_send_key_combo(const char* combo) {
         plus = strchr(key_part, '+');
     }
     
-    uint8_t key = key_name_to_code(key_part);
+    uint16_t key = key_name_to_code(key_part);
     if(key == 0) {
         FURI_LOG_W("FlipDeck", "Unknown key in combo: %s", key_part);
         return false;
