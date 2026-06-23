@@ -369,11 +369,11 @@ interface RpcMainResponse {
   hasNext: boolean;
 }
 
-function formatRpcStatus(status: number): string {
+export function formatRpcStatus(status: number): string {
   return `Flipper RPC failed: ${COMMAND_STATUS[status] ?? `status ${status}`}`;
 }
 
-function concatBytes(parts: Array<Uint8Array<ArrayBufferLike>>): Uint8Array {
+export function concatBytes(parts: Array<Uint8Array<ArrayBufferLike>>): Uint8Array {
   const length = parts.reduce((sum, part) => sum + part.length, 0);
   const out = new Uint8Array(length);
   let offset = 0;
@@ -384,7 +384,7 @@ function concatBytes(parts: Array<Uint8Array<ArrayBufferLike>>): Uint8Array {
   return out;
 }
 
-function chunkBytes(bytes: Uint8Array<ArrayBufferLike>, size: number): Uint8Array[] {
+export function chunkBytes(bytes: Uint8Array<ArrayBufferLike>, size: number): Uint8Array[] {
   const chunks: Uint8Array[] = [];
   for (let offset = 0; offset < bytes.length; offset += size) {
     chunks.push(bytes.slice(offset, offset + size));
@@ -392,7 +392,7 @@ function chunkBytes(bytes: Uint8Array<ArrayBufferLike>, size: number): Uint8Arra
   return chunks;
 }
 
-function encodeVarint(value: number): Uint8Array {
+export function encodeVarint(value: number): Uint8Array {
   const bytes: number[] = [];
   let current = value >>> 0;
 
@@ -413,11 +413,11 @@ function encodeVarintField(fieldNumber: number, value: number): Uint8Array {
   return concatBytes([encodeKey(fieldNumber, 0), encodeVarint(value)]);
 }
 
-function encodeBytesField(fieldNumber: number, value: Uint8Array): Uint8Array {
+export function encodeBytesField(fieldNumber: number, value: Uint8Array): Uint8Array {
   return concatBytes([encodeKey(fieldNumber, 2), encodeVarint(value.length), value]);
 }
 
-function encodeStringField(fieldNumber: number, value: string): Uint8Array {
+export function encodeStringField(fieldNumber: number, value: string): Uint8Array {
   return encodeBytesField(fieldNumber, new TextEncoder().encode(value));
 }
 
@@ -425,7 +425,7 @@ function encodeMessageField(fieldNumber: number, value: Uint8Array): Uint8Array 
   return encodeBytesField(fieldNumber, value);
 }
 
-function encodeMain(
+export function encodeMain(
   commandId: number,
   contentField: number,
   payload: Uint8Array,
@@ -437,7 +437,7 @@ function encodeMain(
   return concatBytes(fields);
 }
 
-function parseMainResponse(message: Uint8Array): RpcMainResponse {
+export function parseMainResponse(message: Uint8Array): RpcMainResponse {
   let offset = 0;
   const response: RpcMainResponse = { commandId: 0, commandStatus: 0, hasNext: false };
 

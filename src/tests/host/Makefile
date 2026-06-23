@@ -4,7 +4,7 @@ SRCDIR  = ../..
 
 .PHONY: all test run clean
 
-all: test_profile_manager test_usb_hid test_profile_manager_target
+all: test_profile_manager test_usb_hid test_profile_manager_target test_settings
 
 test_profile_manager: test_profile_manager.c $(SRCDIR)/profile_manager.c
 	$(CC) $(CFLAGS) -o $@ $^
@@ -14,6 +14,11 @@ test_usb_hid: test_usb_hid.c $(SRCDIR)/usb_hid.c $(SRCDIR)/usb_hid.h
 
 test_profile_manager_target: test_profile_manager_target.c $(SRCDIR)/profile_manager.c
 	$(CC) $(CFLAGS) -o $@ $^
+
+# test_settings.c #includes profile_manager.c and settings.c directly to reach
+# the static JSON helpers, so it is compiled as a single translation unit.
+test_settings: test_settings.c $(SRCDIR)/profile_manager.c $(SRCDIR)/settings.c
+	$(CC) $(CFLAGS) -I$(SRCDIR) -o $@ test_settings.c
 
 test: run
 
@@ -26,6 +31,9 @@ run: all
 	@echo ""
 	@echo "--- profile_manager_target ---"
 	./test_profile_manager_target
+	@echo ""
+	@echo "--- settings ---"
+	./test_settings
 
 clean:
-	rm -f test_profile_manager test_usb_hid test_profile_manager_target
+	rm -f test_profile_manager test_usb_hid test_profile_manager_target test_settings
