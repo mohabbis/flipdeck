@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const outDir = path.join(__dirname, "..", ".railway-build");
+const outDir = path.join(__dirname, "..", ".pack-build");
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(
   path.join(outDir, "packs.json"),

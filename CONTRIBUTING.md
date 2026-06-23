@@ -16,8 +16,8 @@ We recommend using the Flipper Zero simulator for initial development:
 
 ```bash
 # Clone the repository
-git clone https://github.com/mohabbis/moswagger.git
-cd moswagger
+git clone https://github.com/mohabbis/flipdeck.git
+cd flipdeck
 
 # Build using fbt
 curl -fsSL https://raw.githubusercontent.com/flipperzero/fbt/main/install.sh | sh

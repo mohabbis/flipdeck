@@ -292,12 +292,6 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for planned features.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
-## Project History
-
-This repository was originally **moswagger** - a Swagger/OpenAPI tooling project with Vercel deployment. It has been completely pivoted to **FlipDeck**, a Flipper Zero USB command deck application.
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for details on the original moswagger-vercel.app and the migration to FlipDeck.
-
 ## License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
