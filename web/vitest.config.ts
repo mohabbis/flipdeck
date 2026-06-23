@@ -4,7 +4,9 @@ import path from 'path';
 export default defineConfig({
     test: {
         environment: 'node',
-        include: ['src/__tests__/**/*.test.ts'],
+        // Component tests opt into jsdom per-file via a `@vitest-environment`
+        // docblock; everything else runs in the default node environment.
+        include: ['src/__tests__/**/*.test.{ts,tsx}'],
     },
     resolve: {
         alias: {
