@@ -8,6 +8,7 @@ set(SOURCES
     src/flipdeck_app.c
     src/flipdeck_ui.c
     src/profile_manager.c
+    src/uart_bridge.c
     src/usb_hid.c
     src/settings.c
 )
