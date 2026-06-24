@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
-import { getProfileCommands, profileFiles } from "@/lib/profiles";
+import { getDeviceProfile, getProfileCommands, profileFiles } from "@/lib/profiles";
 import { DEFAULT_SETTINGS, SNIPPETS } from "@/lib/install-data";
 import { auditCommands, auditSnippets, hasCriticalRisk } from "@/lib/safety-check";
 
@@ -49,9 +49,11 @@ export async function GET() {
   );
 
   for (const { fileName, profile } of profileFiles) {
+    // Write the normalized device profile (commands array) — the same shape the
+    // serial installer and /api/pack produce, and what the C parser expects.
     zip.file(
       `${APP_ROOT}/profiles/${fileName}`,
-      `${JSON.stringify(profile, null, 2)}\n`
+      `${JSON.stringify(getDeviceProfile(profile, fileName), null, 2)}\n`
     );
   }
 

@@ -54,6 +54,19 @@ static void test_find_json_string(void) {
         "returns NULL for missing key");
 }
 
+/* ---------- find_json_uint ---------- */
+
+static void test_find_json_uint(void) {
+    char json[] = "{ \"delay_ms\": 250, \"zero\": 0, \"spaced\":   42 }";
+    EXPECT_EQ_INT(find_json_uint(json, "delay_ms", 99u), 250u, "reads numeric value");
+    EXPECT_EQ_INT(find_json_uint(json, "zero", 99u), 0u, "reads explicit zero");
+    EXPECT_EQ_INT(find_json_uint(json, "spaced", 99u), 42u, "skips whitespace before digits");
+    EXPECT_EQ_INT(find_json_uint(json, "missing", 7u), 7u, "missing key returns default");
+
+    char nan[] = "{ \"delay_ms\": \"oops\" }";
+    EXPECT_EQ_INT(find_json_uint(nan, "delay_ms", 5u), 5u, "non-numeric value returns default");
+}
+
 /* ---------- load_settings: no file → defaults ---------- */
 
 static void test_load_settings_defaults(void) {
@@ -98,6 +111,9 @@ int main(void) {
 
     printf("[find_json_string]\n");
     test_find_json_string();
+
+    printf("[find_json_uint]\n");
+    test_find_json_uint();
 
     printf("[load_settings defaults]\n");
     test_load_settings_defaults();

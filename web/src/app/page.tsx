@@ -10,24 +10,24 @@ import { auditCommands, auditSnippets, hasCriticalRisk } from "@/lib/safety-chec
 import { SNIPPETS } from "@/lib/install-data";
 
 const installSteps = [
-  "Pick a mission profile",
-  "Audit every keystroke",
-  "Stage to Flipper or ZIP",
-  "Run only when context is safe",
+  "Pick the profiles you need",
+  "Review every keystroke",
+  "Stage to Flipper or download a ZIP",
+  "Send from the Flipper with OK",
 ];
 
-const operatorLoops = [
+const featureCards = [
   {
-    title: "Recon",
-    body: "Profiles are small, readable playbooks for repeatable terminal moves: git triage, cloud probes, system checks, snippets, and recovery flows.",
+    title: "Readable profiles",
+    body: "Profiles are small JSON files grouping the git, cloud, system, and snippet commands you run all the time, so they're easy to find on the device.",
   },
   {
-    title: "Control",
-    body: "Nothing is hidden. The browser shows the exact keystrokes and blocks destructive patterns before a pack can be generated.",
+    title: "Nothing hidden",
+    body: "The browser shows the exact keystrokes each profile sends and blocks known-destructive commands before you can build a pack.",
   },
   {
-    title: "Deploy",
-    body: "The web installer stages the mission pack first. The .fap binary is treated as experimental payload, not the single point of failure.",
+    title: "Two ways to install",
+    body: "Install straight to the Flipper over USB in Chrome or Edge, or download a ZIP and copy it onto the SD card with qFlipper.",
   },
 ];
 
@@ -90,7 +90,7 @@ export default function Home() {
                 <div className="mb-4 flex flex-wrap items-center gap-3">
                   <p className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-sm font-semibold text-accent">
                     <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent"></span>
-                  Operator playbooks for Flipper Zero
+                  Command profiles for Flipper Zero
                   </p>
                   <span className="f1-lights" aria-hidden="true">
                     <span></span>
@@ -101,27 +101,28 @@ export default function Home() {
                   </span>
                 </div>
                 <h1 className="max-w-3xl bg-gradient-to-r from-foreground via-foreground to-accent bg-clip-text text-5xl font-black uppercase tracking-tight text-transparent sm:text-6xl lg:text-7xl">
-                  Field
+                  Command
                   <span className="italic" style={{ WebkitTextFillColor: "var(--accent-primary)" }}>
-                    Ops
+                    deck
                   </span>
                 </h1>
                 <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-                  FlipDeck is being repositioned from a novelty macro pad into a tactical
-                  command-pack system: assemble known-safe workflows, inspect the exact payload,
-                  stage them to a Flipper, and use the device as an offline execution rail when
-                  speed and repeatability matter.
+                  FlipDeck keeps the terminal commands and shortcuts you use most on your Flipper
+                  Zero&apos;s SD card. Pick the profiles you want, review the exact keystrokes they
+                  send, and stage them to the device over USB. The Flipper then types them into any
+                  connected computer as a USB keyboard — with a confirmation step before anything is
+                  sent.
                 </p>
                 <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                  The new <code className="rounded bg-card px-1 py-0.5">.fap</code> path is
-                  intentionally treated as experimental until it proves reliable across firmware
-                  versions. Profile staging and ZIP export remain first-class so the product still
-                  works when the binary payload fails.
+                  Installing the FlipDeck <code className="rounded bg-card px-1 py-0.5">.fap</code>{" "}
+                  app is still experimental and may not work on every firmware version, so profile
+                  staging and ZIP export are first-class and keep working even when the app install
+                  doesn&apos;t.
                 </p>
               </div>
 
               <div className="grid gap-3 md:grid-cols-3">
-                {operatorLoops.map((loop) => (
+                {featureCards.map((loop) => (
                   <article
                     key={loop.title}
                     className="rounded-xl border border-border bg-background/55 p-4 shadow-sm"
@@ -147,7 +148,7 @@ export default function Home() {
               <div className="col-span-3 mb-1 flex items-center gap-2">
                 <span className="f1-live-dot" aria-hidden="true"></span>
                 <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  Pack telemetry
+                  Your selection
                 </span>
               </div>
               <div className="text-center sm:text-left">
@@ -202,9 +203,9 @@ export default function Home() {
           <section className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
             <div className="border-b border-border bg-gradient-to-r from-card to-card/80 px-4 py-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold uppercase tracking-wide text-foreground">🚀 Operating loop</h2>
+                <h2 className="text-lg font-bold uppercase tracking-wide text-foreground">How it works</h2>
                 <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-bold uppercase tracking-[0.15em] text-accent">
-                  auditable by default
+                  review before you send
                 </span>
               </div>
             </div>

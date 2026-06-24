@@ -30,6 +30,8 @@ typedef struct {
     FlipDeckProfileCategory current_category;
     uint32_t category_scroll_offset;
     uint32_t action_scroll_offset;
+    uint32_t settings_index;
+    uint32_t settings_scroll_offset;
 } FlipDeckUi;
 
 static FlipDeckUi ui;
@@ -47,6 +49,7 @@ static void flipdeck_ui_input_confirm(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_input_settings(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_input_long_snippet_warning(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_send_action(FlipDeckUi* ui_ctx, FlipDeckAction* action);
+static void flipdeck_ui_set_send_status(FlipDeckApp* app, FlipDeckAction* action, bool ok);
 
 /* Returns the action at app_ctx->selected_action_index, or NULL if the index is
  * stale/out of range for the currently loaded category. Callers must treat NULL
@@ -260,6 +263,18 @@ static void flipdeck_ui_draw_action_browser(Canvas* canvas, FlipDeckUi* ui_ctx) 
         canvas_draw_str(canvas, 5, y, ui_ctx->current_category.actions[i].label);
     }
 
+    // A pending send result takes over the footer as a transient toast; it is
+    // cleared on the next button press in the action browser input handler.
+    if(app->status_message[0] != '\0') {
+        canvas_set_color(canvas, ColorBlack);
+        canvas_draw_box(canvas, 0, 54, 128, 10);
+        canvas_set_color(canvas, ColorWhite);
+        canvas_set_font(canvas, FontSecondary);
+        canvas_draw_str(canvas, 3, 62, app->status_message);
+        canvas_set_color(canvas, ColorBlack);
+        return;
+    }
+
     if(ui_ctx->current_category.action_count > 4) {
         char range[16];
         snprintf(
@@ -290,14 +305,56 @@ static void flipdeck_ui_draw_confirm(Canvas* canvas, FlipDeckUi* ui_ctx) {
     elements_button_center(canvas, "Send");
 }
 
+#define FLIPDECK_SETTINGS_COUNT 5
+#define FLIPDECK_SETTINGS_MAX_DELAY_MS 500
+#define FLIPDECK_SETTINGS_DELAY_STEP_MS 50
+
+// Render one settings row as "Label: value" into out.
+static void flipdeck_ui_settings_row_text(FlipDeckApp* app, uint32_t index, char* out, size_t out_size) {
+    switch(index) {
+        case 0:
+            snprintf(out, out_size, "Confirm send: %s", app->settings.confirm_before_send ? "On" : "Off");
+            break;
+        case 1:
+            snprintf(out, out_size, "USB auto-check: %s", app->settings.auto_detect_usb ? "On" : "Off");
+            break;
+        case 2:
+            snprintf(out, out_size, "Show icons: %s", app->settings.show_icons ? "On" : "Off");
+            break;
+        case 3:
+            snprintf(out, out_size, "Show descr: %s", app->settings.show_descriptions ? "On" : "Off");
+            break;
+        case 4:
+            snprintf(out, out_size, "Send delay: %lums", (unsigned long)app->settings.send_delay_ms);
+            break;
+        default:
+            out[0] = '\0';
+            break;
+    }
+}
+
 static void flipdeck_ui_draw_settings(Canvas* canvas, FlipDeckUi* ui_ctx) {
     FlipDeckApp* app = ui_ctx->app_ctx;
     flipdeck_ui_draw_header(canvas, "Settings");
 
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 5, 30, app->usb_connected ? "USB connected" : "USB disconnected");
-    canvas_draw_str(canvas, 5, 42, "Back returns to profiles");
-    elements_button_left(canvas, "Back");
+    if(ui_ctx->settings_index >= FLIPDECK_SETTINGS_COUNT) ui_ctx->settings_index = 0;
+    ui_ctx->settings_scroll_offset = flipdeck_ui_scroll_offset_for_selection(
+        ui_ctx->settings_index, ui_ctx->settings_scroll_offset, FLIPDECK_SETTINGS_COUNT, 4);
+
+    for(uint32_t row = 0; row < 4 && row + ui_ctx->settings_scroll_offset < FLIPDECK_SETTINGS_COUNT; row++) {
+        uint32_t i = row + ui_ctx->settings_scroll_offset;
+        int32_t y = 26 + (row * 10);
+        if(i == ui_ctx->settings_index) {
+            elements_frame(canvas, 0, y - 8, 124, 10);
+        }
+        char line[40];
+        flipdeck_ui_settings_row_text(app, i, line, sizeof(line));
+        canvas_draw_str(canvas, 5, y, line);
+    }
+
+    elements_button_left(canvas, "Save");
+    elements_button_center(canvas, "Change");
 }
 
 static void flipdeck_ui_draw_long_snippet_warning(Canvas* canvas, FlipDeckUi* ui_ctx) {
@@ -349,6 +406,10 @@ static void flipdeck_ui_input_action_browser(FlipDeckUi* ui_ctx, InputEvent* eve
     FlipDeckApp* app = ui_ctx->app_ctx;
     if(event->type != InputTypeShort) return;
 
+    // Dismiss any lingering send-result toast on the next interaction. A new
+    // send below re-sets it.
+    app->status_message[0] = '\0';
+
     uint32_t action_count = ui_ctx->current_category.action_count;
     if(action_count == 0 && event->key != InputKeyBack) return;
 
@@ -396,9 +457,62 @@ static void flipdeck_ui_input_confirm(FlipDeckUi* ui_ctx, InputEvent* event) {
     }
 }
 
+// Toggle a boolean setting, or step the send delay. Left decreases the delay,
+// any other adjust key (OK/Right) increases it; bools just flip.
+static void flipdeck_ui_settings_adjust(FlipDeckApp* app, uint32_t index, InputKey key) {
+    switch(index) {
+        case 0:
+            app->settings.confirm_before_send = !app->settings.confirm_before_send;
+            break;
+        case 1:
+            app->settings.auto_detect_usb = !app->settings.auto_detect_usb;
+            break;
+        case 2:
+            app->settings.show_icons = !app->settings.show_icons;
+            break;
+        case 3:
+            app->settings.show_descriptions = !app->settings.show_descriptions;
+            break;
+        case 4: {
+            uint32_t delay = app->settings.send_delay_ms;
+            if(key == InputKeyLeft) {
+                delay = (delay >= FLIPDECK_SETTINGS_DELAY_STEP_MS)
+                    ? delay - FLIPDECK_SETTINGS_DELAY_STEP_MS : 0;
+            } else {
+                delay = (delay + FLIPDECK_SETTINGS_DELAY_STEP_MS <= FLIPDECK_SETTINGS_MAX_DELAY_MS)
+                    ? delay + FLIPDECK_SETTINGS_DELAY_STEP_MS : FLIPDECK_SETTINGS_MAX_DELAY_MS;
+            }
+            app->settings.send_delay_ms = delay;
+            break;
+        }
+        default:
+            break;
+    }
+}
+
 static void flipdeck_ui_input_settings(FlipDeckUi* ui_ctx, InputEvent* event) {
-    if(event->type == InputTypeShort && event->key == InputKeyBack) {
-        ui_ctx->app_ctx->state = FlipDeckState_CategoryBrowser;
+    FlipDeckApp* app = ui_ctx->app_ctx;
+    if(event->type != InputTypeShort) return;
+
+    switch(event->key) {
+        case InputKeyUp:
+            if(ui_ctx->settings_index > 0) ui_ctx->settings_index--;
+            break;
+        case InputKeyDown:
+            if(ui_ctx->settings_index + 1 < FLIPDECK_SETTINGS_COUNT) ui_ctx->settings_index++;
+            break;
+        case InputKeyOk:
+        case InputKeyLeft:
+        case InputKeyRight:
+            flipdeck_ui_settings_adjust(app, ui_ctx->settings_index, event->key);
+            break;
+        case InputKeyBack:
+            // Persist on the way out so toggled settings survive a relaunch.
+            profile_manager_save_settings(&app->settings);
+            app->state = FlipDeckState_CategoryBrowser;
+            break;
+        default:
+            break;
     }
 }
 
@@ -413,12 +527,13 @@ static void flipdeck_ui_input_long_snippet_warning(FlipDeckUi* ui_ctx, InputEven
                 app->state = FlipDeckState_ActionBrowser;
                 break;
             }
+            bool ok;
             if(action->target == FlipDeckActionTarget_WifiUart) {
-                uart_bridge_send_string(action->value);
+                ok = uart_bridge_send_string(action->value);
             } else {
-                usb_hid_send_string(action->value);
+                ok = usb_hid_send_string(action->value);
             }
-            snprintf(app->status_message, sizeof(app->status_message), "Sent!");
+            flipdeck_ui_set_send_status(app, action, ok);
             app->state = FlipDeckState_ActionBrowser;
             break;
         }
@@ -430,29 +545,54 @@ static void flipdeck_ui_input_long_snippet_warning(FlipDeckUi* ui_ctx, InputEven
     }
 }
 
+// Record the outcome of a send as a short status_message (drawn as a footer
+// toast in the action browser) and, on success, apply the post-send delay:
+// the action's own delay_ms if set, otherwise the global send_delay_ms.
+static void flipdeck_ui_set_send_status(FlipDeckApp* app, FlipDeckAction* action, bool ok) {
+    if(ok) {
+        snprintf(app->status_message, sizeof(app->status_message), "Sent");
+        uint32_t delay = action->delay_ms ? action->delay_ms : app->settings.send_delay_ms;
+        if(delay) furi_delay_ms(delay);
+        return;
+    }
+
+    if(action->target == FlipDeckActionTarget_WifiUart) {
+        snprintf(
+            app->status_message, sizeof(app->status_message),
+            uart_bridge_is_connected() ? "Send failed" : "Dev board off");
+    } else {
+        snprintf(
+            app->status_message, sizeof(app->status_message),
+            usb_hid_is_connected() ? "Send failed" : "USB not connected");
+    }
+}
+
 static void flipdeck_ui_send_action(FlipDeckUi* ui_ctx, FlipDeckAction* action) {
+    FlipDeckApp* app = ui_ctx->app_ctx;
     if(!action) return;
 
     if(!profile_manager_validate_action(action)) {
         FURI_LOG_W("FlipDeck", "Blocked unsafe action");
+        snprintf(app->status_message, sizeof(app->status_message), "Blocked: unsafe");
         return;
     }
 
+    bool ok = false;
     if(action->type == FlipDeckActionType_Text) {
         if(strlen(action->value) > FLIPDECK_MAX_SNIPPET_LENGTH_WARN) {
-            ui_ctx->app_ctx->state = FlipDeckState_LongSnippetWarning;
+            app->state = FlipDeckState_LongSnippetWarning;
             return;
         }
         if(action->target == FlipDeckActionTarget_WifiUart) {
-            uart_bridge_send_string(action->value);
+            ok = uart_bridge_send_string(action->value);
         } else {
-            usb_hid_send_string(action->value);
+            ok = usb_hid_send_string(action->value);
         }
     } else if(action->type == FlipDeckActionType_Key) {
-        usb_hid_send_key(action->value);
+        ok = usb_hid_send_key(action->value);
     } else if(action->type == FlipDeckActionType_KeyCombo) {
-        usb_hid_send_key_combo(action->value);
+        ok = usb_hid_send_key_combo(action->value);
     }
 
-    snprintf(ui_ctx->app_ctx->status_message, sizeof(ui_ctx->app_ctx->status_message), "Sent!");
+    flipdeck_ui_set_send_status(app, action, ok);
 }

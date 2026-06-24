@@ -59,7 +59,7 @@ export function SmartInstallButton({
     <section className="overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/80 p-4 shadow-lg">
       {/* Direct serial install — leads the UX */}
       <div className="mb-4">
-        <h2 className="mb-1 text-lg font-semibold text-foreground">⚡ Stage mission pack</h2>
+        <h2 className="mb-1 text-lg font-semibold text-foreground">⚡ Install to your Flipper</h2>
         <p className="mb-3 text-sm text-muted-foreground">
           {hasSelection
             ? `${selectedIds.length} profile${selectedIds.length === 1 ? "" : "s"} · ${selectedCount} command${selectedCount === 1 ? "" : "s"} selected`

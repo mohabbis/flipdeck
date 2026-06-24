@@ -1,6 +1,6 @@
 # FlipDeck
 
-**A USB Command Deck for Flipper Zero** — Turn your Flipper into a safe, configurable USB keyboard and touchpad for developers and power users.
+**A USB Command Deck for Flipper Zero** — Turn your Flipper into a safe, configurable USB keyboard for developers and power users.
 
 [![License](https://img.shields.io/github/license/mohabbis/flipdeck)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-blue)](https://flipperzero.one)
@@ -18,7 +18,7 @@ FlipDeck transforms your Flipper Zero into a programmable command deck. Store fr
 
 ## Features
 
-- ✅ **Profile Storage** — Save unlimited command profiles on SD card
+- ✅ **Profile Storage** — Save command profiles on the SD card
 - ✅ **USB HID Keyboard** — Send text, key presses, and shortcuts
 - ✅ **Profile Types** — Commands, snippets, shortcuts, and scripts
 - ✅ **No WiFi Required** — Works on stock Flipper Zero
@@ -262,12 +262,11 @@ flipdeck/
 
 ## Desktop Helper
 
-The `desktop_helper/` directory contains a companion Node.js/TypeScript application for:
-- GitHub authentication
-- Profile sync from GitHub/Gist
-- Profile import/export
-- GitHub Actions triggers
-- Issue creation from profiles
+The `desktop_helper/` directory contains a companion Node.js/TypeScript CLI for:
+- Creating, validating, and auditing profiles
+- Previewing how a profile renders on the Flipper
+- Migrating legacy `actions` profiles to the v2 `commands` format
+- Importing/exporting profiles and syncing them via GitHub Gist
 
 ```bash
 cd desktop_helper

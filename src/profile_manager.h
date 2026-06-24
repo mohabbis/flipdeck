@@ -40,6 +40,7 @@ typedef struct {
     char value[FLIPDECK_MAX_COMMAND_LENGTH];
     bool confirm;
     FlipDeckActionTarget target;
+    uint32_t delay_ms;
 } FlipDeckAction;
 
 /**
