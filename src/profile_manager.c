@@ -97,6 +97,30 @@ static bool find_json_bool(char* json, const char* key, bool default_val) {
     return default_val;
 }
 
+// Parse an unsigned integer value for `key`. Returns the parsed number, or
+// `default_val` when the key is absent or has no digits after the colon.
+static uint32_t find_json_uint(char* json, const char* key, uint32_t default_val) {
+    char search_key[64];
+    snprintf(search_key, sizeof(search_key), "\"%s\"", key);
+    char* pos = strstr(json, search_key);
+    if(!pos) return default_val;
+
+    pos = strstr(pos, ":");
+    if(!pos) return default_val;
+    pos++;
+
+    // Skip whitespace, then require at least one digit.
+    while(*pos == ' ' || *pos == '\t') pos++;
+    if(*pos < '0' || *pos > '9') return default_val;
+
+    uint32_t value = 0;
+    while(*pos >= '0' && *pos <= '9') {
+        value = (value * 10) + (uint32_t)(*pos - '0');
+        pos++;
+    }
+    return value;
+}
+
 FlipDeckActionType parse_action_type(char* json) {
     char type_str[16];
     if(find_json_string(json, "type", type_str, sizeof(type_str))) {
@@ -162,8 +186,10 @@ bool profile_manager_load_category(const char* category_id, FlipDeckProfileCateg
     char path[128];
     snprintf(path, sizeof(path), "%s/%s.json", PROFILE_BASE_PATH, category_id);
     
-    // Read file content
-    char buffer[2048];
+    // Read file content. The buffer is static (not a 2KB stack frame) because
+    // the FAP stack is only 4096 bytes and this runs mid-navigation; the app is
+    // single-threaded and this function is not re-entrant, so a shared buffer is safe.
+    static char buffer[2048];
     if(!read_text_file(path, buffer, sizeof(buffer))) {
         FURI_LOG_E("FlipDeck", "Category file not found: %s", path);
         return false;
@@ -235,6 +261,8 @@ bool profile_manager_load_category(const char* category_id, FlipDeckProfileCateg
                         "confirmation_required",
                         find_json_bool(action_json, "confirm", true));
                 category->actions[category->action_count].target = parse_action_target(action_json);
+                category->actions[category->action_count].delay_ms =
+                    find_json_uint(action_json, "delay_ms", 0);
 
                 category->action_count++;
                 pos = action_end + 1;
@@ -257,8 +285,9 @@ bool profile_manager_save_category(FlipDeckProfileCategory* category) {
     char path[128];
     snprintf(path, sizeof(path), "%s/%s.json", PROFILE_BASE_PATH, category->id);
     
-    // Build JSON content
-    char json[4096];
+    // Build JSON content. Static for the same reason as load_category's buffer:
+    // a 4KB local would overflow the 4096-byte FAP stack. Single-threaded, not re-entrant.
+    static char json[4096];
     uint32_t offset = 0;
     offset += snprintf(json + offset, sizeof(json) - offset,
         "{\n  \"name\": \"%s\",\n  \"id\": \"%s\",\n  \"description\": \"%s\",\n  \"actions\": [\n",
@@ -291,10 +320,11 @@ bool profile_manager_save_category(FlipDeckProfileCategory* category) {
         const char* target_str = action->target == FlipDeckActionTarget_WifiUart ? "wifi_uart" : "usb_hid";
 
         offset += snprintf(json + offset, sizeof(json) - offset,
-            "    {\"label\": \"%s\", \"type\": \"%s\", \"value\": \"%s\", \"confirm\": %s, \"target\": \"%s\"}%s\n",
+            "    {\"label\": \"%s\", \"type\": \"%s\", \"value\": \"%s\", \"confirm\": %s, \"target\": \"%s\", \"delay_ms\": %lu}%s\n",
             escaped_label, type_str, escaped_value,
             action->confirm ? "true" : "false",
             target_str,
+            (unsigned long)action->delay_ms,
             (i < category->action_count - 1) ? "," : "");
     }
     

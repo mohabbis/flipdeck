@@ -168,7 +168,7 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
       <div className="space-y-3">
         <div className="rounded-lg border border-accent-success/30 bg-accent-success/10 px-4 py-3">
           <p className="font-semibold text-accent-success">
-            ✓ {phase.appInstalled ? "FlipDeck installed" : "Mission pack staged"} with {phase.count} profile{phase.count !== 1 ? "s" : ""}
+            ✓ {phase.appInstalled ? "FlipDeck installed" : "Profiles staged"} with {phase.count} profile{phase.count !== 1 ? "s" : ""}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {phase.appInstalled ? (

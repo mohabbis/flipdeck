@@ -30,4 +30,17 @@ describe("GET /api/install-bundle/download", () => {
     );
     expect(gitProfile.id).toBe("git");
   });
+
+  it("writes normalized device profiles (commands array, no legacy actions)", async () => {
+    const res = await GET();
+    const zip = await JSZip.loadAsync(await res.arrayBuffer());
+
+    const gitProfile = JSON.parse(
+      await zip.file("apps_data/flipdeck/profiles/git.json")!.async("string")
+    );
+
+    expect(Array.isArray(gitProfile.commands)).toBe(true);
+    expect(gitProfile.commands.length).toBeGreaterThan(0);
+    expect(gitProfile).not.toHaveProperty("actions");
+  });
 });
