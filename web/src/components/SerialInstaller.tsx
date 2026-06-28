@@ -172,33 +172,32 @@ export function SerialInstaller({ selectedIds }: SerialInstallerProps) {
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {phase.appInstalled ? (
-              <>App: <code className="font-mono">/apps/Tools/flipdeck.fap</code> · </>
+              <>App: <code className="font-mono">/ext/apps/Tools/flipdeck.fap</code> · </>
             ) : (
               <>App binary skipped because the hosted .fap failed validation · </>
             )}
-            Profiles: <code className="font-mono">/apps_data/flipdeck/profiles/</code>
+            Profiles: <code className="font-mono">/ext/apps_data/flipdeck/profiles/</code>
           </p>
         </div>
         <div className="flex gap-2">
-            <a
-              href="/flipdeck.fap"
-              download="flipdeck.fap"
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
-              Download experimental .fap
-            </a>
-            <button
-              onClick={retry}
-              className="h-8 rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
-              Disconnect
-            </button>
+          <a
+            href="/flipdeck.fap"
+            download="flipdeck.fap"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            Download experimental .fap
+          </a>
+          <button
+            onClick={retry}
+            className="h-8 rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            Disconnect
+          </button>
         </div>
       </div>
     );
   }
 
-  // error
   return (
     <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
       <p className="font-semibold text-red-400">Installation failed</p>
