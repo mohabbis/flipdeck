@@ -8,7 +8,7 @@
 - [x] USB HID communication layer
 - [x] Default profile templates
 - [x] Settings management
-- [ ] Flight manual documentation
+- [x] Flight manual documentation
 
 ## Phase 2: Profile Management
 
@@ -45,7 +45,7 @@
 
 ## Long-term Vision
 
-FlipDeck should become the ultimate USB command center for Flipper Zero — a safe, extensible tool that bridges the gap between physical button presses and digital workflows.
+FlipDeck should become the ultimate USB command center for Flipper Zero: a safe, extensible tool that bridges the gap between physical button presses and digital workflows.
 
 ---
 
