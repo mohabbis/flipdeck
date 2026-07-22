@@ -3,18 +3,25 @@
  * @brief NFC tag scanning bridge implementation
  *
  * ############################################################################
- * # UNVERIFIED AGAINST REAL FIRMWARE HEADERS
+ * # VERIFIED AGAINST REAL FIRMWARE HEADERS, NOT AGAINST REAL FIRMWARE
  * #
- * # This file was written against function signatures confirmed from
- * # lib/nfc/{nfc_scanner,nfc_poller,nfc_device}.h in the flipperdevices
- * # firmware source, but there was no uFBT/fbt toolchain available to
- * # actually compile it against those headers. The riskiest guess is the
- * # bridge from NfcPoller's `const NfcDeviceData*` (nfc_poller_get_data)
- * # to a UID via a scratch NfcDevice (nfc_device_set_data +
- * # nfc_device_get_uid) - firmware code may have a more direct accessor.
- * # `NfcCommand`/`NfcGenericEvent`'s exact field names are inferred from
- * # common Flipper poller-callback conventions, not confirmed. Build this
- * # with a real `fbt`/`ufbt` and expect to fix compile errors here first.
+ * # There is no fbt/ufbt toolchain available in this environment (its SDK
+ * # download is blocked by network policy here), so this could not go
+ * # through a real build. It WAS syntax/type-checked with gcc -fsyntax-only
+ * # -Wall -Wextra -Wpedantic against the actual, current
+ * # lib/nfc/{nfc,nfc_device,nfc_scanner,nfc_poller}.h and its protocols headers, from
+ * # flipperdevices/flipperzero-firmware (dev branch) - not hand-typed
+ * # guesses at their contents - and came back clean. Every function call,
+ * # struct field, and typedef used below (nfc_scanner_alloc/start/stop/free,
+ * # NfcScannerEvent.{type,data.protocol_num,data.protocols}, nfc_poller_alloc/
+ * # start/stop/free/get_data/get_protocol, NfcCommand/NfcCommandStop,
+ * # nfc_device_alloc/free/set_data/get_uid) matches the real header exactly.
+ * #
+ * # What that does NOT cover: linking against the real compiled library,
+ * # runtime behavior (timing, threading, actual hardware I/O), whether this
+ * # specific firmware build's headers differ from the fetched dev-branch
+ * # snapshot, and Momentum-firmware-specific differences if any. Build and
+ * # flash this on real hardware before trusting it end-to-end.
  * ############################################################################
  */
 
