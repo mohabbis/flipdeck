@@ -1,14 +1,22 @@
 # Spec: NFC Tag Triggers for FlipDeck
 
 Status: **Phase 1 implemented** (`flipdeck_app.h`/`.c`, `flipdeck_ui.h`/`.c`,
-`profile_manager.h`/`.c`, `nfc_bridge.h`/`.c`, `application.fam`). Written
-against the real Flipper NFC API surface (`lib/nfc/nfc_scanner.h`,
-`lib/nfc/nfc_poller.h`, `lib/nfc/nfc_device.h`) so it's buildable, not
-hand-waved — but there was no `fbt`/`ufbt` toolchain available to actually
-compile `nfc_bridge.c` against those headers; see its file header comment
-for exactly what's unverified. Everything else (data model, state machine,
-UI) was syntax/type-checked against a hand-built fake GUI header set and the
-real host test suite, and passes both.
+`profile_manager.h`/`.c`, `nfc_bridge.h`/`.c`, `application.fam`).
+
+No `fbt`/`ufbt` toolchain is available in this environment (its SDK download
+is blocked by the sandbox's network policy), so this hasn't gone through a
+real build. As a substitute: `nfc_bridge.c` was syntax/type-checked with
+`gcc -fsyntax-only -Wall -Wextra -Wpedantic` against the actual, current
+`lib/nfc/{nfc,nfc_device,nfc_scanner,nfc_poller,protocols/*}.h` fetched from
+`flipperdevices/flipperzero-firmware` (not hand-typed guesses at their
+contents) and came back with zero warnings — every function signature and
+struct field it uses matches the real headers exactly. `flipdeck_ui.c`/
+`flipdeck_app.c` were checked the same way against a hand-built fake GUI
+header set, and `profile_manager.c`'s new logic runs through the real host
+test suite (188/188 passing). None of that substitutes for an actual build +
+hardware flash, which is still the next step before trusting this fully —
+see `nfc_bridge.c`'s file header comment for exactly what remains unconfirmed
+(linking, runtime behavior, any Momentum-specific header differences).
 
 Two deliberate deviations from the plan below, made during implementation:
 - No separate `FlipDeckState_NfcBind`. Binding reuses `CategoryBrowser`/

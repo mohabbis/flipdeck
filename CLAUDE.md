@@ -112,7 +112,7 @@ Key modules:
 - `profile_manager.c` — JSON parsing from SD card, safety validation before send
 - `usb_hid.c` — USB HID keyboard report generation
 - `uart_bridge.c` — UART bridge to the Flipper WiFi Dev Board (GPIO pins 13/14, 115200 baud) for `target: "wifi_uart"` commands
-- `nfc_bridge.c` — NFC tag scanning bridge (`nfc/nfc_scanner.h`/`nfc_poller.h`/`nfc_device.h`); **written without a working `fbt`/`ufbt` toolchain to compile against, so its exact API calls are unverified against real firmware headers** — expect to fix compile errors here first when building on real hardware
+- `nfc_bridge.c` — NFC tag scanning bridge (`nfc/nfc_scanner.h`/`nfc_poller.h`/`nfc_device.h`); no `fbt`/`ufbt` toolchain is available in this environment to actually build it, but its API usage was syntax/type-checked clean against the real headers fetched from `flipperdevices/flipperzero-firmware` — still needs a real build + hardware flash to confirm runtime behavior
 - `settings.c` — JSON settings serialization
 
 Memory constraint: 4096-byte stack limit. Use fixed-size buffers; avoid deep call stacks.

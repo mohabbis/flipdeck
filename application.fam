@@ -16,12 +16,10 @@ App(
         "src/settings.c",
         "src/nfc_bridge.c",
     ],
-    # NOTE: unverified - src/nfc_bridge.c links against the firmware's NFC
-    # library (nfc/nfc_scanner.h, nfc/nfc_poller.h, nfc/nfc_device.h). This
-    # repo has no fbt/ufbt toolchain available to confirm whether an
-    # EXTERNAL app needs an explicit `requires=["nfc"]` (or similar) entry
-    # here to resolve those symbols at load time, the way some external NFC
-    # apps declare dependencies on shared libraries. If `fbt`/`ufbt build`
-    # fails to link/load with unresolved nfc_* symbols, this is the first
-    # place to check - compare against another external app that uses NFC.
 )
+# No `requires=[...]` needed for NFC: checked against
+# applications/main/nfc/application.fam in flipperdevices/flipperzero-firmware
+# — `requires` is for app-to-app plugin dependencies (e.g. a card-parser
+# PLUGIN requiring the NFC *app*), not for linking against the NFC *library*.
+# nfc_scanner.h/nfc_poller.h/nfc_device.h are part of the standard external-app
+# API surface, same as gui.h/storage.h.
