@@ -387,24 +387,64 @@ bool profile_manager_list_categories(char category_ids[][32], uint32_t* count) {
     return *count > 0;
 }
 
+// Parse a `"favorites": [ {"category_id": "...", "label": "..."}, ... ]` array
+// into settings->favorites. Mirrors the action-array parsing in
+// profile_manager_load_category: scan `{...}` objects between the array's `[`
+// and `]`, stopping at FLIPDECK_MAX_FAVORITES.
+static void parse_favorites(char* json, FlipDeckSettings* settings) {
+    settings->favorite_count = 0;
+
+    char* arr_start = strstr(json, "\"favorites\"");
+    if(!arr_start) return;
+    arr_start = strchr(arr_start, '[');
+    if(!arr_start) return;
+    char* arr_end = strchr(arr_start, ']');
+    if(!arr_end) return;
+
+    char* pos = arr_start + 1;
+    while(pos < arr_end && settings->favorite_count < FLIPDECK_MAX_FAVORITES) {
+        char* obj_start = strchr(pos, '{');
+        if(!obj_start || obj_start >= arr_end) break;
+        char* obj_end = strchr(obj_start, '}');
+        if(!obj_end || obj_end > arr_end) break;
+
+        char obj_json[160];
+        uint32_t obj_len = obj_end - obj_start + 1;
+        if(obj_len < sizeof(obj_json)) {
+            strncpy(obj_json, obj_start, obj_len);
+            obj_json[obj_len] = '\0';
+
+            FlipDeckFavorite* fav = &settings->favorites[settings->favorite_count];
+            find_json_string(obj_json, "category_id", fav->category_id, sizeof(fav->category_id));
+            find_json_string(obj_json, "label", fav->label, sizeof(fav->label));
+            if(fav->category_id[0] && fav->label[0]) {
+                settings->favorite_count++;
+            }
+        }
+
+        pos = obj_end + 1;
+    }
+}
+
 bool profile_manager_load_settings(FlipDeckSettings* settings) {
     FURI_LOG_I("FlipDeck", "Loading settings");
-    
-    char buffer[512];
+
+    char buffer[1024];
     if(!read_text_file(SETTINGS_PATH, buffer, sizeof(buffer))) {
         FURI_LOG_W("FlipDeck", "No settings file found");
         goto default_settings;
     }
-    
+
     // Parse settings with defaults
     settings->send_delay_ms = 100;
     settings->confirm_before_send = find_json_bool(buffer, "confirm_before_send", true);
     settings->auto_detect_usb = find_json_bool(buffer, "auto_detect_usb", true);
     settings->show_icons = find_json_bool(buffer, "show_icons", true);
     settings->show_descriptions = find_json_bool(buffer, "show_descriptions", true);
-    find_json_string(buffer, "startup_category", settings->startup_category, 
+    find_json_string(buffer, "startup_category", settings->startup_category,
         sizeof(settings->startup_category));
-    
+    parse_favorites(buffer, settings);
+
     return true;
 
 default_settings:
@@ -415,41 +455,97 @@ default_settings:
     settings->show_descriptions = true;
     strcpy(settings->startup_category, "");
     settings->long_snippet_warn_state = 0;  // Initialize new field
+    settings->favorite_count = 0;
     return false;
 }
 
 bool profile_manager_save_settings(FlipDeckSettings* settings) {
     FURI_LOG_I("FlipDeck", "Saving settings");
-    
+
     if(!settings) {
         FURI_LOG_E("FlipDeck", "Invalid settings for saving");
         return false;
     }
-    
-    // Build JSON content
-    char json[512];
-    snprintf(json, sizeof(json),
+
+    // Build JSON content. Static for the same reason as load_category's
+    // buffer: a 1KB+ local would eat too much of the 4096-byte FAP stack.
+    // Single-threaded, not re-entrant.
+    static char json[1536];
+    uint32_t offset = 0;
+    offset += snprintf(json + offset, sizeof(json) - offset,
         "{\n"
         "  \"confirm_before_send\": %s,\n"
         "  \"auto_detect_usb\": %s,\n"
         "  \"show_icons\": %s,\n"
         "  \"show_descriptions\": %s,\n"
         "  \"send_delay_ms\": %" PRIu32 ",\n"
-        "  \"startup_category\": \"%s\"\n"
-        "}\n",
+        "  \"startup_category\": \"%s\",\n"
+        "  \"favorites\": [\n",
         settings->confirm_before_send ? "true" : "false",
         settings->auto_detect_usb ? "true" : "false",
         settings->show_icons ? "true" : "false",
         settings->show_descriptions ? "true" : "false",
         settings->send_delay_ms,
         settings->startup_category);
-    
+
+    for(uint32_t i = 0; i < settings->favorite_count && offset < sizeof(json) - 96; i++) {
+        offset += snprintf(json + offset, sizeof(json) - offset,
+            "    {\"category_id\": \"%s\", \"label\": \"%s\"}%s\n",
+            settings->favorites[i].category_id,
+            settings->favorites[i].label,
+            (i < settings->favorite_count - 1) ? "," : "");
+    }
+    offset += snprintf(json + offset, sizeof(json) - offset, "  ]\n}\n");
+
     if(!write_text_file(SETTINGS_PATH, json)) {
         FURI_LOG_E("FlipDeck", "Failed to open settings file for writing");
         return false;
     }
-    
+
     FURI_LOG_I("FlipDeck", "Settings saved successfully");
+    return true;
+}
+
+bool profile_manager_is_favorite(
+    const FlipDeckSettings* settings,
+    const char* category_id,
+    const char* label) {
+    if(!settings || !category_id || !label) return false;
+    for(uint32_t i = 0; i < settings->favorite_count; i++) {
+        if(strcmp(settings->favorites[i].category_id, category_id) == 0 &&
+           strcmp(settings->favorites[i].label, label) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool profile_manager_toggle_favorite(
+    FlipDeckSettings* settings,
+    const char* category_id,
+    const char* label) {
+    if(!settings || !category_id || !label) return false;
+
+    for(uint32_t i = 0; i < settings->favorite_count; i++) {
+        if(strcmp(settings->favorites[i].category_id, category_id) == 0 &&
+           strcmp(settings->favorites[i].label, label) == 0) {
+            // Remove by shifting the tail down, then shrink.
+            for(uint32_t j = i + 1; j < settings->favorite_count; j++) {
+                settings->favorites[j - 1] = settings->favorites[j];
+            }
+            settings->favorite_count--;
+            return false;
+        }
+    }
+
+    if(settings->favorite_count >= FLIPDECK_MAX_FAVORITES) return false;
+
+    FlipDeckFavorite* fav = &settings->favorites[settings->favorite_count];
+    strncpy(fav->category_id, category_id, sizeof(fav->category_id) - 1);
+    fav->category_id[sizeof(fav->category_id) - 1] = '\0';
+    strncpy(fav->label, label, sizeof(fav->label) - 1);
+    fav->label[sizeof(fav->label) - 1] = '\0';
+    settings->favorite_count++;
     return true;
 }
 

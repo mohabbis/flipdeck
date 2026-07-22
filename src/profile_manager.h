@@ -109,6 +109,26 @@ bool profile_manager_save_settings(FlipDeckSettings* settings);
 bool profile_manager_validate_action(FlipDeckAction* action);
 
 /**
+ * @brief Check whether (category_id, label) is currently favorited
+ * @return true if a matching favorite exists in settings->favorites
+ */
+bool profile_manager_is_favorite(
+    const FlipDeckSettings* settings,
+    const char* category_id,
+    const char* label);
+
+/**
+ * @brief Add or remove (category_id, label) from settings->favorites in place
+ * @return true if the action is favorited after the toggle, false if it was
+ *         removed, or if it wasn't present and there was no room to add it
+ *         (favorite_count already at FLIPDECK_MAX_FAVORITES)
+ */
+bool profile_manager_toggle_favorite(
+    FlipDeckSettings* settings,
+    const char* category_id,
+    const char* label);
+
+/**
  * @brief Check if value contains potentially dangerous commands
  * @param value Command string to check
  * @return true if value is safe
