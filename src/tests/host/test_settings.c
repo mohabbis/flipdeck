@@ -101,6 +101,39 @@ static void test_reset_to_defaults(void) {
     EXPECT_EQ_INT(settings.long_snippet_warn_state, 0u, "reset long_snippet_warn_state to 0");
 }
 
+/* ---------- favorites parsing ---------- */
+
+static void test_load_settings_parses_favorites(void) {
+    /* parse_favorites() is exercised directly against a hand-built JSON
+     * buffer, since the stub read_text_file() always reports "no file". */
+    char json[] =
+        "{\n"
+        "  \"confirm_before_send\": true,\n"
+        "  \"favorites\": [\n"
+        "    {\"category_id\": \"git\", \"label\": \"Git Status\"},\n"
+        "    {\"category_id\": \"node\", \"label\": \"Run Dev\"}\n"
+        "  ]\n"
+        "}\n";
+
+    FlipDeckSettings settings;
+    memset(&settings, 0xAA, sizeof(settings));
+    parse_favorites(json, &settings);
+
+    EXPECT_EQ_INT(settings.favorite_count, 2u, "parses two favorites");
+    EXPECT_STR_EQ(settings.favorites[0].category_id, "git", "first favorite category_id");
+    EXPECT_STR_EQ(settings.favorites[0].label, "Git Status", "first favorite label");
+    EXPECT_STR_EQ(settings.favorites[1].category_id, "node", "second favorite category_id");
+    EXPECT_STR_EQ(settings.favorites[1].label, "Run Dev", "second favorite label");
+}
+
+static void test_load_settings_no_favorites_key(void) {
+    char json[] = "{ \"confirm_before_send\": true }";
+    FlipDeckSettings settings;
+    memset(&settings, 0xAA, sizeof(settings));
+    parse_favorites(json, &settings);
+    EXPECT_EQ_INT(settings.favorite_count, 0u, "no favorites key means zero favorites");
+}
+
 /* ---------- runner ---------- */
 
 int main(void) {
@@ -120,6 +153,10 @@ int main(void) {
 
     printf("[reset_to_defaults]\n");
     test_reset_to_defaults();
+
+    printf("[favorites parsing]\n");
+    test_load_settings_parses_favorites();
+    test_load_settings_no_favorites_key();
 
     printf("\n===========================================\n");
     printf("Results: %d passed, %d failed\n", g_passes, g_failures);

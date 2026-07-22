@@ -162,6 +162,78 @@ static void test_validate_null(void) {
     EXPECT_FALSE(profile_manager_validate_action(NULL), "NULL action rejected");
 }
 
+/* ---------- favorites ---------- */
+
+static void test_favorites_toggle_add_remove(void) {
+    FlipDeckSettings settings;
+    memset(&settings, 0, sizeof(settings));
+
+    EXPECT_FALSE(
+        profile_manager_is_favorite(&settings, "git", "Git Status"), "not favorited initially");
+
+    bool added = profile_manager_toggle_favorite(&settings, "git", "Git Status");
+    EXPECT_TRUE(added, "toggle returns true when adding");
+    EXPECT_TRUE(settings.favorite_count == 1, "favorite_count is 1 after add");
+    EXPECT_TRUE(
+        profile_manager_is_favorite(&settings, "git", "Git Status"), "favorited after add");
+    EXPECT_FALSE(
+        profile_manager_is_favorite(&settings, "node", "Git Status"),
+        "different category_id does not match");
+
+    bool removed = profile_manager_toggle_favorite(&settings, "git", "Git Status");
+    EXPECT_FALSE(removed, "toggle returns false when removing");
+    EXPECT_TRUE(settings.favorite_count == 0, "favorite_count is 0 after remove");
+    EXPECT_FALSE(
+        profile_manager_is_favorite(&settings, "git", "Git Status"), "not favorited after remove");
+}
+
+static void test_favorites_removal_shifts_tail(void) {
+    FlipDeckSettings settings;
+    memset(&settings, 0, sizeof(settings));
+
+    profile_manager_toggle_favorite(&settings, "git", "Status");
+    profile_manager_toggle_favorite(&settings, "git", "Push");
+    profile_manager_toggle_favorite(&settings, "node", "Run Dev");
+    EXPECT_TRUE(settings.favorite_count == 3, "three favorites added");
+
+    /* Remove the middle one; the last entry should shift down, not vanish. */
+    profile_manager_toggle_favorite(&settings, "git", "Push");
+    EXPECT_TRUE(settings.favorite_count == 2, "favorite_count is 2 after removing middle");
+    EXPECT_TRUE(
+        profile_manager_is_favorite(&settings, "git", "Status"), "first favorite survives");
+    EXPECT_TRUE(
+        profile_manager_is_favorite(&settings, "node", "Run Dev"), "last favorite survives (shifted)");
+    EXPECT_FALSE(
+        profile_manager_is_favorite(&settings, "git", "Push"), "removed favorite is gone");
+}
+
+static void test_favorites_capacity(void) {
+    FlipDeckSettings settings;
+    memset(&settings, 0, sizeof(settings));
+
+    char label[16];
+    for(uint32_t i = 0; i < FLIPDECK_MAX_FAVORITES; i++) {
+        snprintf(label, sizeof(label), "Action %u", i);
+        EXPECT_TRUE(profile_manager_toggle_favorite(&settings, "git", label), "fills capacity");
+    }
+    EXPECT_TRUE(settings.favorite_count == FLIPDECK_MAX_FAVORITES, "favorite_count caps out");
+
+    bool added_over_capacity = profile_manager_toggle_favorite(&settings, "git", "One Too Many");
+    EXPECT_FALSE(added_over_capacity, "adding beyond capacity returns false");
+    EXPECT_TRUE(
+        settings.favorite_count == FLIPDECK_MAX_FAVORITES,
+        "favorite_count unchanged when full");
+}
+
+static void test_favorites_null_args(void) {
+    FlipDeckSettings settings;
+    memset(&settings, 0, sizeof(settings));
+
+    EXPECT_FALSE(profile_manager_is_favorite(NULL, "git", "x"), "is_favorite rejects NULL settings");
+    EXPECT_FALSE(profile_manager_is_favorite(&settings, NULL, "x"), "is_favorite rejects NULL category_id");
+    EXPECT_FALSE(profile_manager_toggle_favorite(NULL, "git", "x"), "toggle rejects NULL settings");
+}
+
 /* ---------- runner ---------- */
 
 int main(void) {
@@ -211,6 +283,18 @@ int main(void) {
 
     printf("[validate_action: null]\n");
     test_validate_null();
+
+    printf("[favorites: toggle add/remove]\n");
+    test_favorites_toggle_add_remove();
+
+    printf("[favorites: removal shifts tail]\n");
+    test_favorites_removal_shifts_tail();
+
+    printf("[favorites: capacity]\n");
+    test_favorites_capacity();
+
+    printf("[favorites: null args]\n");
+    test_favorites_null_args();
 
     printf("\n===========================================\n");
     printf("Results: %d passed, %d failed\n", g_passes, g_failures);

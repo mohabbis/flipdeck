@@ -31,6 +31,15 @@ typedef enum {
 #define FLIPDECK_MAX_COMMAND_LENGTH 256
 #define FLIPDECK_MAX_PROFILE_NAME 64
 #define FLIPDECK_MAX_SNIPPET_LENGTH_WARN 100  /* Warn for snippets longer than this */
+#define FLIPDECK_MAX_FAVORITES 6
+
+/** A pinned action, referenced by its source category + label so the actual
+ *  FlipDeckAction (value/type/target/etc.) is always re-read fresh from the
+ *  category file rather than duplicated and allowed to go stale. */
+typedef struct {
+    char category_id[32];
+    char label[64];
+} FlipDeckFavorite;
 
 /** Settings structure */
 typedef struct {
@@ -41,6 +50,8 @@ typedef struct {
     bool show_descriptions;
     char startup_category[32];
     uint32_t long_snippet_warn_state;  // Temporary state for long snippet warning
+    FlipDeckFavorite favorites[FLIPDECK_MAX_FAVORITES];
+    uint32_t favorite_count;
 } FlipDeckSettings;
 
 /** App context containing all state */

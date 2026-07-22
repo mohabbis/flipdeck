@@ -28,11 +28,19 @@ typedef struct {
     FlipDeckView current_view;
     char category_ids[FLIPDECK_MAX_CATEGORIES][32];
     FlipDeckProfileCategory current_category;
+    // Source category id for each entry in current_category.actions, so a
+    // favorite can be looked up/toggled regardless of whether the actions
+    // came from one category or were flattened from the favorites list.
+    char action_category_ids[FLIPDECK_MAX_ACTIONS_PER_CATEGORY][32];
     uint32_t category_scroll_offset;
     uint32_t action_scroll_offset;
     uint32_t settings_index;
     uint32_t settings_scroll_offset;
 } FlipDeckUi;
+
+#define FLIPDECK_FAVORITES_ROW_ID "__favorites__"
+
+static void flipdeck_ui_open_favorites(FlipDeckUi* ui_ctx);
 
 static FlipDeckUi ui;
 
@@ -50,6 +58,7 @@ static void flipdeck_ui_input_settings(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_input_long_snippet_warning(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_send_action(FlipDeckUi* ui_ctx, FlipDeckAction* action);
 static void flipdeck_ui_set_send_status(FlipDeckApp* app, FlipDeckAction* action, bool ok);
+static bool flipdeck_ui_has_favorites_row(FlipDeckApp* app);
 
 /* Returns the action at app_ctx->selected_action_index, or NULL if the index is
  * stale/out of range for the currently loaded category. Callers must treat NULL
@@ -100,6 +109,16 @@ void flipdeck_ui_free(void) {
 
 void flipdeck_ui_handle_category_browser(void) {
     ui.current_view = FlipDeckView_CategoryBrowser;
+
+    // The favorites row can appear/disappear between visits (e.g. the last
+    // favorite was just removed), so clamp a now-stale selection back in range.
+    uint32_t total_rows = ui.app_ctx->category_count + (flipdeck_ui_has_favorites_row(ui.app_ctx) ? 1 : 0);
+    if(total_rows == 0) {
+        ui.app_ctx->current_category_index = 0;
+    } else if(ui.app_ctx->current_category_index >= total_rows) {
+        ui.app_ctx->current_category_index = total_rows - 1;
+    }
+
     view_port_update(ui.view_port);
 }
 
@@ -193,6 +212,11 @@ static uint32_t flipdeck_ui_scroll_offset_for_selection(
     return current_offset;
 }
 
+// Whether a synthetic "Favorites" row is shown before the real categories.
+static bool flipdeck_ui_has_favorites_row(FlipDeckApp* app) {
+    return app->settings.favorite_count > 0;
+}
+
 static void flipdeck_ui_draw_category_browser(Canvas* canvas, FlipDeckUi* ui_ctx) {
     FlipDeckApp* app = ui_ctx->app_ctx;
     flipdeck_ui_draw_header(canvas, "FlipDeck");
@@ -200,29 +224,39 @@ static void flipdeck_ui_draw_category_browser(Canvas* canvas, FlipDeckUi* ui_ctx
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 92, 10, app->usb_connected ? "USB" : "NO USB");
 
+    bool has_favorites_row = flipdeck_ui_has_favorites_row(app);
+    uint32_t favorites_offset = has_favorites_row ? 1 : 0;
+    uint32_t total_rows = app->category_count + favorites_offset;
+
     ui_ctx->category_scroll_offset = flipdeck_ui_scroll_offset_for_selection(
         app->current_category_index,
         ui_ctx->category_scroll_offset,
-        app->category_count,
+        total_rows,
         4);
 
-    for(uint32_t row = 0; row < 4 && row + ui_ctx->category_scroll_offset < app->category_count; row++) {
+    for(uint32_t row = 0; row < 4 && row + ui_ctx->category_scroll_offset < total_rows; row++) {
         uint32_t i = row + ui_ctx->category_scroll_offset;
         int32_t y = 26 + (row * 10);
         if(i == app->current_category_index) {
             elements_frame(canvas, 0, y - 8, 124, 10);
         }
-        canvas_draw_str(canvas, 5, y, ui_ctx->category_ids[i]);
+        if(has_favorites_row && i == 0) {
+            char label[24];
+            snprintf(label, sizeof(label), "* Favorites (%lu)", (unsigned long)app->settings.favorite_count);
+            canvas_draw_str(canvas, 5, y, label);
+        } else {
+            canvas_draw_str(canvas, 5, y, ui_ctx->category_ids[i - favorites_offset]);
+        }
     }
 
-    if(app->category_count > 4) {
+    if(total_rows > 4) {
         char range[16];
         snprintf(
             range,
             sizeof(range),
             "%lu/%lu",
             (unsigned long)(app->current_category_index + 1),
-            (unsigned long)app->category_count);
+            (unsigned long)total_rows);
         canvas_draw_str(canvas, 96, 62, range);
     }
 
@@ -260,7 +294,11 @@ static void flipdeck_ui_draw_action_browser(Canvas* canvas, FlipDeckUi* ui_ctx) 
         if(i == app->selected_action_index) {
             elements_frame(canvas, 0, y - 8, 124, 10);
         }
-        canvas_draw_str(canvas, 5, y, ui_ctx->current_category.actions[i].label);
+        bool favorited = profile_manager_is_favorite(
+            &app->settings, ui_ctx->action_category_ids[i], ui_ctx->current_category.actions[i].label);
+        char line[68];
+        snprintf(line, sizeof(line), "%s%s", favorited ? "*" : "", ui_ctx->current_category.actions[i].label);
+        canvas_draw_str(canvas, 5, y, line);
     }
 
     // A pending send result takes over the footer as a transient toast; it is
@@ -288,6 +326,7 @@ static void flipdeck_ui_draw_action_browser(Canvas* canvas, FlipDeckUi* ui_ctx) 
 
     elements_button_left(canvas, "Back");
     elements_button_center(canvas, "Send");
+    elements_button_right(canvas, "Fav");
 }
 
 static void flipdeck_ui_draw_confirm(Canvas* canvas, FlipDeckUi* ui_ctx) {
@@ -376,23 +415,36 @@ static void flipdeck_ui_input_category_browser(FlipDeckUi* ui_ctx, InputEvent* e
     FlipDeckApp* app = ui_ctx->app_ctx;
     if(event->type != InputTypeShort) return;
 
+    bool has_favorites_row = flipdeck_ui_has_favorites_row(app);
+    uint32_t favorites_offset = has_favorites_row ? 1 : 0;
+    uint32_t total_rows = app->category_count + favorites_offset;
+
     switch(event->key) {
         case InputKeyUp:
             if(app->current_category_index > 0) app->current_category_index--;
             break;
         case InputKeyDown:
-            if(app->current_category_index + 1 < app->category_count) app->current_category_index++;
+            if(app->current_category_index + 1 < total_rows) app->current_category_index++;
             break;
         case InputKeyOk:
-            if(app->category_count == 0) break;
-            profile_manager_load_category(
-                ui_ctx->category_ids[app->current_category_index],
-                &ui_ctx->current_category);
-            strncpy(app->current_category_id, ui_ctx->category_ids[app->current_category_index], 31);
-            app->current_category_id[31] = '\0';
-            app->selected_action_index = 0;
-            ui_ctx->action_scroll_offset = 0;
-            app->state = FlipDeckState_ActionBrowser;
+            if(total_rows == 0) break;
+            if(has_favorites_row && app->current_category_index == 0) {
+                flipdeck_ui_open_favorites(ui_ctx);
+                break;
+            }
+            {
+                uint32_t cat_index = app->current_category_index - favorites_offset;
+                profile_manager_load_category(ui_ctx->category_ids[cat_index], &ui_ctx->current_category);
+                strncpy(app->current_category_id, ui_ctx->category_ids[cat_index], 31);
+                app->current_category_id[31] = '\0';
+                for(uint32_t i = 0; i < ui_ctx->current_category.action_count; i++) {
+                    strncpy(ui_ctx->action_category_ids[i], app->current_category_id, 31);
+                    ui_ctx->action_category_ids[i][31] = '\0';
+                }
+                app->selected_action_index = 0;
+                ui_ctx->action_scroll_offset = 0;
+                app->state = FlipDeckState_ActionBrowser;
+            }
             break;
         case InputKeyRight:
             app->state = FlipDeckState_Settings;
@@ -402,8 +454,76 @@ static void flipdeck_ui_input_category_browser(FlipDeckUi* ui_ctx, InputEvent* e
     }
 }
 
+// Flatten every currently-favorited action (which may span several
+// categories) into a single synthetic category so the existing action
+// browser / send flow can be reused unmodified.
+static void flipdeck_ui_open_favorites(FlipDeckUi* ui_ctx) {
+    FlipDeckApp* app = ui_ctx->app_ctx;
+
+    memset(&ui_ctx->current_category, 0, sizeof(ui_ctx->current_category));
+    strncpy(ui_ctx->current_category.name, "Favorites", sizeof(ui_ctx->current_category.name) - 1);
+    strncpy(ui_ctx->current_category.id, FLIPDECK_FAVORITES_ROW_ID, sizeof(ui_ctx->current_category.id) - 1);
+
+    // Scratch buffer for the source category of each favorite. Static: too
+    // large (~7KB) for the 4096-byte FAP stack, and this is only ever called
+    // from the single-threaded UI input path, so it's safe to reuse.
+    static FlipDeckProfileCategory scratch;
+
+    for(uint32_t f = 0; f < app->settings.favorite_count; f++) {
+        FlipDeckFavorite* fav = &app->settings.favorites[f];
+        if(!profile_manager_load_category(fav->category_id, &scratch)) continue;
+
+        for(uint32_t a = 0; a < scratch.action_count; a++) {
+            if(strcmp(scratch.actions[a].label, fav->label) != 0) continue;
+            if(ui_ctx->current_category.action_count >= FLIPDECK_MAX_ACTIONS_PER_CATEGORY) break;
+
+            uint32_t dest = ui_ctx->current_category.action_count;
+            ui_ctx->current_category.actions[dest] = scratch.actions[a];
+            strncpy(ui_ctx->action_category_ids[dest], fav->category_id, 31);
+            ui_ctx->action_category_ids[dest][31] = '\0';
+            ui_ctx->current_category.action_count++;
+            break;
+        }
+    }
+
+    strncpy(app->current_category_id, FLIPDECK_FAVORITES_ROW_ID, 31);
+    app->current_category_id[31] = '\0';
+    app->selected_action_index = 0;
+    ui_ctx->action_scroll_offset = 0;
+    app->state = FlipDeckState_ActionBrowser;
+}
+
+// Toggle the favorite status of the currently selected action and persist it.
+// Works the same whether browsing a real category or the flattened
+// Favorites list, since action_category_ids[] always tracks the true source.
+static void flipdeck_ui_toggle_favorite(FlipDeckUi* ui_ctx) {
+    FlipDeckApp* app = ui_ctx->app_ctx;
+    uint32_t index = app->selected_action_index;
+    FlipDeckAction* action = flipdeck_ui_get_selected_action(ui_ctx);
+    if(!action) return;
+
+    bool now_favorited = profile_manager_toggle_favorite(
+        &app->settings, ui_ctx->action_category_ids[index], action->label);
+    profile_manager_save_settings(&app->settings);
+    snprintf(
+        app->status_message,
+        sizeof(app->status_message),
+        now_favorited ? "Added to favorites" : "Removed from favorites");
+}
+
 static void flipdeck_ui_input_action_browser(FlipDeckUi* ui_ctx, InputEvent* event) {
     FlipDeckApp* app = ui_ctx->app_ctx;
+
+    // Long-press OK is a quick-send shortcut: it skips the separate confirm
+    // screen entirely (safety validation in flipdeck_ui_send_action still
+    // applies). Short-press OK below still respects confirm_before_send.
+    if(event->type == InputTypeLong && event->key == InputKeyOk) {
+        app->status_message[0] = '\0';
+        FlipDeckAction* action = flipdeck_ui_get_selected_action(ui_ctx);
+        if(action) flipdeck_ui_send_action(ui_ctx, action);
+        return;
+    }
+
     if(event->type != InputTypeShort) return;
 
     // Dismiss any lingering send-result toast on the next interaction. A new
@@ -430,6 +550,9 @@ static void flipdeck_ui_input_action_browser(FlipDeckUi* ui_ctx, InputEvent* eve
             }
             break;
         }
+        case InputKeyRight:
+            flipdeck_ui_toggle_favorite(ui_ctx);
+            break;
         case InputKeyBack:
             app->state = FlipDeckState_CategoryBrowser;
             app->selected_action_index = 0;
