@@ -33,10 +33,13 @@ void flipdeck_ui_handle_category_browser(void);
 void flipdeck_ui_handle_action_browser(void);
 
 /**
- * @brief Handle action detail view
- * @param furi Furi object
+ * @brief Open the pinned startup/"home" category (if any) directly into the
+ * action browser, bypassing the category browser. Call once after
+ * flipdeck_ui_init(). No-op if no startup category is pinned or it no
+ * longer exists.
+ * @return true if a startup category was opened
  */
-void flipdeck_ui_handle_action_detail(void);
+bool flipdeck_ui_try_open_startup_category(void);
 
 /**
  * @brief Handle send confirmation dialog

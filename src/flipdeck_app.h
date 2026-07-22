@@ -21,7 +21,6 @@ typedef enum {
     FlipDeckState_Idle,
     FlipDeckState_CategoryBrowser,
     FlipDeckState_ActionBrowser,
-    FlipDeckState_ActionDetail,
     FlipDeckState_SendConfirm,
     FlipDeckState_LongSnippetWarning,
     FlipDeckState_Settings,
