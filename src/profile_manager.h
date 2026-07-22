@@ -18,6 +18,22 @@
 #define FLIPDECK_MAX_CATEGORIES 10
 #define FLIPDECK_MAX_ACTIONS_PER_CATEGORY 20
 
+// Maximum number of NFC tag -> action mappings, and the buffer size for a
+// hex-encoded UID (ISO14443 UIDs are 4, 7, or 10 bytes -> up to 20 hex chars).
+#define FLIPDECK_MAX_NFC_TAGS 16
+#define FLIPDECK_NFC_UID_HEX_LEN 21
+
+/**
+ * @brief A single NFC tag -> action mapping. References the action by
+ * (category_id, label) rather than duplicating it, same as FlipDeckFavorite,
+ * so the action is always re-read fresh from its category file.
+ */
+typedef struct {
+    char uid_hex[FLIPDECK_NFC_UID_HEX_LEN];
+    char category_id[32];
+    char label[64];
+} FlipDeckNfcTag;
+
 /** Action types for profiles */
 typedef enum {
     FlipDeckActionType_Text,
@@ -127,6 +143,48 @@ bool profile_manager_toggle_favorite(
     FlipDeckSettings* settings,
     const char* category_id,
     const char* label);
+
+/**
+ * @brief Load NFC tag -> action mappings from nfc_tags.json
+ * @param tags Array to store mappings (capacity FLIPDECK_MAX_NFC_TAGS)
+ * @param count Pointer to store number of mappings loaded
+ * @return true if the file existed and was read (even if it had zero tags)
+ */
+bool profile_manager_load_nfc_tags(FlipDeckNfcTag* tags, uint32_t* count);
+
+/**
+ * @brief Save NFC tag -> action mappings to nfc_tags.json
+ * @param tags Array of mappings to save
+ * @param count Number of mappings in the array
+ * @return true if saved successfully
+ */
+bool profile_manager_save_nfc_tags(const FlipDeckNfcTag* tags, uint32_t count);
+
+/**
+ * @brief Find the mapping for a given UID, if any
+ * @param tags Array of loaded mappings
+ * @param count Number of mappings in the array
+ * @param uid_hex Uppercase hex UID to look up
+ * @return Pointer to the matching entry within `tags`, or NULL if not found
+ */
+const FlipDeckNfcTag* profile_manager_find_nfc_tag(
+    const FlipDeckNfcTag* tags,
+    uint32_t count,
+    const char* uid_hex);
+
+/**
+ * @brief Hex-encode a raw UID into an uppercase string (e.g. {0x04,0xA1} -> "04A1")
+ * @param uid Raw UID bytes
+ * @param uid_len Number of bytes in uid
+ * @param out Output buffer
+ * @param out_size Size of out; must be at least uid_len*2 + 1
+ * @return true on success, false if out_size is too small or args are NULL
+ */
+bool profile_manager_hex_encode_uid(
+    const uint8_t* uid,
+    size_t uid_len,
+    char* out,
+    size_t out_size);
 
 /**
  * @brief Check if value contains potentially dangerous commands

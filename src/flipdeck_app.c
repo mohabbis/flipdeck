@@ -5,6 +5,7 @@
 
 #include "flipdeck_app.h"
 #include "flipdeck_ui.h"
+#include "nfc_bridge.h"
 #include "profile_manager.h"
 #include "uart_bridge.h"
 #include "usb_hid.h"
@@ -49,6 +50,11 @@ bool flipdeck_app_init(void* furi_void) {
     // Initialize UART bridge to the WiFi dev board
     uart_bridge_init();
 
+    // Initialize the NFC tag-scanning bridge
+    if(!nfc_bridge_init()) {
+        FURI_LOG_W("FlipDeck", "NFC bridge init failed; NFC scan will be unavailable");
+    }
+
     // Create UI
     flipdeck_ui_init(g_app_ctx);
 
@@ -87,6 +93,7 @@ void flipdeck_app_free(void* furi_void) {
     if(g_app_ctx) {
         flipdeck_ui_free();
         uart_bridge_deinit();
+        nfc_bridge_deinit();
         free(g_app_ctx);
         g_app_ctx = NULL;
     }
@@ -109,7 +116,11 @@ void flipdeck_app_loop(void* furi_void) {
         case FlipDeckState_ActionBrowser:
             flipdeck_ui_handle_action_browser();
             break;
-            
+
+        case FlipDeckState_NfcScan:
+            flipdeck_ui_handle_nfc_scan();
+            break;
+
         case FlipDeckState_SendConfirm:
             flipdeck_ui_handle_confirm();
             break;
