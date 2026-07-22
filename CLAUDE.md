@@ -102,7 +102,9 @@ Profile categories are derived from the profile `id` via `primaryCategory()` in 
 
 ### Flipper Zero app state machine
 
-The C app in `/src/` is a state machine with these states: `Idle`, `CategoryBrowser`, `ActionBrowser`, `SendConfirm`, `LongSnippetWarning`, `Settings`. In `ActionBrowser`, long-pressing OK sends immediately (skipping `SendConfirm`) and the Right button toggles the selected action as a favorite. In `CategoryBrowser`, long-pressing OK on a category pins/unpins it as the startup category (opened automatically on the next launch, bypassing `CategoryBrowser`), and a synthetic "Favorites" row appears at the top whenever any action is favorited, flattening favorited actions from every category into one list.
+The C app in `/src/` is a state machine with these states: `Idle`, `CategoryBrowser`, `ActionBrowser`, `NfcScan`, `SendConfirm`, `LongSnippetWarning`, `Settings`. In `ActionBrowser`, long-pressing OK sends immediately (skipping `SendConfirm`) and the Right button toggles the selected action as a favorite. In `CategoryBrowser`, long-pressing OK on a category pins/unpins it as the startup category (opened automatically on the next launch, bypassing `CategoryBrowser`); a synthetic "Favorites" row appears at the top whenever any action is favorited (flattening favorited actions from every category into one list), and a synthetic "NFC Scan" row is always present below it.
+
+`NfcScan` reads a tag's UID via `nfc_bridge.c` and looks it up in `nfc_tags.json` (`profile_manager_load_nfc_tags`/`find_nfc_tag`, mirroring the favorites data shape). A known tag jumps straight to `SendConfirm` — **NFC-triggered sends always require the confirm screen**, bypassing neither it nor going through quick-send, regardless of `confirm_before_send`, since a tag's UID is trivially cloneable and is a weaker signal of intent than a person holding OK on a chosen list item. An unknown tag hands off into `CategoryBrowser`/`ActionBrowser` in "binding mode" (`FlipDeckUi.nfc_binding_uid_hex` non-empty — no separate state for this; the two browser states reuse their normal views with OK repurposed to write the new mapping instead of sending) to pick what it should map to. See `docs/nfc_trigger_spec.md` for the full design (two deliberate deviations from that doc: no separate `NfcBind` state, as above, and `nfc_bridge.c` exposes a polled `nfc_bridge_poll_tag()` rather than a raw hardware callback, since NFC detection callbacks run on the NFC worker thread and UI state must only be touched from the main loop thread).
 
 Key modules:
 - `flipdeck_app.c` — main loop, USB polling (50ms), state transitions
@@ -110,6 +112,7 @@ Key modules:
 - `profile_manager.c` — JSON parsing from SD card, safety validation before send
 - `usb_hid.c` — USB HID keyboard report generation
 - `uart_bridge.c` — UART bridge to the Flipper WiFi Dev Board (GPIO pins 13/14, 115200 baud) for `target: "wifi_uart"` commands
+- `nfc_bridge.c` — NFC tag scanning bridge (`nfc/nfc_scanner.h`/`nfc_poller.h`/`nfc_device.h`); **written without a working `fbt`/`ufbt` toolchain to compile against, so its exact API calls are unverified against real firmware headers** — expect to fix compile errors here first when building on real hardware
 - `settings.c` — JSON settings serialization
 
 Memory constraint: 4096-byte stack limit. Use fixed-size buffers; avoid deep call stacks.

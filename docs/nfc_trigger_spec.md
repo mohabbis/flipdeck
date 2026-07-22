@@ -1,8 +1,25 @@
 # Spec: NFC Tag Triggers for FlipDeck
 
-Status: proposed, not implemented. Written against the real Flipper NFC API
-surface (`lib/nfc/nfc_scanner.h`, `lib/nfc/nfc_poller.h`, `lib/nfc/nfc_device.h`)
-so it's buildable, not hand-waved.
+Status: **Phase 1 implemented** (`flipdeck_app.h`/`.c`, `flipdeck_ui.h`/`.c`,
+`profile_manager.h`/`.c`, `nfc_bridge.h`/`.c`, `application.fam`). Written
+against the real Flipper NFC API surface (`lib/nfc/nfc_scanner.h`,
+`lib/nfc/nfc_poller.h`, `lib/nfc/nfc_device.h`) so it's buildable, not
+hand-waved — but there was no `fbt`/`ufbt` toolchain available to actually
+compile `nfc_bridge.c` against those headers; see its file header comment
+for exactly what's unverified. Everything else (data model, state machine,
+UI) was syntax/type-checked against a hand-built fake GUI header set and the
+real host test suite, and passes both.
+
+Two deliberate deviations from the plan below, made during implementation:
+- No separate `FlipDeckState_NfcBind`. Binding reuses `CategoryBrowser`/
+  `ActionBrowser` directly via a `nfc_binding_uid_hex` flag on `FlipDeckUi`
+  that repurposes OK to "bind here" instead of "send this" — simpler than a
+  parallel state, and the existing views already do everything binding needs.
+- `nfc_bridge.c` exposes `nfc_bridge_poll_tag()` (called once per main-loop
+  tick) rather than a raw `NfcBridgeTagCallback`. NFC detection callbacks
+  run on the NFC worker thread, not the UI thread, so handing UI state
+  straight to a hardware callback would be a cross-thread mutation bug; the
+  poll-based API latches the result behind a mutex instead.
 
 ## What this is, and isn't
 

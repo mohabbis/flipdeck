@@ -108,6 +108,7 @@ FlipDeck's default flow is Category → Action → Confirm → Send. These short
 - **Favorites (Right button on an action):** Pins/unpins the selected action. A `* Favorites (N)` row appears at the top of the category list once you have at least one, flattening your pinned actions from every category into a single list.
 - **Quick-send (long-press OK on an action):** Sends immediately, skipping the separate confirm screen. The command was already visible in the list you're looking at, and it still goes through FlipDeck's safety checks — this only removes the extra screen, not the review or the checks.
 - **Home category (long-press OK on a category):** Pins that category as your startup category. The app then opens directly into its action list on launch, skipping the category browser. Long-press it again to unpin.
+- **NFC Scan (select it from the category list):** Hold an NFC tag to the back of the Flipper. A tag you've already bound jumps straight to the confirm screen for its mapped action — NFC-triggered sends always require this confirm step, even with quick-send or `confirm_before_send` off, since a tag's UID can be cloned by anyone who taps it. An unmapped tag prompts you to pick a category and action to bind it to.
 
 ---
 

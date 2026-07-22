@@ -16,6 +16,7 @@
 #define FLIPDECK_DATA_PATH "/ext/apps_data/flipdeck"
 #define PROFILE_BASE_PATH FLIPDECK_DATA_PATH "/profiles"
 #define SETTINGS_PATH FLIPDECK_DATA_PATH "/settings.json"
+#define NFC_TAGS_PATH FLIPDECK_DATA_PATH "/nfc_tags.json"
 
 static void storage_ensure_flipdeck_dirs(Storage* storage) {
     storage_common_mkdir(storage, "/ext/apps_data");
@@ -546,6 +547,125 @@ bool profile_manager_toggle_favorite(
     strncpy(fav->label, label, sizeof(fav->label) - 1);
     fav->label[sizeof(fav->label) - 1] = '\0';
     settings->favorite_count++;
+    return true;
+}
+
+bool profile_manager_hex_encode_uid(
+    const uint8_t* uid,
+    size_t uid_len,
+    char* out,
+    size_t out_size) {
+    if(!uid || !out) return false;
+    if(uid_len == 0 || out_size < (uid_len * 2) + 1) return false;
+
+    static const char hex_digits[] = "0123456789ABCDEF";
+    for(size_t i = 0; i < uid_len; i++) {
+        out[i * 2] = hex_digits[(uid[i] >> 4) & 0x0F];
+        out[i * 2 + 1] = hex_digits[uid[i] & 0x0F];
+    }
+    out[uid_len * 2] = '\0';
+    return true;
+}
+
+const FlipDeckNfcTag* profile_manager_find_nfc_tag(
+    const FlipDeckNfcTag* tags,
+    uint32_t count,
+    const char* uid_hex) {
+    if(!tags || !uid_hex) return NULL;
+    for(uint32_t i = 0; i < count; i++) {
+        if(strcmp(tags[i].uid_hex, uid_hex) == 0) return &tags[i];
+    }
+    return NULL;
+}
+
+// Parse a `{ "tags": [ {"uid": "...", "category_id": "...", "label": "..."}, ... ] }`
+// document into `tags`/`count`. Mirrors parse_favorites()'s object-scanning
+// approach (find_json_string is a whole-buffer scan, so each object is
+// carved out into its own small mini-JSON before extracting its fields).
+// Factored out from profile_manager_load_nfc_tags so it can be exercised
+// directly against a hand-built buffer in host tests, without going through
+// file I/O.
+static void parse_nfc_tags(char* json, FlipDeckNfcTag* tags, uint32_t* count) {
+    *count = 0;
+
+    char* arr_start = strstr(json, "\"tags\"");
+    if(!arr_start) return;
+    arr_start = strchr(arr_start, '[');
+    if(!arr_start) return;
+    char* arr_end = strchr(arr_start, ']');
+    if(!arr_end) return;
+
+    char* pos = arr_start + 1;
+    while(pos < arr_end && *count < FLIPDECK_MAX_NFC_TAGS) {
+        char* obj_start = strchr(pos, '{');
+        if(!obj_start || obj_start >= arr_end) break;
+        char* obj_end = strchr(obj_start, '}');
+        if(!obj_end || obj_end > arr_end) break;
+
+        char obj_json[160];
+        uint32_t obj_len = obj_end - obj_start + 1;
+        if(obj_len < sizeof(obj_json)) {
+            strncpy(obj_json, obj_start, obj_len);
+            obj_json[obj_len] = '\0';
+
+            // Clear stale data first: find_json_string() leaves its output
+            // buffer untouched when a key is absent, and this slot may be
+            // reused across calls (same hazard as profile_manager_load_category).
+            FlipDeckNfcTag* tag = &tags[*count];
+            memset(tag, 0, sizeof(*tag));
+            find_json_string(obj_json, "uid", tag->uid_hex, sizeof(tag->uid_hex));
+            find_json_string(obj_json, "category_id", tag->category_id, sizeof(tag->category_id));
+            find_json_string(obj_json, "label", tag->label, sizeof(tag->label));
+            if(tag->uid_hex[0] && tag->category_id[0] && tag->label[0]) {
+                (*count)++;
+            }
+        }
+
+        pos = obj_end + 1;
+    }
+
+    FURI_LOG_I("FlipDeck", "Loaded %" PRIu32 " NFC tag mappings", *count);
+}
+
+bool profile_manager_load_nfc_tags(FlipDeckNfcTag* tags, uint32_t* count) {
+    *count = 0;
+
+    // Static: same reasoning as load_category's buffer - a few KB local
+    // would eat too much of the 4096-byte FAP stack.
+    static char buffer[2048];
+    if(!read_text_file(NFC_TAGS_PATH, buffer, sizeof(buffer))) {
+        FURI_LOG_W("FlipDeck", "No NFC tags file found");
+        return false;
+    }
+
+    parse_nfc_tags(buffer, tags, count);
+    return true;
+}
+
+bool profile_manager_save_nfc_tags(const FlipDeckNfcTag* tags, uint32_t count) {
+    if(!tags && count > 0) return false;
+
+    // Static for the same reason as save_category/save_settings.
+    static char json[2560];
+    uint32_t offset = 0;
+    offset += snprintf(json + offset, sizeof(json) - offset, "{\n  \"tags\": [\n");
+
+    for(uint32_t i = 0; i < count && offset < sizeof(json) - 96; i++) {
+        offset += snprintf(json + offset, sizeof(json) - offset,
+            "    {\"uid\": \"%s\", \"category_id\": \"%s\", \"label\": \"%s\"}%s\n",
+            tags[i].uid_hex,
+            tags[i].category_id,
+            tags[i].label,
+            (i < count - 1) ? "," : "");
+    }
+    offset += snprintf(json + offset, sizeof(json) - offset, "  ]\n}\n");
+
+    if(!write_text_file(NFC_TAGS_PATH, json)) {
+        FURI_LOG_E("FlipDeck", "Failed to open NFC tags file for writing");
+        return false;
+    }
+
+    FURI_LOG_I("FlipDeck", "Saved %" PRIu32 " NFC tag mappings", count);
     return true;
 }
 

@@ -134,6 +134,52 @@ static void test_load_settings_no_favorites_key(void) {
     EXPECT_EQ_INT(settings.favorite_count, 0u, "no favorites key means zero favorites");
 }
 
+/* ---------- nfc tags parsing ---------- */
+
+static void test_parse_nfc_tags(void) {
+    char json[] =
+        "{\n"
+        "  \"tags\": [\n"
+        "    {\"uid\": \"04A1B2C3\", \"category_id\": \"git\", \"label\": \"Git Status\"},\n"
+        "    {\"uid\": \"00FF1020\", \"category_id\": \"node\", \"label\": \"Run Dev\"}\n"
+        "  ]\n"
+        "}\n";
+
+    FlipDeckNfcTag tags[FLIPDECK_MAX_NFC_TAGS];
+    uint32_t count = 0xAAAAAAAA;
+    memset(tags, 0xAA, sizeof(tags));
+
+    parse_nfc_tags(json, tags, &count);
+
+    EXPECT_EQ_INT(count, 2u, "parses two nfc tags");
+    EXPECT_STR_EQ(tags[0].uid_hex, "04A1B2C3", "first tag uid");
+    EXPECT_STR_EQ(tags[0].category_id, "git", "first tag category_id");
+    EXPECT_STR_EQ(tags[0].label, "Git Status", "first tag label");
+    EXPECT_STR_EQ(tags[1].uid_hex, "00FF1020", "second tag uid");
+    EXPECT_STR_EQ(tags[1].category_id, "node", "second tag category_id");
+    EXPECT_STR_EQ(tags[1].label, "Run Dev", "second tag label");
+}
+
+static void test_parse_nfc_tags_no_key(void) {
+    char json[] = "{ \"other\": 1 }";
+    FlipDeckNfcTag tags[FLIPDECK_MAX_NFC_TAGS];
+    uint32_t count = 0xAAAAAAAA;
+    parse_nfc_tags(json, tags, &count);
+    EXPECT_EQ_INT(count, 0u, "no tags key means zero tags");
+}
+
+static void test_parse_nfc_tags_skips_incomplete_entry(void) {
+    /* An entry missing a required field (no label) should be skipped rather
+     * than counted with a garbage/empty field. */
+    char json[] =
+        "{ \"tags\": [ {\"uid\": \"04A1B2C3\", \"category_id\": \"git\"} ] }";
+    FlipDeckNfcTag tags[FLIPDECK_MAX_NFC_TAGS];
+    memset(tags, 0xAA, sizeof(tags)); /* poison, to prove parse_nfc_tags clears stale data itself */
+    uint32_t count = 0xAAAAAAAA;
+    parse_nfc_tags(json, tags, &count);
+    EXPECT_EQ_INT(count, 0u, "entry missing label is skipped");
+}
+
 /* ---------- runner ---------- */
 
 int main(void) {
@@ -157,6 +203,11 @@ int main(void) {
     printf("[favorites parsing]\n");
     test_load_settings_parses_favorites();
     test_load_settings_no_favorites_key();
+
+    printf("[nfc tags parsing]\n");
+    test_parse_nfc_tags();
+    test_parse_nfc_tags_no_key();
+    test_parse_nfc_tags_skips_incomplete_entry();
 
     printf("\n===========================================\n");
     printf("Results: %d passed, %d failed\n", g_passes, g_failures);

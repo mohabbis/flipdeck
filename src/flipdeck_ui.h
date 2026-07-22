@@ -58,4 +58,13 @@ void flipdeck_ui_handle_settings(void);
  */
 void flipdeck_ui_handle_long_snippet_warning(void);
 
+/**
+ * @brief Handle the NFC scan screen. Called every main-loop tick while
+ * FlipDeckState_NfcScan is active: starts scanning on first entry, polls
+ * for a detected tag, and on detection either jumps to SendConfirm (known
+ * tag) or into the category/action browser in tag-binding mode (unknown
+ * tag).
+ */
+void flipdeck_ui_handle_nfc_scan(void);
+
 #endif // FLIPDECK_UI_H

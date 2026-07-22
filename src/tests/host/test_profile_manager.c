@@ -19,6 +19,7 @@ static int g_failures = 0;
 } while(0)
 
 #define EXPECT_FALSE(expr, msg) EXPECT_TRUE(!(expr), (msg))
+#define EXPECT_STR_EQ(a, b, msg) EXPECT_TRUE(strcmp((a), (b)) == 0, (msg))
 
 /* ---------- is_value_safe: dangerous patterns ---------- */
 
@@ -234,6 +235,55 @@ static void test_favorites_null_args(void) {
     EXPECT_FALSE(profile_manager_toggle_favorite(NULL, "git", "x"), "toggle rejects NULL settings");
 }
 
+/* ---------- NFC tags ---------- */
+
+static void test_nfc_hex_encode_uid(void) {
+    uint8_t uid4[] = {0x04, 0xA1, 0xB2, 0xC3};
+    char out[FLIPDECK_NFC_UID_HEX_LEN];
+
+    EXPECT_TRUE(profile_manager_hex_encode_uid(uid4, sizeof(uid4), out, sizeof(out)), "encodes 4-byte uid");
+    EXPECT_STR_EQ(out, "04A1B2C3", "4-byte uid hex matches");
+
+    uint8_t uid7[] = {0x00, 0xFF, 0x10, 0x20, 0x30, 0x40, 0x50};
+    EXPECT_TRUE(profile_manager_hex_encode_uid(uid7, sizeof(uid7), out, sizeof(out)), "encodes 7-byte uid");
+    EXPECT_STR_EQ(out, "00FF1020304050", "7-byte uid hex matches");
+}
+
+static void test_nfc_hex_encode_uid_bounds(void) {
+    uint8_t uid[] = {0x01, 0x02};
+    char too_small[3];
+
+    EXPECT_FALSE(
+        profile_manager_hex_encode_uid(uid, sizeof(uid), too_small, sizeof(too_small)),
+        "rejects output buffer too small for uid");
+    EXPECT_FALSE(profile_manager_hex_encode_uid(NULL, 2, too_small, sizeof(too_small)), "rejects NULL uid");
+    EXPECT_FALSE(profile_manager_hex_encode_uid(uid, 0, too_small, sizeof(too_small)), "rejects zero-length uid");
+
+    char out[FLIPDECK_NFC_UID_HEX_LEN];
+    EXPECT_FALSE(profile_manager_hex_encode_uid(uid, sizeof(uid), NULL, sizeof(out)), "rejects NULL out");
+}
+
+static void test_nfc_find_tag(void) {
+    FlipDeckNfcTag tags[3];
+    memset(tags, 0, sizeof(tags));
+    strcpy(tags[0].uid_hex, "04A1B2C3");
+    strcpy(tags[0].category_id, "git");
+    strcpy(tags[0].label, "Git Status");
+    strcpy(tags[1].uid_hex, "00FF1020");
+    strcpy(tags[1].category_id, "node");
+    strcpy(tags[1].label, "Run Dev");
+
+    const FlipDeckNfcTag* found = profile_manager_find_nfc_tag(tags, 2, "04A1B2C3");
+    EXPECT_TRUE(found != NULL, "finds existing uid");
+    EXPECT_STR_EQ(found->category_id, "git", "found tag has correct category_id");
+    EXPECT_STR_EQ(found->label, "Git Status", "found tag has correct label");
+
+    EXPECT_TRUE(profile_manager_find_nfc_tag(tags, 2, "DEADBEEF") == NULL, "unknown uid returns NULL");
+    EXPECT_TRUE(profile_manager_find_nfc_tag(tags, 2, "00FF1020")->category_id[0] == 'n', "finds second entry");
+    EXPECT_TRUE(profile_manager_find_nfc_tag(NULL, 2, "x") == NULL, "NULL tags array returns NULL");
+    EXPECT_TRUE(profile_manager_find_nfc_tag(tags, 2, NULL) == NULL, "NULL uid_hex returns NULL");
+}
+
 /* ---------- runner ---------- */
 
 int main(void) {
@@ -295,6 +345,15 @@ int main(void) {
 
     printf("[favorites: null args]\n");
     test_favorites_null_args();
+
+    printf("[nfc: hex encode uid]\n");
+    test_nfc_hex_encode_uid();
+
+    printf("[nfc: hex encode uid bounds]\n");
+    test_nfc_hex_encode_uid_bounds();
+
+    printf("[nfc: find tag]\n");
+    test_nfc_find_tag();
 
     printf("\n===========================================\n");
     printf("Results: %d passed, %d failed\n", g_passes, g_failures);
