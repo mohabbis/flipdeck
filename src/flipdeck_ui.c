@@ -127,10 +127,6 @@ void flipdeck_ui_handle_action_browser(void) {
     view_port_update(ui.view_port);
 }
 
-void flipdeck_ui_handle_action_detail(void) {
-    flipdeck_ui_handle_confirm();
-}
-
 void flipdeck_ui_handle_confirm(void) {
     ui.current_view = FlipDeckView_Confirm;
     view_port_update(ui.view_port);
@@ -245,7 +241,12 @@ static void flipdeck_ui_draw_category_browser(Canvas* canvas, FlipDeckUi* ui_ctx
             snprintf(label, sizeof(label), "* Favorites (%lu)", (unsigned long)app->settings.favorite_count);
             canvas_draw_str(canvas, 5, y, label);
         } else {
-            canvas_draw_str(canvas, 5, y, ui_ctx->category_ids[i - favorites_offset]);
+            const char* cat_id = ui_ctx->category_ids[i - favorites_offset];
+            bool is_home = app->settings.startup_category[0] &&
+                strcmp(app->settings.startup_category, cat_id) == 0;
+            char label[40];
+            snprintf(label, sizeof(label), "%s%s", is_home ? "> " : "", cat_id);
+            canvas_draw_str(canvas, 5, y, label);
         }
     }
 
@@ -411,13 +412,55 @@ static void flipdeck_ui_draw_long_snippet_warning(Canvas* canvas, FlipDeckUi* ui
     elements_button_center(canvas, "Send");
 }
 
+// Load category_ids[cat_index] into current_category and switch to the
+// action browser. Shared by the category browser's OK handler and the
+// startup-category auto-open path so both stay in sync.
+static void flipdeck_ui_open_category(FlipDeckUi* ui_ctx, uint32_t cat_index) {
+    FlipDeckApp* app = ui_ctx->app_ctx;
+    profile_manager_load_category(ui_ctx->category_ids[cat_index], &ui_ctx->current_category);
+    strncpy(app->current_category_id, ui_ctx->category_ids[cat_index], 31);
+    app->current_category_id[31] = '\0';
+    for(uint32_t i = 0; i < ui_ctx->current_category.action_count; i++) {
+        strncpy(ui_ctx->action_category_ids[i], app->current_category_id, 31);
+        ui_ctx->action_category_ids[i][31] = '\0';
+    }
+    app->selected_action_index = 0;
+    ui_ctx->action_scroll_offset = 0;
+    app->state = FlipDeckState_ActionBrowser;
+}
+
+// Long-press OK on a real category row (not the Favorites row) pins/unpins
+// it as the startup category: on the next launch the app opens straight
+// into it, skipping the category browser entirely. Pressing it again on the
+// already-pinned category clears it.
+static void flipdeck_ui_toggle_startup_category(FlipDeckUi* ui_ctx, uint32_t cat_index) {
+    FlipDeckApp* app = ui_ctx->app_ctx;
+    const char* id = ui_ctx->category_ids[cat_index];
+
+    if(strcmp(app->settings.startup_category, id) == 0) {
+        app->settings.startup_category[0] = '\0';
+    } else {
+        strncpy(app->settings.startup_category, id, sizeof(app->settings.startup_category) - 1);
+        app->settings.startup_category[sizeof(app->settings.startup_category) - 1] = '\0';
+    }
+    profile_manager_save_settings(&app->settings);
+}
+
 static void flipdeck_ui_input_category_browser(FlipDeckUi* ui_ctx, InputEvent* event) {
     FlipDeckApp* app = ui_ctx->app_ctx;
-    if(event->type != InputTypeShort) return;
 
     bool has_favorites_row = flipdeck_ui_has_favorites_row(app);
     uint32_t favorites_offset = has_favorites_row ? 1 : 0;
     uint32_t total_rows = app->category_count + favorites_offset;
+
+    if(event->type == InputTypeLong && event->key == InputKeyOk) {
+        if(total_rows == 0) return;
+        if(has_favorites_row && app->current_category_index == 0) return; // favorites row can't be "home"
+        flipdeck_ui_toggle_startup_category(ui_ctx, app->current_category_index - favorites_offset);
+        return;
+    }
+
+    if(event->type != InputTypeShort) return;
 
     switch(event->key) {
         case InputKeyUp:
@@ -432,19 +475,7 @@ static void flipdeck_ui_input_category_browser(FlipDeckUi* ui_ctx, InputEvent* e
                 flipdeck_ui_open_favorites(ui_ctx);
                 break;
             }
-            {
-                uint32_t cat_index = app->current_category_index - favorites_offset;
-                profile_manager_load_category(ui_ctx->category_ids[cat_index], &ui_ctx->current_category);
-                strncpy(app->current_category_id, ui_ctx->category_ids[cat_index], 31);
-                app->current_category_id[31] = '\0';
-                for(uint32_t i = 0; i < ui_ctx->current_category.action_count; i++) {
-                    strncpy(ui_ctx->action_category_ids[i], app->current_category_id, 31);
-                    ui_ctx->action_category_ids[i][31] = '\0';
-                }
-                app->selected_action_index = 0;
-                ui_ctx->action_scroll_offset = 0;
-                app->state = FlipDeckState_ActionBrowser;
-            }
+            flipdeck_ui_open_category(ui_ctx, app->current_category_index - favorites_offset);
             break;
         case InputKeyRight:
             app->state = FlipDeckState_Settings;
@@ -452,6 +483,22 @@ static void flipdeck_ui_input_category_browser(FlipDeckUi* ui_ctx, InputEvent* e
         default:
             break;
     }
+}
+
+// Called once at startup. If a startup/"home" category is pinned and still
+// exists, opens straight into it so the very first screen the user sees is
+// its action list rather than the category browser.
+bool flipdeck_ui_try_open_startup_category(void) {
+    FlipDeckApp* app = ui.app_ctx;
+    if(!app || app->settings.startup_category[0] == '\0') return false;
+
+    for(uint32_t i = 0; i < app->category_count; i++) {
+        if(strcmp(ui.category_ids[i], app->settings.startup_category) != 0) continue;
+        flipdeck_ui_open_category(&ui, i);
+        app->current_category_index = i + (flipdeck_ui_has_favorites_row(app) ? 1 : 0);
+        return true;
+    }
+    return false;
 }
 
 // Flatten every currently-favorited action (which may span several

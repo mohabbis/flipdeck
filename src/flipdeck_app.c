@@ -51,7 +51,11 @@ bool flipdeck_app_init(void* furi_void) {
 
     // Create UI
     flipdeck_ui_init(g_app_ctx);
-    
+
+    // If a startup/"home" category is pinned, skip the category browser and
+    // open straight into it.
+    flipdeck_ui_try_open_startup_category();
+
     FURI_LOG_I("FlipDeck", "Initialization complete");
     return true;
 }
@@ -104,10 +108,6 @@ void flipdeck_app_loop(void* furi_void) {
             
         case FlipDeckState_ActionBrowser:
             flipdeck_ui_handle_action_browser();
-            break;
-            
-        case FlipDeckState_ActionDetail:
-            flipdeck_ui_handle_confirm();
             break;
             
         case FlipDeckState_SendConfirm:

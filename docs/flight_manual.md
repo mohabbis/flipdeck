@@ -101,6 +101,16 @@ Before creating many profiles, backup your SD card. Profile data is stored in:
 
 ---
 
+## Navigation Shortcuts
+
+FlipDeck's default flow is Category → Action → Confirm → Send. These shortcuts cut that down for actions you use often:
+
+- **Favorites (Right button on an action):** Pins/unpins the selected action. A `* Favorites (N)` row appears at the top of the category list once you have at least one, flattening your pinned actions from every category into a single list.
+- **Quick-send (long-press OK on an action):** Sends immediately, skipping the separate confirm screen. The command was already visible in the list you're looking at, and it still goes through FlipDeck's safety checks — this only removes the extra screen, not the review or the checks.
+- **Home category (long-press OK on a category):** Pins that category as your startup category. The app then opens directly into its action list on launch, skipping the category browser. Long-press it again to unpin.
+
+---
+
 ## Emergency Procedures
 
 ### Disable USB Connection
@@ -120,7 +130,7 @@ Open an issue at: https://github.com/mohabbis/flipdeck/issues
 A: No. FlipDeck only sends keystrokes you configure. It cannot read what's on screen.
 
 **Q: Can it run without my permission?**
-A: No. Every command requires OK button confirmation.
+A: No. Sending a command always requires you to press OK on it — either from the confirm screen, or via long-press quick-send while looking at it in the action list. Nothing fires from just scrolling or opening a category.
 
 **Q: Is it safe with banking websites?**
 A: Safe if you review commands first. Never store sensitive data.

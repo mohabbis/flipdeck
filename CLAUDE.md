@@ -102,7 +102,7 @@ Profile categories are derived from the profile `id` via `primaryCategory()` in 
 
 ### Flipper Zero app state machine
 
-The C app in `/src/` is a state machine with these states: `Idle`, `CategoryBrowser`, `ActionBrowser`, `ActionDetail`, `SendConfirm`, `LongSnippetWarning`, `Settings`.
+The C app in `/src/` is a state machine with these states: `Idle`, `CategoryBrowser`, `ActionBrowser`, `SendConfirm`, `LongSnippetWarning`, `Settings`. In `ActionBrowser`, long-pressing OK sends immediately (skipping `SendConfirm`) and the Right button toggles the selected action as a favorite. In `CategoryBrowser`, long-pressing OK on a category pins/unpins it as the startup category (opened automatically on the next launch, bypassing `CategoryBrowser`), and a synthetic "Favorites" row appears at the top whenever any action is favorited, flattening favorited actions from every category into one list.
 
 Key modules:
 - `flipdeck_app.c` — main loop, USB polling (50ms), state transitions
