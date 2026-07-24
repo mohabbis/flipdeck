@@ -302,16 +302,23 @@ flipdeck/
 ├── src/                     # Flipper app source
 │   ├── flipdeck_app.c       # Main application logic
 │   ├── flipdeck_app.h
-│   ├── flipdeck_ui.c        # User interface
+│   ├── flipdeck_ui.c        # User interface (browser, favorites, NFC scan, confirm)
 │   ├── flipdeck_ui.h
-│   ├── profile_manager.c    # SD card profile system
+│   ├── profile_manager.c    # SD card profile system, favorites, NFC tag mappings
 │   ├── profile_manager.h
 │   ├── usb_hid.c            # USB HID communication
 │   ├── usb_hid.h
+│   ├── uart_bridge.c        # UART bridge to the WiFi Dev Board
+│   ├── uart_bridge.h
+│   ├── nfc_bridge.c         # NFC tag scan bridge (tag-triggered sends)
+│   ├── nfc_bridge.h
 │   └── settings.c           # Settings management
 ├── web/                     # Next.js web installer
 ├── docs/
 │   ├── flight_manual.md     # Safety and usage guide
+│   ├── installer-flow.md    # Web Serial / ZIP installer walkthrough
+│   ├── nfc_trigger_spec.md  # NFC tag trigger design
+│   ├── security-model.md    # Safety rules and confirmation model
 │   └── ROADMAP.md           # Development roadmap
 └── README.md
 ```

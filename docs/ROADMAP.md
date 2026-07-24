@@ -22,13 +22,15 @@
 ## Phase 3: USB Enhancements
 
 - [x] Key combination support (Ctrl, Alt, Shift, Win)
+- [x] Delay configuration per profile (`delay_ms` per command)
 - [ ] Key press/release timing control
-- [ ] Delay configuration per profile
 - [ ] USB connection auto-detection
 - [ ] Multiple keyboard layouts
 
 ## Phase 4: Advanced Features
 
+- [x] Favorites + quick-send (long-press OK skips confirm; Right toggles favorite)
+- [x] NFC tag triggers (scan a tag to jump straight to a mapped action's confirm screen)
 - [ ] Presentation remote mode (left/right/up/down keys)
 - [ ] Mouse movement and clicks
 - [ ] Desktop companion app for profile sync
@@ -37,8 +39,9 @@
 
 ## Phase 5: Optional Extensions
 
-- [ ] Momentum firmware integration
 - [x] WiFi dev board support for network commands
+- [ ] Momentum firmware integration (developed/tested on Momentum so far; not yet
+      verified against official Flipper firmware)
 - [ ] Bluetooth HID support
 - [ ] QR code profile import
 - [ ] Voice command triggering
