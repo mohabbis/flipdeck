@@ -369,7 +369,7 @@ static void flipdeck_ui_draw_category_browser(Canvas* canvas, FlipDeckUi* ui_ctx
 static void flipdeck_ui_draw_action_browser(Canvas* canvas, FlipDeckUi* ui_ctx) {
     FlipDeckApp* app = ui_ctx->app_ctx;
 
-    char title[80];
+    char title[96];
     if(app->settings.show_icons && ui_ctx->current_category.icon[0] != '\0') {
         snprintf(
             title,
