@@ -7,6 +7,7 @@
 #include "flipdeck_ui.h"
 #include "nfc_bridge.h"
 #include "profile_manager.h"
+#include "subghz_bridge.h"
 #include "uart_bridge.h"
 #include "usb_hid.h"
 #include <furi.h>
@@ -55,6 +56,14 @@ bool flipdeck_app_init(void* furi_void) {
         FURI_LOG_W("FlipDeck", "NFC bridge init failed; NFC scan will be unavailable");
     }
 
+    // Initialize the Sub-GHz remote-scanning bridge. Unlike NFC, failure
+    // here hides the category-browser row entirely (see subghz_available's
+    // doc comment in flipdeck_app.h) rather than leaving a dead-end row.
+    g_app_ctx->subghz_available = subghz_bridge_init();
+    if(!g_app_ctx->subghz_available) {
+        FURI_LOG_W("FlipDeck", "Sub-GHz bridge init failed; Sub-GHz scan will be unavailable");
+    }
+
     // Create UI
     flipdeck_ui_init(g_app_ctx);
 
@@ -94,6 +103,7 @@ void flipdeck_app_free(void* furi_void) {
         flipdeck_ui_free();
         uart_bridge_deinit();
         nfc_bridge_deinit();
+        subghz_bridge_deinit();
         free(g_app_ctx);
         g_app_ctx = NULL;
     }
@@ -119,6 +129,10 @@ void flipdeck_app_loop(void* furi_void) {
 
         case FlipDeckState_NfcScan:
             flipdeck_ui_handle_nfc_scan();
+            break;
+
+        case FlipDeckState_SubghzScan:
+            flipdeck_ui_handle_subghz_scan();
             break;
 
         case FlipDeckState_SendConfirm:

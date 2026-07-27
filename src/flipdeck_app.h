@@ -22,6 +22,7 @@ typedef enum {
     FlipDeckState_CategoryBrowser,
     FlipDeckState_ActionBrowser,
     FlipDeckState_NfcScan,
+    FlipDeckState_SubghzScan,
     FlipDeckState_SendConfirm,
     FlipDeckState_LongSnippetWarning,
     FlipDeckState_Settings,
@@ -64,6 +65,12 @@ typedef struct FlipDeckApp {
     bool usb_connected;
     FlipDeckSettings settings;
     char current_category_id[32];
+    // Set once at init from subghz_bridge_init()'s return value. Unlike NFC
+    // (whose category-browser row is always shown), the Sub-GHz row is
+    // hidden entirely when this is false, since Sub-GHz's real-firmware
+    // linkage is a materially bigger open risk than NFC's turned out to be
+    // - see application.fam and docs/subghz_trigger_spec.md.
+    bool subghz_available;
 } FlipDeckApp;
 
 /**

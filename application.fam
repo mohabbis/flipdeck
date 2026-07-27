@@ -15,6 +15,7 @@ App(
         "src/usb_hid.c",
         "src/settings.c",
         "src/nfc_bridge.c",
+        "src/subghz_bridge.c",
     ],
 )
 # No `requires=[...]` needed for NFC: checked against
@@ -23,3 +24,20 @@ App(
 # PLUGIN requiring the NFC *app*), not for linking against the NFC *library*.
 # nfc_scanner.h/nfc_poller.h/nfc_device.h are part of the standard external-app
 # API surface, same as gui.h/storage.h.
+#
+# Sub-GHz linkage — genuinely uncertain, more so than NFC, flagged honestly:
+# subghz_bridge.c deliberately calls furi_hal_subghz_* (the same HAL tier as
+# furi_hal_usb_hid.h, which this app already uses via usb_hid.c with no
+# special manifest entry) plus standalone lib/subghz/{environment,receiver,
+# subghz_worker,protocols/base,subghz_protocol_registry}.h — NOT the newer
+# subghz_devices_* abstraction the real firmware's own Sub-GHz app
+# (applications/main/subghz/application.fam) uses, which declares
+# `requires=["region"], fap_libs=["assets", "hwdrivers"]` and pulls in the
+# ELF plugin-loader subsystem for pluggable external CC1101 support — real
+# complexity this app deliberately avoids by targeting only the internal
+# radio directly. So this is closer to NFC's "no special entry" case than
+# to the official Sub-GHz app's case, but this could NOT be confirmed by an
+# actual link/build — no fbt/ufbt toolchain is available in this
+# environment (SDK download blocked by network policy). If `fbt`/`ufbt
+# build` fails to link/load with unresolved furi_hal_subghz_*/subghz_*
+# symbols, this is the first place to check.
