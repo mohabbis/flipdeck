@@ -34,6 +34,24 @@ typedef struct {
     char label[64];
 } FlipDeckNfcTag;
 
+// Maximum number of Sub-GHz remote -> action mappings, and the buffer size
+// for a hashed signature (64-bit FNV-1a -> 16 hex chars + NUL).
+#define FLIPDECK_MAX_SUBGHZ_REMOTES 16
+#define FLIPDECK_SUBGHZ_SIG_HEX_LEN 17
+
+/**
+ * @brief A single Sub-GHz remote button -> action mapping. References the
+ * action by (category_id, label), same as FlipDeckNfcTag/FlipDeckFavorite.
+ * The key is a hash of the decoded protocol string
+ * (subghz_protocol_decoder_base_get_string()), not the raw string - see
+ * profile_manager_hash_subghz_signature() for why.
+ */
+typedef struct {
+    char signature_hex[FLIPDECK_SUBGHZ_SIG_HEX_LEN];
+    char category_id[32];
+    char label[64];
+} FlipDeckSubghzRemote;
+
 /** Action types for profiles */
 typedef enum {
     FlipDeckActionType_Text,
@@ -185,6 +203,48 @@ bool profile_manager_hex_encode_uid(
     size_t uid_len,
     char* out,
     size_t out_size);
+
+/**
+ * @brief Load Sub-GHz remote -> action mappings from subghz_remotes.json
+ * @param remotes Array to store mappings (capacity FLIPDECK_MAX_SUBGHZ_REMOTES)
+ * @param count Pointer to store number of mappings loaded
+ * @return true if the file existed and was read (even if it had zero remotes)
+ */
+bool profile_manager_load_subghz_remotes(FlipDeckSubghzRemote* remotes, uint32_t* count);
+
+/**
+ * @brief Save Sub-GHz remote -> action mappings to subghz_remotes.json
+ * @param remotes Array of mappings to save
+ * @param count Number of mappings in the array
+ * @return true if saved successfully
+ */
+bool profile_manager_save_subghz_remotes(const FlipDeckSubghzRemote* remotes, uint32_t count);
+
+/**
+ * @brief Find the mapping for a given signature, if any
+ * @param remotes Array of loaded mappings
+ * @param count Number of mappings in the array
+ * @param signature_hex Hex signature to look up
+ * @return Pointer to the matching entry within `remotes`, or NULL if not found
+ */
+const FlipDeckSubghzRemote* profile_manager_find_subghz_remote(
+    const FlipDeckSubghzRemote* remotes,
+    uint32_t count,
+    const char* signature_hex);
+
+/**
+ * @brief Hash a decoded Sub-GHz protocol string into a fixed-width uppercase
+ * hex fingerprint (64-bit FNV-1a). Fixed-code remotes produce byte-identical
+ * decoded text on every press, so this hash is stable across presses;
+ * rolling-code remotes produce different text each press, so the hash
+ * naturally never repeats and such remotes simply never re-match (see
+ * docs/subghz_trigger_spec.md).
+ * @param text Decoded protocol string (from subghz_protocol_decoder_base_get_string)
+ * @param out Output buffer
+ * @param out_size Size of out; must be at least FLIPDECK_SUBGHZ_SIG_HEX_LEN
+ * @return true on success, false if text or out is NULL, or out_size is too small
+ */
+bool profile_manager_hash_subghz_signature(const char* text, char* out, size_t out_size);
 
 /**
  * @brief Check if value contains potentially dangerous commands

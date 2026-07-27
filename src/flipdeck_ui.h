@@ -67,4 +67,13 @@ void flipdeck_ui_handle_long_snippet_warning(void);
  */
 void flipdeck_ui_handle_nfc_scan(void);
 
+/**
+ * @brief Handle the Sub-GHz scan screen. Called every main-loop tick while
+ * FlipDeckState_SubghzScan is active: starts scanning on first entry, polls
+ * for a decoded signal, and on detection either jumps to SendConfirm (known
+ * remote) or into the category/action browser in binding mode (unknown
+ * remote). Receive only - see subghz_bridge.c for why.
+ */
+void flipdeck_ui_handle_subghz_scan(void);
+
 #endif // FLIPDECK_UI_H

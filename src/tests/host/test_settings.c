@@ -180,6 +180,50 @@ static void test_parse_nfc_tags_skips_incomplete_entry(void) {
     EXPECT_EQ_INT(count, 0u, "entry missing label is skipped");
 }
 
+/* ---------- subghz remotes parsing ---------- */
+
+static void test_parse_subghz_remotes(void) {
+    char json[] =
+        "{\n"
+        "  \"remotes\": [\n"
+        "    {\"signature\": \"F9E6E6EF197C2B25\", \"category_id\": \"system\", \"label\": \"Lock Screen\"},\n"
+        "    {\"signature\": \"99B57D1BEB526798\", \"category_id\": \"presentation\", \"label\": \"Next Slide\"}\n"
+        "  ]\n"
+        "}\n";
+
+    FlipDeckSubghzRemote remotes[FLIPDECK_MAX_SUBGHZ_REMOTES];
+    uint32_t count = 0xAAAAAAAA;
+    memset(remotes, 0xAA, sizeof(remotes));
+
+    parse_subghz_remotes(json, remotes, &count);
+
+    EXPECT_EQ_INT(count, 2u, "parses two subghz remotes");
+    EXPECT_STR_EQ(remotes[0].signature_hex, "F9E6E6EF197C2B25", "first remote signature");
+    EXPECT_STR_EQ(remotes[0].category_id, "system", "first remote category_id");
+    EXPECT_STR_EQ(remotes[0].label, "Lock Screen", "first remote label");
+    EXPECT_STR_EQ(remotes[1].signature_hex, "99B57D1BEB526798", "second remote signature");
+    EXPECT_STR_EQ(remotes[1].category_id, "presentation", "second remote category_id");
+    EXPECT_STR_EQ(remotes[1].label, "Next Slide", "second remote label");
+}
+
+static void test_parse_subghz_remotes_no_key(void) {
+    char json[] = "{ \"other\": 1 }";
+    FlipDeckSubghzRemote remotes[FLIPDECK_MAX_SUBGHZ_REMOTES];
+    uint32_t count = 0xAAAAAAAA;
+    parse_subghz_remotes(json, remotes, &count);
+    EXPECT_EQ_INT(count, 0u, "no remotes key means zero remotes");
+}
+
+static void test_parse_subghz_remotes_skips_incomplete_entry(void) {
+    char json[] =
+        "{ \"remotes\": [ {\"signature\": \"F9E6E6EF197C2B25\", \"category_id\": \"system\"} ] }";
+    FlipDeckSubghzRemote remotes[FLIPDECK_MAX_SUBGHZ_REMOTES];
+    memset(remotes, 0xAA, sizeof(remotes)); /* poison, to prove parse_subghz_remotes clears stale data itself */
+    uint32_t count = 0xAAAAAAAA;
+    parse_subghz_remotes(json, remotes, &count);
+    EXPECT_EQ_INT(count, 0u, "entry missing label is skipped");
+}
+
 /* ---------- runner ---------- */
 
 int main(void) {
@@ -208,6 +252,11 @@ int main(void) {
     test_parse_nfc_tags();
     test_parse_nfc_tags_no_key();
     test_parse_nfc_tags_skips_incomplete_entry();
+
+    printf("[subghz remotes parsing]\n");
+    test_parse_subghz_remotes();
+    test_parse_subghz_remotes_no_key();
+    test_parse_subghz_remotes_skips_incomplete_entry();
 
     printf("\n===========================================\n");
     printf("Results: %d passed, %d failed\n", g_passes, g_failures);

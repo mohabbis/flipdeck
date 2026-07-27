@@ -17,6 +17,7 @@
 #define PROFILE_BASE_PATH FLIPDECK_DATA_PATH "/profiles"
 #define SETTINGS_PATH FLIPDECK_DATA_PATH "/settings.json"
 #define NFC_TAGS_PATH FLIPDECK_DATA_PATH "/nfc_tags.json"
+#define SUBGHZ_REMOTES_PATH FLIPDECK_DATA_PATH "/subghz_remotes.json"
 
 static void storage_ensure_flipdeck_dirs(Storage* storage) {
     storage_common_mkdir(storage, "/ext/apps_data");
@@ -666,6 +667,125 @@ bool profile_manager_save_nfc_tags(const FlipDeckNfcTag* tags, uint32_t count) {
     }
 
     FURI_LOG_I("FlipDeck", "Saved %" PRIu32 " NFC tag mappings", count);
+    return true;
+}
+
+bool profile_manager_hash_subghz_signature(const char* text, char* out, size_t out_size) {
+    if(!text || !out) return false;
+    if(out_size < FLIPDECK_SUBGHZ_SIG_HEX_LEN) return false;
+
+    // FNV-1a, 64-bit.
+    uint64_t hash = 0xcbf29ce484222325ULL;
+    for(const unsigned char* p = (const unsigned char*)text; *p; p++) {
+        hash ^= *p;
+        hash *= 0x100000001b3ULL;
+    }
+
+    static const char hex_digits[] = "0123456789ABCDEF";
+    for(int i = 0; i < 16; i++) {
+        int shift = (15 - i) * 4;
+        out[i] = hex_digits[(hash >> shift) & 0xF];
+    }
+    out[16] = '\0';
+    return true;
+}
+
+const FlipDeckSubghzRemote* profile_manager_find_subghz_remote(
+    const FlipDeckSubghzRemote* remotes,
+    uint32_t count,
+    const char* signature_hex) {
+    if(!remotes || !signature_hex) return NULL;
+    for(uint32_t i = 0; i < count; i++) {
+        if(strcmp(remotes[i].signature_hex, signature_hex) == 0) return &remotes[i];
+    }
+    return NULL;
+}
+
+// Parse a `{ "remotes": [ {"signature": "...", "category_id": "...", "label": "..."}, ... ] }`
+// document into `remotes`/`count`. Mirrors parse_nfc_tags() exactly - same
+// object-scanning approach, factored out so it can be exercised directly
+// against a hand-built buffer in host tests, without going through file I/O.
+static void parse_subghz_remotes(char* json, FlipDeckSubghzRemote* remotes, uint32_t* count) {
+    *count = 0;
+
+    char* arr_start = strstr(json, "\"remotes\"");
+    if(!arr_start) return;
+    arr_start = strchr(arr_start, '[');
+    if(!arr_start) return;
+    char* arr_end = strchr(arr_start, ']');
+    if(!arr_end) return;
+
+    char* pos = arr_start + 1;
+    while(pos < arr_end && *count < FLIPDECK_MAX_SUBGHZ_REMOTES) {
+        char* obj_start = strchr(pos, '{');
+        if(!obj_start || obj_start >= arr_end) break;
+        char* obj_end = strchr(obj_start, '}');
+        if(!obj_end || obj_end > arr_end) break;
+
+        char obj_json[160];
+        uint32_t obj_len = obj_end - obj_start + 1;
+        if(obj_len < sizeof(obj_json)) {
+            strncpy(obj_json, obj_start, obj_len);
+            obj_json[obj_len] = '\0';
+
+            // Clear stale data first: find_json_string() leaves its output
+            // buffer untouched when a key is absent, and this slot may be
+            // reused across calls (same hazard as parse_nfc_tags's fix).
+            FlipDeckSubghzRemote* remote = &remotes[*count];
+            memset(remote, 0, sizeof(*remote));
+            find_json_string(obj_json, "signature", remote->signature_hex, sizeof(remote->signature_hex));
+            find_json_string(obj_json, "category_id", remote->category_id, sizeof(remote->category_id));
+            find_json_string(obj_json, "label", remote->label, sizeof(remote->label));
+            if(remote->signature_hex[0] && remote->category_id[0] && remote->label[0]) {
+                (*count)++;
+            }
+        }
+
+        pos = obj_end + 1;
+    }
+
+    FURI_LOG_I("FlipDeck", "Loaded %" PRIu32 " Sub-GHz remote mappings", *count);
+}
+
+bool profile_manager_load_subghz_remotes(FlipDeckSubghzRemote* remotes, uint32_t* count) {
+    *count = 0;
+
+    // Static: same reasoning as load_category's buffer - a few KB local
+    // would eat too much of the 4096-byte FAP stack.
+    static char buffer[2048];
+    if(!read_text_file(SUBGHZ_REMOTES_PATH, buffer, sizeof(buffer))) {
+        FURI_LOG_W("FlipDeck", "No Sub-GHz remotes file found");
+        return false;
+    }
+
+    parse_subghz_remotes(buffer, remotes, count);
+    return true;
+}
+
+bool profile_manager_save_subghz_remotes(const FlipDeckSubghzRemote* remotes, uint32_t count) {
+    if(!remotes && count > 0) return false;
+
+    // Static for the same reason as save_nfc_tags's buffer.
+    static char json[2560];
+    uint32_t offset = 0;
+    offset += snprintf(json + offset, sizeof(json) - offset, "{\n  \"remotes\": [\n");
+
+    for(uint32_t i = 0; i < count && offset < sizeof(json) - 96; i++) {
+        offset += snprintf(json + offset, sizeof(json) - offset,
+            "    {\"signature\": \"%s\", \"category_id\": \"%s\", \"label\": \"%s\"}%s\n",
+            remotes[i].signature_hex,
+            remotes[i].category_id,
+            remotes[i].label,
+            (i < count - 1) ? "," : "");
+    }
+    offset += snprintf(json + offset, sizeof(json) - offset, "  ]\n}\n");
+
+    if(!write_text_file(SUBGHZ_REMOTES_PATH, json)) {
+        FURI_LOG_E("FlipDeck", "Failed to open Sub-GHz remotes file for writing");
+        return false;
+    }
+
+    FURI_LOG_I("FlipDeck", "Saved %" PRIu32 " Sub-GHz remote mappings", count);
     return true;
 }
 

@@ -284,6 +284,68 @@ static void test_nfc_find_tag(void) {
     EXPECT_TRUE(profile_manager_find_nfc_tag(tags, 2, NULL) == NULL, "NULL uid_hex returns NULL");
 }
 
+/* ---------- Sub-GHz remotes ---------- */
+
+static void test_subghz_hash_signature(void) {
+    char out[FLIPDECK_SUBGHZ_SIG_HEX_LEN];
+
+    EXPECT_TRUE(profile_manager_hash_subghz_signature("test", out, sizeof(out)), "hashes 'test'");
+    EXPECT_STR_EQ(out, "F9E6E6EF197C2B25", "FNV-1a hash of 'test' matches known vector");
+
+    EXPECT_TRUE(
+        profile_manager_hash_subghz_signature(
+            "Princeton, Key:0x123456, Bit:24", out, sizeof(out)),
+        "hashes a realistic decoded-protocol string");
+    EXPECT_STR_EQ(out, "99B57D1BEB526798", "FNV-1a hash of protocol string matches known vector");
+
+    // Same input always produces the same hash - required for fixed-code
+    // remotes to bind reliably across separate presses.
+    char first[FLIPDECK_SUBGHZ_SIG_HEX_LEN];
+    char second[FLIPDECK_SUBGHZ_SIG_HEX_LEN];
+    profile_manager_hash_subghz_signature("test", first, sizeof(first));
+    profile_manager_hash_subghz_signature("test", second, sizeof(second));
+    EXPECT_STR_EQ(first, second, "hash is deterministic across repeated calls");
+}
+
+static void test_subghz_hash_signature_bounds(void) {
+    char out[FLIPDECK_SUBGHZ_SIG_HEX_LEN];
+    char too_small[FLIPDECK_SUBGHZ_SIG_HEX_LEN - 1];
+
+    EXPECT_FALSE(profile_manager_hash_subghz_signature(NULL, out, sizeof(out)), "rejects NULL text");
+    EXPECT_FALSE(profile_manager_hash_subghz_signature("x", NULL, sizeof(out)), "rejects NULL out");
+    EXPECT_FALSE(
+        profile_manager_hash_subghz_signature("x", too_small, sizeof(too_small)),
+        "rejects out buffer smaller than FLIPDECK_SUBGHZ_SIG_HEX_LEN");
+}
+
+static void test_subghz_find_remote(void) {
+    FlipDeckSubghzRemote remotes[3];
+    memset(remotes, 0, sizeof(remotes));
+    strcpy(remotes[0].signature_hex, "F9E6E6EF197C2B25");
+    strcpy(remotes[0].category_id, "system");
+    strcpy(remotes[0].label, "Lock Screen");
+    strcpy(remotes[1].signature_hex, "99B57D1BEB526798");
+    strcpy(remotes[1].category_id, "presentation");
+    strcpy(remotes[1].label, "Next Slide");
+
+    const FlipDeckSubghzRemote* found =
+        profile_manager_find_subghz_remote(remotes, 2, "F9E6E6EF197C2B25");
+    EXPECT_TRUE(found != NULL, "finds existing signature");
+    EXPECT_STR_EQ(found->category_id, "system", "found remote has correct category_id");
+    EXPECT_STR_EQ(found->label, "Lock Screen", "found remote has correct label");
+
+    EXPECT_TRUE(
+        profile_manager_find_subghz_remote(remotes, 2, "DEADBEEFDEADBEEF") == NULL,
+        "unknown signature returns NULL");
+    EXPECT_TRUE(
+        profile_manager_find_subghz_remote(remotes, 2, "99B57D1BEB526798")->category_id[0] == 'p',
+        "finds second entry");
+    EXPECT_TRUE(
+        profile_manager_find_subghz_remote(NULL, 2, "x") == NULL, "NULL remotes array returns NULL");
+    EXPECT_TRUE(
+        profile_manager_find_subghz_remote(remotes, 2, NULL) == NULL, "NULL signature_hex returns NULL");
+}
+
 /* ---------- runner ---------- */
 
 int main(void) {
@@ -354,6 +416,15 @@ int main(void) {
 
     printf("[nfc: find tag]\n");
     test_nfc_find_tag();
+
+    printf("[subghz: hash signature]\n");
+    test_subghz_hash_signature();
+
+    printf("[subghz: hash signature bounds]\n");
+    test_subghz_hash_signature_bounds();
+
+    printf("[subghz: find remote]\n");
+    test_subghz_find_remote();
 
     printf("\n===========================================\n");
     printf("Results: %d passed, %d failed\n", g_passes, g_failures);

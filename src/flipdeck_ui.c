@@ -6,6 +6,7 @@
 #include "flipdeck_ui.h"
 #include "nfc_bridge.h"
 #include "profile_manager.h"
+#include "subghz_bridge.h"
 #include "uart_bridge.h"
 #include "usb_hid.h"
 #include <gui/elements.h>
@@ -18,10 +19,28 @@ typedef enum {
     FlipDeckView_CategoryBrowser,
     FlipDeckView_ActionBrowser,
     FlipDeckView_NfcScan,
+    FlipDeckView_SubghzScan,
     FlipDeckView_Confirm,
     FlipDeckView_LongSnippetWarning,
     FlipDeckView_Settings,
 } FlipDeckView;
+
+// Which hardware trigger source (if any) is currently waiting for the user
+// to pick a category/action target for an unrecognized token. At most one
+// bind can be pending at a time - a tagged union rather than one flag per
+// source makes that structurally true instead of "shouldn't happen".
+typedef enum {
+    FlipDeckBindKind_None,
+    FlipDeckBindKind_Nfc,
+    FlipDeckBindKind_Subghz,
+} FlipDeckBindKind;
+
+typedef struct {
+    FlipDeckBindKind kind;
+    // Holds either an NFC UID or a Sub-GHz signature hash, whichever kind
+    // is pending. Sized for the larger of the two (FLIPDECK_NFC_UID_HEX_LEN).
+    char id_hex[FLIPDECK_NFC_UID_HEX_LEN];
+} FlipDeckPendingBind;
 
 typedef struct {
     FlipDeckApp* app_ctx;
@@ -32,7 +51,8 @@ typedef struct {
     FlipDeckProfileCategory current_category;
     // Source category id for each entry in current_category.actions, so a
     // favorite can be looked up/toggled regardless of whether the actions
-    // came from one category or were flattened from the favorites/NFC list.
+    // came from one category or were flattened from the favorites/NFC/
+    // Sub-GHz list.
     char action_category_ids[FLIPDECK_MAX_ACTIONS_PER_CATEGORY][32];
     uint32_t category_scroll_offset;
     uint32_t action_scroll_offset;
@@ -43,14 +63,21 @@ typedef struct {
     uint32_t nfc_tag_count;
     bool nfc_scan_active;
     char nfc_scan_status[32];
-    // Non-empty while picking a category/action target for a freshly-scanned
-    // unknown tag; holds the tag's hex UID until the pick completes or is
-    // cancelled. See flipdeck_ui_is_binding().
-    char nfc_binding_uid_hex[FLIPDECK_NFC_UID_HEX_LEN];
+    // Sub-GHz remote mappings, (re)loaded each time the Sub-GHz scan screen
+    // is entered - mirrors the NFC fields above exactly.
+    FlipDeckSubghzRemote subghz_remotes[FLIPDECK_MAX_SUBGHZ_REMOTES];
+    uint32_t subghz_remote_count;
+    bool subghz_scan_active;
+    char subghz_scan_status[32];
+    // Non-empty (kind != None) while picking a category/action target for a
+    // freshly-detected unknown token from either trigger source. See
+    // flipdeck_ui_is_binding().
+    FlipDeckPendingBind pending_bind;
 } FlipDeckUi;
 
 #define FLIPDECK_FAVORITES_ROW_ID "__favorites__"
 #define FLIPDECK_NFC_TAG_ROW_ID "__nfc_tag__"
+#define FLIPDECK_SUBGHZ_REMOTE_ROW_ID "__subghz_remote__"
 
 static void flipdeck_ui_open_favorites(FlipDeckUi* ui_ctx);
 
@@ -64,19 +91,26 @@ static void flipdeck_ui_draw_confirm(Canvas* canvas, FlipDeckUi* ui_ctx);
 static void flipdeck_ui_draw_settings(Canvas* canvas, FlipDeckUi* ui_ctx);
 static void flipdeck_ui_draw_long_snippet_warning(Canvas* canvas, FlipDeckUi* ui_ctx);
 static void flipdeck_ui_draw_nfc_scan(Canvas* canvas, FlipDeckUi* ui_ctx);
+static void flipdeck_ui_draw_subghz_scan(Canvas* canvas, FlipDeckUi* ui_ctx);
 static void flipdeck_ui_input_category_browser(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_input_action_browser(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_input_confirm(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_input_settings(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_input_long_snippet_warning(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_input_nfc_scan(FlipDeckUi* ui_ctx, InputEvent* event);
+static void flipdeck_ui_input_subghz_scan(FlipDeckUi* ui_ctx, InputEvent* event);
 static void flipdeck_ui_send_action(FlipDeckUi* ui_ctx, FlipDeckAction* action);
 static void flipdeck_ui_set_send_status(FlipDeckApp* app, FlipDeckAction* action, bool ok);
 static bool flipdeck_ui_has_favorites_row(FlipDeckApp* app);
 static bool flipdeck_ui_is_binding(FlipDeckUi* ui_ctx);
 static void flipdeck_ui_category_rows(
     FlipDeckUi* ui_ctx, bool* has_favorites_row_out, uint32_t* synthetic_offset_out);
-static bool flipdeck_ui_load_single_action(FlipDeckUi* ui_ctx, const char* category_id, const char* label);
+static bool flipdeck_ui_load_single_action(
+    FlipDeckUi* ui_ctx,
+    const char* category_id,
+    const char* label,
+    const char* synthetic_category_name,
+    const char* synthetic_category_id);
 
 /* Returns the action at app_ctx->selected_action_index, or NULL if the index is
  * stale/out of range for the currently loaded category. Callers must treat NULL
@@ -185,11 +219,13 @@ void flipdeck_ui_handle_nfc_scan(void) {
         if(!tag) {
             // Unknown tag: hand off to the category browser in binding mode
             // to pick what it should map to.
-            strncpy(ui.nfc_binding_uid_hex, uid_hex, sizeof(ui.nfc_binding_uid_hex) - 1);
-            ui.nfc_binding_uid_hex[sizeof(ui.nfc_binding_uid_hex) - 1] = '\0';
+            ui.pending_bind.kind = FlipDeckBindKind_Nfc;
+            strncpy(ui.pending_bind.id_hex, uid_hex, sizeof(ui.pending_bind.id_hex) - 1);
+            ui.pending_bind.id_hex[sizeof(ui.pending_bind.id_hex) - 1] = '\0';
             app->current_category_index = 0;
             app->state = FlipDeckState_CategoryBrowser;
-        } else if(flipdeck_ui_load_single_action(&ui, tag->category_id, tag->label)) {
+        } else if(flipdeck_ui_load_single_action(
+                      &ui, tag->category_id, tag->label, "NFC Tag", FLIPDECK_NFC_TAG_ROW_ID)) {
             // Known tag with a still-valid mapping: NFC-triggered sends
             // always land on the confirm screen, regardless of
             // confirm_before_send or the long-press quick-send shortcut -
@@ -201,6 +237,53 @@ void flipdeck_ui_handle_nfc_scan(void) {
             // (e.g. the profile was edited since binding). Report and stay
             // on this screen rather than silently re-arming or guessing.
             snprintf(ui.nfc_scan_status, sizeof(ui.nfc_scan_status), "Mapped action missing");
+        }
+    }
+
+    view_port_update(ui.view_port);
+}
+
+void flipdeck_ui_handle_subghz_scan(void) {
+    FlipDeckApp* app = ui.app_ctx;
+    ui.current_view = FlipDeckView_SubghzScan;
+
+    if(!ui.subghz_scan_active) {
+        ui.subghz_remote_count = 0;
+        profile_manager_load_subghz_remotes(ui.subghz_remotes, &ui.subghz_remote_count);
+        ui.subghz_scan_status[0] = '\0';
+        subghz_bridge_start_scan();
+        ui.subghz_scan_active = true;
+    }
+
+    char sig_hex[FLIPDECK_SUBGHZ_SIG_HEX_LEN];
+    if(subghz_bridge_poll_signal(sig_hex, sizeof(sig_hex))) {
+        // subghz_bridge_poll_signal() already stopped scanning on a hit.
+        ui.subghz_scan_active = false;
+
+        const FlipDeckSubghzRemote* remote =
+            profile_manager_find_subghz_remote(ui.subghz_remotes, ui.subghz_remote_count, sig_hex);
+        if(!remote) {
+            // Unknown signature: hand off to the category browser in
+            // binding mode, same as an unknown NFC tag.
+            ui.pending_bind.kind = FlipDeckBindKind_Subghz;
+            strncpy(ui.pending_bind.id_hex, sig_hex, sizeof(ui.pending_bind.id_hex) - 1);
+            ui.pending_bind.id_hex[sizeof(ui.pending_bind.id_hex) - 1] = '\0';
+            app->current_category_index = 0;
+            app->state = FlipDeckState_CategoryBrowser;
+        } else if(flipdeck_ui_load_single_action(
+                      &ui,
+                      remote->category_id,
+                      remote->label,
+                      "Sub-GHz Remote",
+                      FLIPDECK_SUBGHZ_REMOTE_ROW_ID)) {
+            // Known remote with a still-valid mapping: Sub-GHz-triggered
+            // sends also always land on the confirm screen - for an even
+            // stronger reason than NFC's UID-cloneability, since RF is
+            // receivable from across a room with zero physical contact
+            // with the device at all.
+            app->state = FlipDeckState_SendConfirm;
+        } else {
+            snprintf(ui.subghz_scan_status, sizeof(ui.subghz_scan_status), "Mapped action missing");
         }
     }
 
@@ -220,6 +303,9 @@ static void flipdeck_ui_draw_callback(Canvas* canvas, void* context) {
             break;
         case FlipDeckView_NfcScan:
             flipdeck_ui_draw_nfc_scan(canvas, ui_ctx);
+            break;
+        case FlipDeckView_SubghzScan:
+            flipdeck_ui_draw_subghz_scan(canvas, ui_ctx);
             break;
         case FlipDeckView_Confirm:
             flipdeck_ui_draw_confirm(canvas, ui_ctx);
@@ -245,6 +331,9 @@ static void flipdeck_ui_input_callback(InputEvent* event, void* context) {
             break;
         case FlipDeckView_NfcScan:
             flipdeck_ui_input_nfc_scan(ui_ctx, event);
+            break;
+        case FlipDeckView_SubghzScan:
+            flipdeck_ui_input_subghz_scan(ui_ctx, event);
             break;
         case FlipDeckView_Confirm:
             flipdeck_ui_input_confirm(ui_ctx, event);
@@ -284,24 +373,27 @@ static bool flipdeck_ui_has_favorites_row(FlipDeckApp* app) {
     return app->settings.favorite_count > 0;
 }
 
-// True while picking a category/action target for a freshly-scanned unknown
-// NFC tag (see flipdeck_ui_on_nfc_tag_detected below).
+// True while picking a category/action target for a freshly-detected
+// unknown token from either trigger source (see flipdeck_ui_handle_nfc_scan
+// / flipdeck_ui_handle_subghz_scan).
 static bool flipdeck_ui_is_binding(FlipDeckUi* ui_ctx) {
-    return ui_ctx->nfc_binding_uid_hex[0] != '\0';
+    return ui_ctx->pending_bind.kind != FlipDeckBindKind_None;
 }
 
 // Layout of the synthetic rows shown before the real categories in the
-// category browser: "* Favorites" (only when at least one favorite exists)
-// followed by "~ NFC Scan" (always present). Both are hidden while binding
-// an NFC tag, since binding only wants a real category/action target, not
-// another trip into Favorites or a second scan.
+// category browser: "* Favorites" (only when at least one favorite exists),
+// "~ NFC Scan" (always present), "^ Sub-GHz Scan" (present unless the
+// Sub-GHz bridge failed to initialize). All three are hidden while binding,
+// since binding only wants a real category/action target, not another trip
+// into Favorites or a second scan.
 static void flipdeck_ui_category_rows(
     FlipDeckUi* ui_ctx, bool* has_favorites_row_out, uint32_t* synthetic_offset_out) {
     bool binding = flipdeck_ui_is_binding(ui_ctx);
     bool has_favorites_row = !binding && flipdeck_ui_has_favorites_row(ui_ctx->app_ctx);
     uint32_t nfc_row_count = binding ? 0 : 1;
+    uint32_t subghz_row_count = (!binding && ui_ctx->app_ctx->subghz_available) ? 1 : 0;
     *has_favorites_row_out = has_favorites_row;
-    *synthetic_offset_out = (has_favorites_row ? 1 : 0) + nfc_row_count;
+    *synthetic_offset_out = (has_favorites_row ? 1 : 0) + nfc_row_count + subghz_row_count;
 }
 
 static void flipdeck_ui_draw_category_browser(Canvas* canvas, FlipDeckUi* ui_ctx) {
@@ -315,7 +407,10 @@ static void flipdeck_ui_draw_category_browser(Canvas* canvas, FlipDeckUi* ui_ctx
     bool has_favorites_row;
     uint32_t synthetic_offset;
     flipdeck_ui_category_rows(ui_ctx, &has_favorites_row, &synthetic_offset);
-    bool has_nfc_row = !binding; // the sole remaining synthetic row once favorites is accounted for
+    bool has_nfc_row = !binding;
+    bool has_subghz_row = !binding && app->subghz_available;
+    uint32_t nfc_row_index = has_favorites_row ? 1u : 0u;
+    uint32_t subghz_row_index = nfc_row_index + (has_nfc_row ? 1u : 0u);
     uint32_t total_rows = app->category_count + synthetic_offset;
 
     ui_ctx->category_scroll_offset = flipdeck_ui_scroll_offset_for_selection(
@@ -334,8 +429,10 @@ static void flipdeck_ui_draw_category_browser(Canvas* canvas, FlipDeckUi* ui_ctx
             char label[24];
             snprintf(label, sizeof(label), "* Favorites (%lu)", (unsigned long)app->settings.favorite_count);
             canvas_draw_str(canvas, 5, y, label);
-        } else if(has_nfc_row && i == (has_favorites_row ? 1u : 0u)) {
+        } else if(has_nfc_row && i == nfc_row_index) {
             canvas_draw_str(canvas, 5, y, "~ NFC Scan");
+        } else if(has_subghz_row && i == subghz_row_index) {
+            canvas_draw_str(canvas, 5, y, "^ Sub-GHz Scan");
         } else {
             const char* cat_id = ui_ctx->category_ids[i - synthetic_offset];
             bool is_home = app->settings.startup_category[0] &&
@@ -457,6 +554,17 @@ static void flipdeck_ui_draw_nfc_scan(Canvas* canvas, FlipDeckUi* ui_ctx) {
     elements_button_left(canvas, "Cancel");
 }
 
+static void flipdeck_ui_draw_subghz_scan(Canvas* canvas, FlipDeckUi* ui_ctx) {
+    flipdeck_ui_draw_header(canvas, "Sub-GHz Scan");
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 5, 30, "Press the remote's");
+    canvas_draw_str(canvas, 5, 40, "button... (receive only)");
+    if(ui_ctx->subghz_scan_status[0]) {
+        canvas_draw_str(canvas, 5, 52, ui_ctx->subghz_scan_status);
+    }
+    elements_button_left(canvas, "Cancel");
+}
+
 #define FLIPDECK_SETTINGS_COUNT 5
 #define FLIPDECK_SETTINGS_MAX_DELAY_MS 500
 #define FLIPDECK_SETTINGS_DELAY_STEP_MS 50
@@ -566,7 +674,9 @@ static void flipdeck_ui_input_category_browser(FlipDeckUi* ui_ctx, InputEvent* e
     uint32_t synthetic_offset;
     flipdeck_ui_category_rows(ui_ctx, &has_favorites_row, &synthetic_offset);
     bool has_nfc_row = !binding;
+    bool has_subghz_row = !binding && app->subghz_available;
     uint32_t nfc_row_index = has_favorites_row ? 1u : 0u;
+    uint32_t subghz_row_index = nfc_row_index + (has_nfc_row ? 1u : 0u);
     uint32_t total_rows = app->category_count + synthetic_offset;
 
     if(!binding && event->type == InputTypeLong && event->key == InputKeyOk) {
@@ -595,11 +705,15 @@ static void flipdeck_ui_input_category_browser(FlipDeckUi* ui_ctx, InputEvent* e
                 app->state = FlipDeckState_NfcScan;
                 break;
             }
+            if(has_subghz_row && app->current_category_index == subghz_row_index) {
+                app->state = FlipDeckState_SubghzScan;
+                break;
+            }
             flipdeck_ui_open_category(ui_ctx, app->current_category_index - synthetic_offset);
             break;
         case InputKeyLeft:
             if(binding) {
-                ui_ctx->nfc_binding_uid_hex[0] = '\0';
+                ui_ctx->pending_bind.kind = FlipDeckBindKind_None;
                 app->current_category_index = 0;
             }
             break;
@@ -671,11 +785,18 @@ static void flipdeck_ui_open_favorites(FlipDeckUi* ui_ctx) {
 
 // Load the single action (category_id, label) into current_category as a
 // one-entry synthetic category, the same way flipdeck_ui_open_favorites
-// flattens several - used when a known NFC tag resolves to an action, so
-// the existing SendConfirm/send flow can be reused unmodified.
+// flattens several - used when a known NFC tag or Sub-GHz remote resolves
+// to an action, so the existing SendConfirm/send flow can be reused
+// unmodified. synthetic_category_name/id let each trigger source label the
+// resulting screen distinctly ("NFC Tag" vs "Sub-GHz Remote").
 // Returns false if the category or the labeled action no longer exists
-// (e.g. the profile was edited/deleted since the tag was bound).
-static bool flipdeck_ui_load_single_action(FlipDeckUi* ui_ctx, const char* category_id, const char* label) {
+// (e.g. the profile was edited/deleted since the mapping was bound).
+static bool flipdeck_ui_load_single_action(
+    FlipDeckUi* ui_ctx,
+    const char* category_id,
+    const char* label,
+    const char* synthetic_category_name,
+    const char* synthetic_category_id) {
     // Static for the same reason as open_favorites' scratch buffer.
     static FlipDeckProfileCategory scratch;
     if(!profile_manager_load_category(category_id, &scratch)) return false;
@@ -684,8 +805,14 @@ static bool flipdeck_ui_load_single_action(FlipDeckUi* ui_ctx, const char* categ
         if(strcmp(scratch.actions[a].label, label) != 0) continue;
 
         memset(&ui_ctx->current_category, 0, sizeof(ui_ctx->current_category));
-        strncpy(ui_ctx->current_category.name, "NFC Tag", sizeof(ui_ctx->current_category.name) - 1);
-        strncpy(ui_ctx->current_category.id, FLIPDECK_NFC_TAG_ROW_ID, sizeof(ui_ctx->current_category.id) - 1);
+        strncpy(
+            ui_ctx->current_category.name,
+            synthetic_category_name,
+            sizeof(ui_ctx->current_category.name) - 1);
+        strncpy(
+            ui_ctx->current_category.id,
+            synthetic_category_id,
+            sizeof(ui_ctx->current_category.id) - 1);
         ui_ctx->current_category.actions[0] = scratch.actions[a];
         ui_ctx->current_category.action_count = 1;
         strncpy(ui_ctx->action_category_ids[0], category_id, 31);
@@ -718,32 +845,51 @@ static void flipdeck_ui_toggle_favorite(FlipDeckUi* ui_ctx) {
         now_favorited ? "Added to favorites" : "Removed from favorites");
 }
 
-// Finish NFC tag binding: write (nfc_binding_uid_hex -> selected action) as
-// a new mapping, persist it, and re-arm the NFC scan screen so several tags
-// can be bound in one sitting.
+// Finish binding: write (pending_bind.id_hex -> selected action) as a new
+// mapping in whichever list pending_bind.kind selects, persist it, and
+// re-arm that trigger's scan screen so several tokens can be bound in one
+// sitting.
 static void flipdeck_ui_bind_selected_action(FlipDeckUi* ui_ctx) {
     FlipDeckApp* app = ui_ctx->app_ctx;
     FlipDeckAction* action = flipdeck_ui_get_selected_action(ui_ctx);
     if(!action) return;
 
-    if(ui_ctx->nfc_tag_count >= FLIPDECK_MAX_NFC_TAGS) {
-        snprintf(app->status_message, sizeof(app->status_message), "NFC tag list full");
-    } else {
-        FlipDeckNfcTag* tag = &ui_ctx->nfc_tags[ui_ctx->nfc_tag_count];
-        strncpy(tag->uid_hex, ui_ctx->nfc_binding_uid_hex, sizeof(tag->uid_hex) - 1);
-        tag->uid_hex[sizeof(tag->uid_hex) - 1] = '\0';
-        strncpy(tag->category_id, app->current_category_id, sizeof(tag->category_id) - 1);
-        tag->category_id[sizeof(tag->category_id) - 1] = '\0';
-        strncpy(tag->label, action->label, sizeof(tag->label) - 1);
-        tag->label[sizeof(tag->label) - 1] = '\0';
-        ui_ctx->nfc_tag_count++;
-        profile_manager_save_nfc_tags(ui_ctx->nfc_tags, ui_ctx->nfc_tag_count);
-        snprintf(ui_ctx->nfc_scan_status, sizeof(ui_ctx->nfc_scan_status), "Tag bound!");
+    if(ui_ctx->pending_bind.kind == FlipDeckBindKind_Nfc) {
+        if(ui_ctx->nfc_tag_count >= FLIPDECK_MAX_NFC_TAGS) {
+            snprintf(app->status_message, sizeof(app->status_message), "NFC tag list full");
+        } else {
+            FlipDeckNfcTag* tag = &ui_ctx->nfc_tags[ui_ctx->nfc_tag_count];
+            strncpy(tag->uid_hex, ui_ctx->pending_bind.id_hex, sizeof(tag->uid_hex) - 1);
+            tag->uid_hex[sizeof(tag->uid_hex) - 1] = '\0';
+            strncpy(tag->category_id, app->current_category_id, sizeof(tag->category_id) - 1);
+            tag->category_id[sizeof(tag->category_id) - 1] = '\0';
+            strncpy(tag->label, action->label, sizeof(tag->label) - 1);
+            tag->label[sizeof(tag->label) - 1] = '\0';
+            ui_ctx->nfc_tag_count++;
+            profile_manager_save_nfc_tags(ui_ctx->nfc_tags, ui_ctx->nfc_tag_count);
+            snprintf(ui_ctx->nfc_scan_status, sizeof(ui_ctx->nfc_scan_status), "Tag bound!");
+        }
+        app->state = FlipDeckState_NfcScan;
+    } else if(ui_ctx->pending_bind.kind == FlipDeckBindKind_Subghz) {
+        if(ui_ctx->subghz_remote_count >= FLIPDECK_MAX_SUBGHZ_REMOTES) {
+            snprintf(app->status_message, sizeof(app->status_message), "Sub-GHz list full");
+        } else {
+            FlipDeckSubghzRemote* remote = &ui_ctx->subghz_remotes[ui_ctx->subghz_remote_count];
+            strncpy(remote->signature_hex, ui_ctx->pending_bind.id_hex, sizeof(remote->signature_hex) - 1);
+            remote->signature_hex[sizeof(remote->signature_hex) - 1] = '\0';
+            strncpy(remote->category_id, app->current_category_id, sizeof(remote->category_id) - 1);
+            remote->category_id[sizeof(remote->category_id) - 1] = '\0';
+            strncpy(remote->label, action->label, sizeof(remote->label) - 1);
+            remote->label[sizeof(remote->label) - 1] = '\0';
+            ui_ctx->subghz_remote_count++;
+            profile_manager_save_subghz_remotes(ui_ctx->subghz_remotes, ui_ctx->subghz_remote_count);
+            snprintf(ui_ctx->subghz_scan_status, sizeof(ui_ctx->subghz_scan_status), "Remote bound!");
+        }
+        app->state = FlipDeckState_SubghzScan;
     }
 
-    ui_ctx->nfc_binding_uid_hex[0] = '\0';
+    ui_ctx->pending_bind.kind = FlipDeckBindKind_None;
     app->current_category_index = 0;
-    app->state = FlipDeckState_NfcScan;
 }
 
 static void flipdeck_ui_input_action_browser(FlipDeckUi* ui_ctx, InputEvent* event) {
@@ -797,7 +943,7 @@ static void flipdeck_ui_input_action_browser(FlipDeckUi* ui_ctx, InputEvent* eve
             if(!binding) flipdeck_ui_toggle_favorite(ui_ctx);
             break;
         case InputKeyBack:
-            if(binding) ui_ctx->nfc_binding_uid_hex[0] = '\0';
+            if(binding) ui_ctx->pending_bind.kind = FlipDeckBindKind_None;
             app->state = FlipDeckState_CategoryBrowser;
             app->selected_action_index = 0;
             ui_ctx->action_scroll_offset = 0;
@@ -831,6 +977,16 @@ static void flipdeck_ui_input_nfc_scan(FlipDeckUi* ui_ctx, InputEvent* event) {
     nfc_bridge_stop_scan();
     ui_ctx->nfc_scan_active = false;
     ui_ctx->nfc_scan_status[0] = '\0';
+    ui_ctx->app_ctx->state = FlipDeckState_CategoryBrowser;
+}
+
+static void flipdeck_ui_input_subghz_scan(FlipDeckUi* ui_ctx, InputEvent* event) {
+    if(event->type != InputTypeShort) return;
+    if(event->key != InputKeyBack) return;
+
+    subghz_bridge_stop_scan();
+    ui_ctx->subghz_scan_active = false;
+    ui_ctx->subghz_scan_status[0] = '\0';
     ui_ctx->app_ctx->state = FlipDeckState_CategoryBrowser;
 }
 
