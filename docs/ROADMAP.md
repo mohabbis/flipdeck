@@ -22,15 +22,16 @@
 ## Phase 3: USB Enhancements
 
 - [x] Key combination support (Ctrl, Alt, Shift, Win)
-- [x] Delay configuration per profile (`delay_ms` per command)
+- [x] Delay configuration per command (`delay_ms` on each command; profile-level default still open — see #42)
 - [ ] Key press/release timing control
-- [ ] USB connection auto-detection
+- [x] USB connection auto-detection (settings toggle gates the status poll)
 - [ ] Multiple keyboard layouts
 
 ## Phase 4: Advanced Features
 
 - [x] Favorites + quick-send (long-press OK skips confirm; Right toggles favorite)
 - [x] NFC tag triggers (scan a tag to jump straight to a mapped action's confirm screen)
+- [x] Sub-GHz RF remote triggers (RX-only 433MHz bind/fire; always confirms)
 - [ ] Presentation remote mode (left/right/up/down keys)
 - [ ] Mouse movement and clicks
 - [ ] Desktop companion app for profile sync

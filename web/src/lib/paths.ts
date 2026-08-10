@@ -19,6 +19,10 @@ export const PATHS = {
     SNIPPETS_DIR: "/ext/apps_data/flipdeck/snippets",
     // Settings file
     SETTINGS_FILE: "/ext/apps_data/flipdeck/settings.json",
+    // NFC tag → action mappings
+    NFC_TAGS_FILE: "/ext/apps_data/flipdeck/nfc_tags.json",
+    // Sub-GHz remote → action mappings
+    SUBGHZ_REMOTES_FILE: "/ext/apps_data/flipdeck/subghz_remotes.json",
     // Logs directory
     LOGS_DIR: "/ext/apps_data/flipdeck/logs",
     // The installed flipdeck.fap app itself

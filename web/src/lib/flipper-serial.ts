@@ -1,3 +1,5 @@
+import { PATHS } from "@/lib/paths";
+
 // Minimal Web Serial type declarations for Flipper Zero CLI communication
 interface FlipperSerialPort {
   open(options: { baudRate: number; dataBits: number; stopBits: number; parity: string }): Promise<void>;
@@ -318,25 +320,25 @@ export class FlipperSerial {
     const tick = (msg: string) => onProgress(msg, step++ / total);
 
     tick("Creating directory…");
-    await this.ensureDir("/ext/apps_data/flipdeck");
+    await this.ensureDir(PATHS.DEVICE.DATA_ROOT);
 
     tick("Creating profiles directory…");
-    await this.ensureDir("/ext/apps_data/flipdeck/profiles");
+    await this.ensureDir(PATHS.DEVICE.PROFILES_DIR);
 
     tick("Writing settings…");
-    await this.writeFile("/ext/apps_data/flipdeck/settings.json", settingsJson);
+    await this.writeFile(PATHS.DEVICE.SETTINGS_FILE, settingsJson);
 
     for (const { id, json } of profiles) {
       tick(`Writing ${id}.json…`);
-      await this.writeFile(`/ext/apps_data/flipdeck/profiles/${id}.json`, json);
+      await this.writeFile(`${PATHS.DEVICE.PROFILES_DIR}/${id}.json`, json);
     }
 
     if (snippets.length) {
       tick("Creating snippets directory…");
-      await this.ensureDir("/ext/apps_data/flipdeck/snippets");
+      await this.ensureDir(PATHS.DEVICE.SNIPPETS_DIR);
       for (const { name, content } of snippets) {
         tick(`Writing snippet ${name}…`);
-        await this.writeFile(`/ext/apps_data/flipdeck/snippets/${name}`, content);
+        await this.writeFile(`${PATHS.DEVICE.SNIPPETS_DIR}/${name}`, content);
       }
     }
 
@@ -351,7 +353,7 @@ export class FlipperSerial {
       await this.ensureDirRpc("/ext/apps/Tools");
 
       tick("Installing flipdeck.fap…");
-      await this.writeFileRpc("/ext/apps/Tools/flipdeck.fap", appBinary);
+      await this.writeFileRpc(PATHS.DEVICE.APP_PATH, appBinary);
     }
 
     onProgress(appBinary ? "Done!" : "Profiles staged. Install the app binary separately.", 1);

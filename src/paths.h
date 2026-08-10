@@ -17,6 +17,8 @@
 #define FLIPDECK_PROFILES_PATH "/ext/apps_data/flipdeck/profiles"
 #define FLIPDECK_SNIPPETS_PATH "/ext/apps_data/flipdeck/snippets"
 #define FLIPDECK_SETTINGS_PATH "/ext/apps_data/flipdeck/settings.json"
+#define FLIPDECK_NFC_TAGS_PATH "/ext/apps_data/flipdeck/nfc_tags.json"
+#define FLIPDECK_SUBGHZ_REMOTES_PATH "/ext/apps_data/flipdeck/subghz_remotes.json"
 #define FLIPDECK_LOGS_PATH "/ext/apps_data/flipdeck/logs"
 #define FLIPDECK_APP_PATH "/ext/apps/Tools/flipdeck.fap"
 

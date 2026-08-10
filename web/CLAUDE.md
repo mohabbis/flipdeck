@@ -27,7 +27,7 @@ npm test
 
 - Main install-pack endpoint: `/api/install-bundle/download`
 - The generated ZIP must include `README-FIRST.txt`, `apps_data/flipdeck/settings.json`, `apps_data/flipdeck/profiles/*.json`, and `apps_data/flipdeck/snippets/*.txt`.
-- `npm run start` serves the standalone Next.js build on `0.0.0.0` for Railway.
+- `npm run start` serves the standalone Next.js build on `0.0.0.0` (used for local/production Node hosting).
 
 ## Guidelines
 
