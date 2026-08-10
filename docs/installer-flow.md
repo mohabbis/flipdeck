@@ -4,9 +4,23 @@ The web installer exists to make FlipDeck feel like a simple device install inst
 
 ## User Flow
 
+There are two install paths. Both write the same on-device layout under
+`/ext/apps_data/flipdeck/`.
+
+### Path A: Web Serial (Chrome / Edge)
+
+1. Open the deployed FlipDeck installer in Chrome or Edge.
+2. Choose the default profiles or a custom subset.
+3. Review the browser safety check (critical matches block install).
+4. Click **Connect Flipper & Stage Pack**, pick the Flipper in the OS picker.
+5. Click **Stage N profiles to Flipper** — files are written over the CLI serial port.
+6. Launch FlipDeck from the Flipper apps menu (**Apps → Tools → FlipDeck**).
+
+### Path B: ZIP + qFlipper (any browser)
+
 1. Open the deployed FlipDeck installer.
 2. Choose the default profiles or a custom subset.
-3. Download the install ZIP.
+3. Review the browser safety check, then download the install ZIP.
 4. Extract the ZIP locally.
 5. Drag `apps_data` onto the Flipper SD card root in qFlipper.
 6. Launch FlipDeck from the Flipper apps menu.

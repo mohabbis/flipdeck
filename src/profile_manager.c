@@ -5,6 +5,7 @@
 
 #include "profile_manager.h"
 #include "flipdeck_app.h"
+#include "paths.h"
 #include <furi.h>
 #include <furi_hal.h>
 #include <string.h>
@@ -13,11 +14,10 @@
 #include <storage/storage.h>
 #include <inttypes.h>
 
-#define FLIPDECK_DATA_PATH "/ext/apps_data/flipdeck"
-#define PROFILE_BASE_PATH FLIPDECK_DATA_PATH "/profiles"
-#define SETTINGS_PATH FLIPDECK_DATA_PATH "/settings.json"
-#define NFC_TAGS_PATH FLIPDECK_DATA_PATH "/nfc_tags.json"
-#define SUBGHZ_REMOTES_PATH FLIPDECK_DATA_PATH "/subghz_remotes.json"
+#define PROFILE_BASE_PATH FLIPDECK_PROFILES_PATH
+#define SETTINGS_PATH FLIPDECK_SETTINGS_PATH
+#define NFC_TAGS_PATH FLIPDECK_NFC_TAGS_PATH
+#define SUBGHZ_REMOTES_PATH FLIPDECK_SUBGHZ_REMOTES_PATH
 
 static void storage_ensure_flipdeck_dirs(Storage* storage) {
     storage_common_mkdir(storage, "/ext/apps_data");
@@ -794,6 +794,67 @@ bool profile_manager_save_subghz_remotes(const FlipDeckSubghzRemote* remotes, ui
  * @param value Command string to check
  * @return true if value is safe
  */
+/**
+ * @brief Case-folded substring match where each space in `pattern` matches
+ *        one or more whitespace characters in `haystack`.
+ *
+ * Mirrors the `\s+` / `\s*` usage in safety-rules.json so on-device blocking
+ * catches the same spacing variants the web/desktop auditors reject
+ * (e.g. `rm  -rf`, `dd\tif=`, `>  /dev/sda`).
+ */
+static bool contains_flexible_ws(const char* haystack, const char* pattern) {
+    if(!haystack || !pattern || !*pattern) return false;
+
+    for(const char* start = haystack; *start; start++) {
+        const char* h = start;
+        const char* p = pattern;
+        bool matched = true;
+
+        while(*p) {
+            if(*p == ' ') {
+                if(!isspace((unsigned char)*h)) {
+                    matched = false;
+                    break;
+                }
+                while(isspace((unsigned char)*h)) h++;
+                p++;
+                continue;
+            }
+            if(*h != *p) {
+                matched = false;
+                break;
+            }
+            h++;
+            p++;
+        }
+
+        if(matched) return true;
+    }
+
+    return false;
+}
+
+/**
+ * @brief True when haystack contains `|` followed by optional whitespace and
+ *        then a whole-token match of `token` (already uppercased), approximating
+ *        `\\|\\s*(sh|bash)`. Requires a non-alnum boundary after the token so
+ *        `|BASH` does not spuriously match the `SH` token.
+ */
+static bool contains_pipe_token(const char* haystack, const char* token) {
+    size_t token_len = strlen(token);
+    for(const char* p = haystack; *p; p++) {
+        if(*p != '|') continue;
+        p++;
+        while(isspace((unsigned char)*p)) p++;
+        if(strncmp(p, token, token_len) == 0) {
+            char next = p[token_len];
+            if(next == '\0' || !isalnum((unsigned char)next)) return true;
+        }
+        if(!*p) break;
+    }
+    return false;
+}
+
 bool profile_manager_is_value_safe(const char* value) {
     if(!value) return false;
 
@@ -808,28 +869,36 @@ bool profile_manager_is_value_safe(const char* value) {
     }
     upper_value[len] = '\0';
 
-    // Critical patterns — block the command.
+    // Critical patterns — block the command. Spaces in these patterns match
+    // one-or-more whitespace (see contains_flexible_ws), matching the
+    // `rm\s+-rf` / `dd\s+if=` / `>\s*/dev/sd` rules in safety-rules.json.
     const char* critical_patterns[] = {
-        "RM -RF",           // Recursive delete
+        "RM -RF",           // Recursive delete (rm\s+-rf)
         "MKFS",             // Format filesystem
-        "DD IF=",           // Raw disk write
-        "> /DEV/SD",        // Raw disk redirect
-        ":(){ :|:& };:",    // Fork bomb (no letters; case-insensitive copy is identical)
+        "DD IF=",           // Raw disk write (dd\s+if=)
+        "> /DEV/SD",        // Raw disk redirect with whitespace (>\s+/dev/sd)
+        ">/DEV/SD",         // Raw disk redirect with no whitespace (>\s*/dev/sd)
         NULL
     };
     for(int i = 0; critical_patterns[i]; i++) {
-        if(strstr(upper_value, critical_patterns[i])) {
+        if(contains_flexible_ws(upper_value, critical_patterns[i])) {
             FURI_LOG_W("FlipDeck", "Blocked critical command: %s", critical_patterns[i]);
             return false;
         }
+    }
+
+    // Fork bomb: allow flexible whitespace around the classic shape.
+    if(strstr(upper_value, ":(){") && strstr(upper_value, ":|:&")) {
+        FURI_LOG_W("FlipDeck", "Blocked critical command: fork bomb");
+        return false;
     }
 
     // Remote shell pipe: (curl|wget) ... | (sh|bash). Approximates the regex
     // "(curl|wget).*\\|\\s*(sh|bash)" — catches real one-liners like
     // "curl -fsSL https://x | bash" that a literal "curl | sh" match misses.
     bool has_fetch = strstr(upper_value, "CURL") || strstr(upper_value, "WGET");
-    bool has_pipe_shell = strstr(upper_value, "| SH") || strstr(upper_value, "|SH") ||
-                          strstr(upper_value, "| BASH") || strstr(upper_value, "|BASH");
+    bool has_pipe_shell =
+        contains_pipe_token(upper_value, "SH") || contains_pipe_token(upper_value, "BASH");
     if(has_fetch && has_pipe_shell) {
         FURI_LOG_W("FlipDeck", "Blocked remote shell pipe");
         return false;
@@ -837,28 +906,29 @@ bool profile_manager_is_value_safe(const char* value) {
 
     // Warning patterns — surfaced in the log but allowed (the user still has to
     // confirm OK on-device before the command is sent).
-    const char* warning_patterns[] = {
-        "SUDO",         // Privilege escalation
-        "CHMOD 777",    // Loose permissions
-        "CHOWN ROOT",   // Ownership change to root
-        NULL
-    };
-    for(int i = 0; warning_patterns[i]; i++) {
-        if(strstr(upper_value, warning_patterns[i])) {
-            FURI_LOG_W("FlipDeck", "Warning: command matched %s", warning_patterns[i]);
-        }
+    if(strstr(upper_value, "SUDO")) {
+        FURI_LOG_W("FlipDeck", "Warning: command matched SUDO");
+    }
+    if(contains_flexible_ws(upper_value, "CHMOD 777")) {
+        FURI_LOG_W("FlipDeck", "Warning: command matched CHMOD 777");
+    }
+    if(contains_flexible_ws(upper_value, "CHOWN ROOT")) {
+        FURI_LOG_W("FlipDeck", "Warning: command matched CHOWN ROOT");
     }
 
-    // Credential assignments (NAME=...) — warn only.
-    if(strchr(upper_value, '=')) {
-        const char* credential_patterns[] = {
-            "PASSWORD", "TOKEN", "API_KEY", "SECRET", "PRIVATE_KEY", NULL
-        };
-        for(int i = 0; credential_patterns[i]; i++) {
-            if(strstr(upper_value, credential_patterns[i])) {
-                FURI_LOG_W("FlipDeck", "Warning: possible credential assignment");
-                break;
-            }
+    // Credential assignments (NAME=...) — warn only. Allow whitespace around '='
+    // to mirror `(PASSWORD|...)\\s*=` in safety-rules.json.
+    const char* credential_patterns[] = {
+        "PASSWORD", "TOKEN", "API_KEY", "SECRET", "PRIVATE_KEY", NULL
+    };
+    for(int i = 0; credential_patterns[i]; i++) {
+        const char* hit = strstr(upper_value, credential_patterns[i]);
+        if(!hit) continue;
+        const char* after = hit + strlen(credential_patterns[i]);
+        while(isspace((unsigned char)*after)) after++;
+        if(*after == '=') {
+            FURI_LOG_W("FlipDeck", "Warning: possible credential assignment");
+            break;
         }
     }
 

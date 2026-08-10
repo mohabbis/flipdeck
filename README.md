@@ -20,10 +20,12 @@ FlipDeck transforms your Flipper Zero into a programmable command deck. Store fr
 
 - ✅ **Profile Storage** — Save command profiles on the SD card
 - ✅ **USB HID Keyboard** — Send text, key presses, and shortcuts
-- ✅ **Profile Types** — Commands, snippets, shortcuts, and scripts
-- ✅ **No WiFi Required** — Works on stock Flipper Zero
-- ✅ **Safe Mode** — Confirmation before sending commands
-- ✅ **Settings** — Configurable delays and preferences
+- ✅ **Favorites + quick-send** — Pin actions; long-press OK to skip confirm
+- ✅ **NFC tag triggers** — Bind a tag to an action's confirm screen
+- ✅ **Sub-GHz RF triggers** — RX-only 433MHz remote bind/fire (never transmits)
+- ✅ **WiFi Dev Board UART** — Optional `wifi_uart` command target
+- ✅ **Safe Mode** — Confirmation before sending; critical patterns blocked
+- ✅ **Settings** — Configurable delays, confirm, and USB auto-check
 
 ## Installation for Flipper Zero users
 
@@ -228,6 +230,8 @@ On the Flipper, the SD card is mounted under `/ext`, so the app reads from `/ext
 ├── snippets/             # Text snippet templates
 │   ├── typescript.txt    # TS code templates
 │   └── go.txt            # Go code templates
+├── nfc_tags.json         # NFC tag → action bindings (created on first bind)
+├── subghz_remotes.json   # Sub-GHz remote → action bindings (created on first bind)
 ├── logs/                 # Session logs
 └── settings.json         # User preferences
 ```
@@ -302,22 +306,25 @@ flipdeck/
 ├── src/                     # Flipper app source
 │   ├── flipdeck_app.c       # Main application logic
 │   ├── flipdeck_app.h
-│   ├── flipdeck_ui.c        # User interface (browser, favorites, NFC scan, confirm)
+│   ├── flipdeck_ui.c        # UI (browser, favorites, NFC/Sub-GHz scan, confirm)
 │   ├── flipdeck_ui.h
-│   ├── profile_manager.c    # SD card profile system, favorites, NFC tag mappings
+│   ├── profile_manager.c    # Profiles, favorites, NFC + Sub-GHz mappings
 │   ├── profile_manager.h
 │   ├── usb_hid.c            # USB HID communication
 │   ├── usb_hid.h
 │   ├── uart_bridge.c        # UART bridge to the WiFi Dev Board
 │   ├── uart_bridge.h
-│   ├── nfc_bridge.c         # NFC tag scan bridge (tag-triggered sends)
+│   ├── nfc_bridge.c         # NFC tag scan bridge
 │   ├── nfc_bridge.h
+│   ├── subghz_bridge.c      # Sub-GHz RX-only remote scan bridge
+│   ├── subghz_bridge.h
 │   └── settings.c           # Settings management
 ├── web/                     # Next.js web installer
 ├── docs/
 │   ├── flight_manual.md     # Safety and usage guide
 │   ├── installer-flow.md    # Web Serial / ZIP installer walkthrough
 │   ├── nfc_trigger_spec.md  # NFC tag trigger design
+│   ├── subghz_trigger_spec.md # Sub-GHz remote trigger design
 │   ├── security-model.md    # Safety rules and confirmation model
 │   └── ROADMAP.md           # Development roadmap
 └── README.md
@@ -346,9 +353,8 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for planned features.
 
 - [ ] Custom profile creation from Flipper UI
 - [ ] Profile import/export via SD card
-- [ ] Key combination support
 - [ ] Presentation remote mode
-- [ ] Desktop companion app for profile sync
+- [ ] Desktop companion app for live profile sync
 - [ ] Momentum firmware integration, optional
 
 ## Contributing

@@ -45,8 +45,15 @@ bool flipdeck_app_init(void* furi_void) {
     // Load categories from SD card
     flipdeck_load_categories();
     
-    // Check USB connection
-    g_app_ctx->usb_connected = usb_hid_is_connected();
+    // Check USB connection when auto-detect is enabled
+    if(g_app_ctx->settings.auto_detect_usb) {
+        g_app_ctx->usb_connected = usb_hid_is_connected();
+    } else {
+        // Off: don't probe — avoid a sticky "NO USB" banner when the user
+        // has opted out of status polling. Send still checks the live HID
+        // link at the moment of transmission.
+        g_app_ctx->usb_connected = true;
+    }
 
     // Initialize UART bridge to the WiFi dev board
     uart_bridge_init();
@@ -112,9 +119,13 @@ void flipdeck_app_free(void* furi_void) {
 void flipdeck_app_loop(void* furi_void) {
     UNUSED(furi_void);
     
-    // Poll USB connection status
-    g_app_ctx->usb_connected = usb_hid_is_connected();
-    
+    // Poll USB connection status when auto-detect is enabled
+    if(g_app_ctx->settings.auto_detect_usb) {
+        g_app_ctx->usb_connected = usb_hid_is_connected();
+    } else {
+        g_app_ctx->usb_connected = true;
+    }
+
     switch(g_app_ctx->state) {
         case FlipDeckState_Idle:
             break;

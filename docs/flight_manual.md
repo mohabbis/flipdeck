@@ -36,14 +36,14 @@ Default profiles use safe commands (comments, harmless text). You must create or
 ### Review Default Profiles
 Default profiles include Git and dev commands. Review them in:
 ```
-/stor0800/flipdeck/profiles/
+/ext/apps_data/flipdeck/profiles/
 ```
 
 ### Backup Your SD Card
 Before creating many profiles, backup your SD card. Profile data is stored in:
 ```
-/stor0800/flipdeck/profiles/
-/stor0800/flipdeck/settings.json
+/ext/apps_data/flipdeck/profiles/
+/ext/apps_data/flipdeck/settings.json
 ```
 
 ---
@@ -119,7 +119,7 @@ FlipDeck's default flow is Category → Action → Confirm → Send. These short
 Hold MENU + DOWN during startup to disable USB.
 
 ### Factory Reset
-Delete `/stor0800/flipdeck/` folder to reset all profiles and settings.
+Delete `/ext/apps_data/flipdeck/` folder to reset all profiles and settings.
 
 ### Report Issues
 Open an issue at: https://github.com/mohabbis/flipdeck/issues

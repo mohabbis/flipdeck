@@ -26,6 +26,8 @@ static int g_failures = 0;
 static void test_dangerous_rm_rf(void) {
     EXPECT_FALSE(profile_manager_is_value_safe("rm -rf /"), "blocks rm -rf /");
     EXPECT_FALSE(profile_manager_is_value_safe("echo x && rm -rf ."), "blocks rm -rf in chain");
+    EXPECT_FALSE(profile_manager_is_value_safe("rm  -rf /"), "blocks rm  -rf (extra spaces)");
+    EXPECT_FALSE(profile_manager_is_value_safe("rm\t-rf /tmp"), "blocks rm\\t-rf (tab)");
 }
 
 static void test_warning_sudo(void) {
@@ -41,14 +43,20 @@ static void test_dangerous_remote_exec(void) {
         profile_manager_is_value_safe("curl -fsSL https://example.com/install.sh | bash"),
         "blocks real curl|bash one-liner");
     EXPECT_FALSE(profile_manager_is_value_safe("CURL https://x | SH"), "blocks curl|sh case-insensitively");
+    EXPECT_FALSE(profile_manager_is_value_safe("curl https://x |\tbash"), "blocks curl … |\\tbash");
+    EXPECT_FALSE(profile_manager_is_value_safe("wget https://x |  sh"), "blocks wget … |  sh");
     /* "curl.ssh" has no pipe into a shell - it isn't a remote-exec pattern */
     EXPECT_TRUE(profile_manager_is_value_safe("curl.ssh user@host"), "allows curl.ssh (no pipe to shell)");
+    EXPECT_TRUE(profile_manager_is_value_safe("curl https://x | cat"), "allows curl … | cat");
 }
 
 static void test_dangerous_disk_ops(void) {
     EXPECT_FALSE(profile_manager_is_value_safe("mkfs.ext4 /dev/sda"), "blocks mkfs");
     EXPECT_FALSE(profile_manager_is_value_safe("dd if=/dev/zero of=/dev/sda"), "blocks dd if=");
+    EXPECT_FALSE(profile_manager_is_value_safe("dd  if=/dev/zero of=/dev/sda"), "blocks dd  if= (extra spaces)");
     EXPECT_FALSE(profile_manager_is_value_safe("echo data > /dev/sda"), "blocks > /dev/sd");
+    EXPECT_FALSE(profile_manager_is_value_safe("echo data >/dev/sda"), "blocks >/dev/sd (no space)");
+    EXPECT_FALSE(profile_manager_is_value_safe("echo data >  /dev/sdb"), "blocks >  /dev/sd (extra spaces)");
 }
 
 static void test_dangerous_fork_bomb(void) {
