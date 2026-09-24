@@ -1,39 +1,29 @@
-CC      = gcc
-CFLAGS  = -DUFBT_HOST_BUILD -I./stubs -std=c99 -Wall -Wextra -Wpedantic
+# Host tests for the SDK-independent parts of the Flipper app (protocol + state).
+# `make run` is what CI invokes.
+CC      ?= cc
+CFLAGS  = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wno-sign-conversion -g -fsanitize=address,undefined -I../..
 SRCDIR  = ../..
 
 .PHONY: all test run clean
 
-all: test_profile_manager test_usb_hid test_profile_manager_target test_settings
+all: test_proto test_state fd_sim
 
-test_profile_manager: test_profile_manager.c $(SRCDIR)/profile_manager.c
-	$(CC) $(CFLAGS) -o $@ $^
+test_proto: test_proto.c test_util.h $(SRCDIR)/fd_proto.c $(SRCDIR)/fd_proto.h
+	$(CC) $(CFLAGS) -o $@ test_proto.c $(SRCDIR)/fd_proto.c
 
-test_usb_hid: test_usb_hid.c $(SRCDIR)/usb_hid.c $(SRCDIR)/usb_hid.h
-	$(CC) $(CFLAGS) -o $@ test_usb_hid.c
+test_state: test_state.c test_util.h $(SRCDIR)/fd_state.c $(SRCDIR)/fd_state.h $(SRCDIR)/fd_proto.c
+	$(CC) $(CFLAGS) -o $@ test_state.c $(SRCDIR)/fd_state.c $(SRCDIR)/fd_proto.c
 
-test_profile_manager_target: test_profile_manager_target.c $(SRCDIR)/profile_manager.c
-	$(CC) $(CFLAGS) -o $@ $^
-
-# test_settings.c #includes profile_manager.c and settings.c directly to reach
-# the static JSON helpers, so it is compiled as a single translation unit.
-test_settings: test_settings.c $(SRCDIR)/profile_manager.c $(SRCDIR)/settings.c
-	$(CC) $(CFLAGS) -I$(SRCDIR) -o $@ test_settings.c
+# The Flipper's protocol/state code as a stdin/stdout process, used by the
+# Swift interop test (mac/Tests/FlipDeckCoreTests/InteropTests.swift).
+fd_sim: fd_sim.c $(SRCDIR)/fd_state.c $(SRCDIR)/fd_state.h $(SRCDIR)/fd_proto.c
+	$(CC) $(CFLAGS) -D_POSIX_C_SOURCE=200809L -o $@ fd_sim.c $(SRCDIR)/fd_state.c $(SRCDIR)/fd_proto.c
 
 test: run
 
 run: all
-	@echo "--- profile_manager ---"
-	./test_profile_manager
-	@echo ""
-	@echo "--- usb_hid ---"
-	./test_usb_hid
-	@echo ""
-	@echo "--- profile_manager_target ---"
-	./test_profile_manager_target
-	@echo ""
-	@echo "--- settings ---"
-	./test_settings
+	./test_proto ../../../docs/protocol-vectors.txt
+	./test_state
 
 clean:
-	rm -f test_profile_manager test_usb_hid test_profile_manager_target test_settings
+	rm -f test_proto test_state fd_sim

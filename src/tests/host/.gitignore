@@ -1,5 +1,4 @@
-# Built host-test binaries (rebuilt via `make`)
-/test_profile_manager
-/test_usb_hid
-/test_profile_manager_target
-/test_settings
+test_proto
+test_state
+*.dSYM
+fd_sim
