@@ -158,6 +158,22 @@ final class FlipperSessionTests: XCTestCase {
         XCTAssertEqual(performed.all.count, 2, "req 1 from a new app instance is a new request")
     }
 
+    func testHelloIsRetriedUntilHI() async {
+        transport.emit(.connected(peerName: "f", maxChunk: 20))
+        await settle()
+        XCTAssertEqual(frames("HELLO").count, 1)
+        clock.advance(1)
+        await session.tick()
+        XCTAssertEqual(frames("HELLO").count, 1, "not before the retry interval")
+        clock.advance(2.5)
+        await session.tick()
+        XCTAssertEqual(frames("HELLO").count, 2, "retried after 3s without HI")
+        await send(Frame("HI", ["1", "0.1.0", "0", "n"]))
+        clock.advance(10)
+        await session.tick()
+        XCTAssertEqual(frames("HELLO").count, 2, "no more HELLOs once ready")
+    }
+
     func testRequestsIgnoredUntilReady() async {
         await session.update(snapshot: snapshot(), machine: nil)
         transport.emit(.connected(peerName: "f", maxChunk: 20))

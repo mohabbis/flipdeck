@@ -28,6 +28,7 @@ public actor FlipperSession {
     public typealias StatusHandler = @Sendable (FlipperLinkStatus) -> Void
 
     static let heartbeatInterval: TimeInterval = 5
+    static let helloRetryInterval: TimeInterval = 3
     static let minSnapshotInterval: TimeInterval = 1
     static let alertReplayWindow: TimeInterval = 30 * 60
     static let maxQueuedAlerts = 3
@@ -62,6 +63,7 @@ public actor FlipperSession {
     private var machineFrame: Frame?
     private var sentMachineFrame: Frame?
     private var lastPingAt: Date = .distantPast
+    private var lastHelloAt: Date = .distantPast
 
     // Recent alert-worthy events: (event, owner id). Replayed after every
     // handshake (the Flipper de-duplicates by id) until seen or expired.
@@ -124,10 +126,14 @@ public actor FlipperSession {
     /// Call about once a second: heartbeats and coalesced snapshot sends.
     public func tick() {
         guard case .ready = status.link else {
-            if isIncompatible, now().timeIntervalSince(lastPingAt) >= Self.heartbeatInterval {
+            let sinceHello = now().timeIntervalSince(lastHelloAt)
+            if status.link == .handshaking, sinceHello >= Self.helloRetryInterval {
+                // The first HELLO can be lost (e.g. glued to a partial frame
+                // left over from a previous connection); keep asking.
+                sendHello()
+            } else if isIncompatible, sinceHello >= Self.heartbeatInterval {
                 // Keep announcing ourselves so the Flipper can show both versions.
                 sendHello()
-                lastPingAt = now()
             }
             return
         }
@@ -275,6 +281,7 @@ public actor FlipperSession {
     // MARK: Sending
 
     private func sendHello() {
+        lastHelloAt = now()
         send(Frame("HELLO", [
             String(FDP.protocolVersion), sessionID, FrameCodec.sanitize(hostName, maxLength: FlipperLimits.host),
             String(maxChunk), String(Int(now().timeIntervalSince1970)),

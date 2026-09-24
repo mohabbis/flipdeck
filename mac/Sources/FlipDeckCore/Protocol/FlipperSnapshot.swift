@@ -48,12 +48,13 @@ public enum FlipperSnapshotBuilder {
     static func s(_ text: String?, _ max: Int) -> String { FrameCodec.sanitize(text ?? "", maxLength: max) }
     static func unix(_ date: Date?) -> String { date.map { String(Int($0.timeIntervalSince1970)) } ?? "-" }
 
-    static let timeFormatter: DateFormatter = {
+    static func timeFormatter(_ timeZone: TimeZone) -> DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "HH:mm"
+        formatter.timeZone = timeZone
         return formatter
-    }()
+    }
 
     public static func build(state: EngineState, attention: [AttentionItem], events: [FDEvent], timeZone: TimeZone = .current) -> FlipperSnapshot {
         var records: [Frame] = []
@@ -132,8 +133,7 @@ public enum FlipperSnapshotBuilder {
             }
         }
 
-        let formatter = timeFormatter
-        formatter.timeZone = timeZone
+        let formatter = timeFormatter(timeZone)
         for event in events.prefix(FlipperLimits.events) {
             let owner = eventOwners[event.id] ?? FlipperIDs.event(event.id)
             eventOwners[event.id] = owner

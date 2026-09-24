@@ -13,7 +13,7 @@ public struct BasicMachineMetrics: MachineMetricsProvider {
     public func sample() async -> MachineStatus {
         let info = ProcessInfo.processInfo
         return MachineStatus(
-            hostName: Host.current().localizedName ?? info.hostName,
+            hostName: info.hostName,
             osVersion: info.operatingSystemVersionString,
             memoryTotalBytes: info.physicalMemory,
             bootTime: Date().addingTimeInterval(-info.systemUptime)

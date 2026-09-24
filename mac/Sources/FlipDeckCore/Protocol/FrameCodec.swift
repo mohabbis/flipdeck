@@ -104,12 +104,14 @@ public enum FrameCodec {
         guard bytes.allSatisfy({ $0 >= 0x20 && $0 <= 0x7E }) else { return .failure(.nonPrintable) }
         guard let star = bytes.lastIndex(of: 0x2A), bytes.count - star == 5 else { return .failure(.malformed) }
         let payload = bytes[..<star]
-        guard let expected = UInt16(String(decoding: bytes[(star + 1)...], as: UTF8.self), radix: 16) else {
+        let hexDigits = bytes[(star + 1)...]
+        guard hexDigits.allSatisfy({ ($0 >= 0x30 && $0 <= 0x39) || ($0 >= 0x41 && $0 <= 0x46) || ($0 >= 0x61 && $0 <= 0x66) }),
+              let expected = UInt16(String(decoding: hexDigits, as: UTF8.self), radix: 16) else {
             return .failure(.malformed)
         }
         guard CRC16.ccittFalse(payload) == expected else { return .failure(.badChecksum) }
         let parts = String(decoding: payload, as: UTF8.self).split(separator: "|", omittingEmptySubsequences: false).map(String.init)
-        guard let type = parts.first, !type.isEmpty, type.allSatisfy({ $0.isUppercase && $0.isASCII }) else {
+        guard let type = parts.first, (1...7).contains(type.count), type.allSatisfy({ $0 >= "A" && $0 <= "Z" }) else {
             return .failure(.malformed)
         }
         return .success(Frame(type, Array(parts.dropFirst())))

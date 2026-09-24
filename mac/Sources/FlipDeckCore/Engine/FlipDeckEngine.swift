@@ -85,6 +85,7 @@ public actor FlipDeckEngine {
     /// Serializes everything sent to the session so a snapshot always
     /// reaches it before an alert that refers to the snapshot's actions.
     private var flipperChain: Task<Void, Never>?
+    private var lastPublished: PublishedFingerprint?
 
     public init(dependencies: EngineDependencies) {
         deps = dependencies
@@ -107,8 +108,11 @@ public actor FlipDeckEngine {
 
     public func setObserver(_ observer: @escaping @Sendable (EngineSnapshot) -> Void) {
         self.observer = observer
+        observerNeedsInitial = true
         publish()
     }
+
+    private var observerNeedsInitial = false
 
     public func start() async {
         guard loops.isEmpty else { return }
@@ -191,6 +195,14 @@ public actor FlipDeckEngine {
         let result = await executor.perform(action, origin: .mac, state: state, policy: policy)
         if !result.ok { log.warning("Action \(action.kind.rawValue) failed: \(result.message)") }
         return result
+    }
+
+    /// Remembers (or forgets, with nil) the paired Flipper's identifier.
+    public func rememberFlipper(_ identifier: String?) async {
+        guard settings.flipperPeripheralID != identifier else { return }
+        settings.flipperPeripheralID = identifier
+        do { try deps.settingsStore.save(settings) } catch { log.error("Couldn't save settings: \(error)") }
+        publish()
     }
 
     public func acknowledge(eventID: String) async {
@@ -483,8 +495,21 @@ public actor FlipDeckEngine {
         }
     }
 
+    /// What the UI and Flipper can observe; publishing is skipped when unchanged.
+    struct PublishedFingerprint: Equatable {
+        let state: EngineState
+        let events: [FDEvent]
+        let flipper: FlipperLinkStatus
+        let settings: FlipDeckSettings
+        let hasToken: Bool
+    }
+
     private func publish() {
         let events = deps.activityLog.recent(200)
+        let fingerprint = PublishedFingerprint(state: state, events: events, flipper: flipperStatus, settings: settings, hasToken: vercelToken != nil)
+        guard fingerprint != lastPublished || observerNeedsInitial else { return }
+        lastPublished = fingerprint
+        observerNeedsInitial = false
         let attention = AttentionBuilder.build(state: state, events: events, now: Date())
         if let session {
             let snapshot = FlipperSnapshotBuilder.build(state: state, attention: attention, events: events)
