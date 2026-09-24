@@ -1,0 +1,109 @@
+# FDP/1 — FlipDeck Protocol, version 1
+
+The wire protocol between FlipDeck for Mac and FlipDeck for Flipper. It is
+transport-independent: any ordered, reliable byte stream works. Phase 1 uses
+the Flipper BLE serial service (see `ARCHITECTURE.md`).
+
+Implementations:
+- Mac: `mac/Sources/FlipDeckCore/Protocol/`
+- Flipper: `flipper/fd_proto.c` and `flipper/fd_state.c`
+
+Both are tested against the shared golden vectors in `docs/protocol-vectors.txt`.
+
+## Design goals
+
+- Small enough to parse with fixed buffers on a 4 KB stack. No JSON on the Flipper.
+- Human-readable, so you can debug a session from a log.
+- Idempotent. Every message can be delivered twice without harm.
+- Full-state sync instead of deltas. After any doubt (reconnect, parse error,
+  generation mismatch) the fix is always "send the whole snapshot again".
+
+## Framing
+
+```
+TYPE|field1|field2|…|fieldN*CCCC\n
+```
+
+- The payload is printable ASCII only (0x20–0x7E), and `|` separates fields.
+- `CCCC` is the CRC-16/CCITT-FALSE of every payload byte before the `*`
+  (poly 0x1021, init 0xFFFF, no reflection, xorout 0), as 4 uppercase hex digits.
+- A frame, including `\n`, is **at most 240 bytes**. `\r` is ignored.
+- Fields never contain `|`, `*`, or control characters. The Mac encoder folds
+  diacritics, replaces other non-ASCII characters with `?`, maps `|` to `/` and
+  `*` to `+`, and truncates to the field limit. The Flipper only displays text,
+  so lossy sanitizing is acceptable.
+- Receivers **drop** frames that are too long, fail the CRC, contain a non-printable
+  byte, or have an unknown `TYPE`. Unknown types are ignored, which keeps the
+  protocol forward-compatible within a major version. Too few fields is a
+  malformed frame. Extra trailing fields are ignored.
+- Numbers are unsigned decimal. `-` means "unknown / not available".
+
+## Time
+
+The Flipper has no reliable wall clock. `HELLO` and `PING` carry the Mac's Unix
+time. The Flipper stores `(mac_time, local_tick)` and estimates the Mac's current time
+from them. Records carry **absolute** Unix start times, so a snapshot stays
+byte-identical while nothing changes, and the Flipper renders "38m" locally.
+Activity timestamps are pre-formatted by the Mac (`23:42`).
+
+## Mac → Flipper
+
+| Frame | Fields | Notes |
+|---|---|---|
+| `HELLO` | `proto`, `session`, `host`, `mtu`, `now` | Sent when the link comes up. `session` is 8 hex chars, new each connection. `mtu` is the maximum bytes per Flipper→Mac chunk. |
+| `SNAP` | `gen`, `count` | Starts a snapshot. `gen` increases monotonically within a session. `count` is the number of records that follow. |
+| `SUM` | `attention`, `projects`, `servers`, `agents` | Snapshot record. Home-screen counts. |
+| `PRJ` | `id`, `name`, `branch`, `git`, `ahead`, `behind`, `port`, `deploy`, `attn` | Snapshot record. `git`: `c` clean, `d` dirty, `n` not a repo, `-` unknown. `deploy`: `-` none, `q` queued, `b` building, `r` ready, `e` error, `x` canceled. `port` is `0` if there is no dev server. `attn` is `0`/`1`. |
+| `SVC` | `id`, `name`, `port`, `project`, `started` | Snapshot record. `started` is a Unix time or `-`. |
+| `AGT` | `id`, `provider`, `project`, `state`, `started` | Snapshot record. `state`: `r` running, `w` waiting, `x` exited (outcome unknown), `c` completed, `f` failed. Phase 1 emits only `r`. |
+| `ATN` | `id`, `sev`, `project`, `title` | Snapshot record. An attention item. |
+| `EVT` | `id`, `sev`, `time`, `project`, `title` | Snapshot record. Recent activity, newest first. `sev`: `i` info, `s` success, `w` warning, `e` error, `a` action required. |
+| `ACT` | `owner`, `id`, `kind`, `flags`, `label` | Snapshot record. An action available on entity `owner` (a project, service, agent, attention, or event id). `kind`: `OPEN` open on Mac, `LOCAL` open localhost, `LOGS` open logs, `DEPLOY` open deployment, `TERM` open terminal, `STOP` stop server. `flags` letters: `d` destructive, `c` requires confirmation. `label` may be empty, in which case the Flipper uses its built-in label for `kind`. |
+| `END` | `gen` | Commits the snapshot. |
+| `MAC` | `host`, `cpu`, `mem`, `batt`, `chg`, `net`, `boot` | Live frame, outside snapshots. Percentages 0–100, `chg`/`net` `0`/`1`, `boot` = Unix boot time. |
+| `ALR` | `id`, `sev`, `project`, `title`, `message` | Alert: vibrate and show. `id` is the event's owner id, so its `ACT` records attach to the alert. |
+| `RES` | `req`, `ok`, `message` | Result of an action request. `ok` is `0`/`1`. |
+| `PING` | `gen`, `now` | Heartbeat every 5 s. |
+| `BYE` | `reason` | The Mac is going away (app quitting). |
+
+## Flipper → Mac
+
+| Frame | Fields | Notes |
+|---|---|---|
+| `HI` | `proto`, `app`, `gen` | Reply to `HELLO`. `gen` is the last committed generation (0 if none). |
+| `PONG` | `gen` | Reply to `PING`. |
+| `SYNC` | `gen` | Asks for a full snapshot, after a snapshot was discarded or on user refresh. |
+| `REQ` | `req`, `action`, `gen` | Action request. `req` increases per Flipper boot of the app. `action` is an `ACT` id. |
+| `SEEN` | `id` | The user dismissed alert or attention `id`. The Mac acknowledges the underlying event. |
+
+## Session rules
+
+1. **Handshake.** When the transport connects, the Mac sends `HELLO` and the Flipper answers `HI`.
+   If either side sees a different `proto`, it enters the *incompatible* state and
+   says so in its UI. The Mac keeps sending only `HELLO` (so the Flipper can show
+   the Mac's version) and the Flipper only `HI`.
+2. **Snapshot.** After `HI`, the Mac sends a full snapshot. Later snapshots are sent only
+   when the encoded records change, at most once per second.
+3. **Atomic commit.** The Flipper writes records into a staging area. `END` commits
+   it only if `END.gen == SNAP.gen` and the record count matches. A new `SNAP`
+   discards any partial staging. A mismatch discards staging and sends `SYNC`.
+   Live frames (`MAC`, `PING`, `ALR`, `RES`) can arrive at any time and never touch
+   staging.
+4. **Heartbeat and staleness.** The Mac sends `PING` every 5 s. The Flipper answers
+   `PONG gen`. If `gen` differs from the last committed generation the Mac sent,
+   the Mac resends the snapshot. If the Flipper receives no valid frame for 15 s,
+   it shows its data as stale (with age). On transport disconnect it shows
+   *disconnected* immediately and keeps the last data dimmed.
+5. **Actions.** The Flipper only sends `REQ` for action ids it received. The Mac
+   resolves the id in its own table (current and previous snapshot), re-validates
+   the target against live state, executes, and answers `RES`. The Mac caches the
+   last 32 `(session, req)` results. A duplicate `REQ` gets the cached `RES` and
+   is never executed twice. The Flipper shows its own confirmation screen before
+   sending a `REQ` for a `c`-flagged action. The Flipper waits 10 s for `RES`.
+6. **Alerts.** The Flipper keeps the last 16 alert ids and ignores duplicates. After a
+   reconnect, the Mac re-sends up to 3 unacknowledged alert-worthy events from the
+   last 30 minutes.
+7. **Flow control (BLE).** The Mac never writes more than the Flipper's advertised
+   credit (flow-control characteristic), and writes exactly up to the credit. The
+   Flipper re-arms the credit only when its buffer is fully drained, and the
+   serial service replenishes only when the credit reaches 0.
