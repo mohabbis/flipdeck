@@ -1,173 +1,94 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) in this repository.
 
-## Project Overview
+## Project
 
-FlipDeck is a USB command deck for Flipper Zero. It has three distinct sub-projects that must be understood as a whole:
+FlipDeck Mission Control: a **Mac app** (Swift/SwiftUI) that monitors a developer's
+environment, plus a **Flipper Zero app** (C, uFBT) that displays it and requests a few
+vetted actions over Bluetooth LE. The Mac is the brains; the Flipper is a thin terminal.
+Read `ARCHITECTURE.md` first, then `docs/protocol.md` (the contract between the two).
 
-1. **Flipper Zero native app** (`/src/`) — C app running on the device, built with uFBT
-2. **Web installer** (`/web/`) — Next.js 16 app for browsing profiles and downloading install packs
-3. **Desktop helper CLI** (`/desktop_helper/`) — Node.js/TypeScript CLI (`flipdeck` command) for profile management
+`web/`, `desktop_helper/`, `sd_card/` and `safety-rules.json` belong to the **legacy**
+keystroke-deck product (see `docs/AUDIT.md`). Don't extend them. Vercel still deploys
+`web/`, so don't delete them without the owner's go-ahead.
 
 ## Commands
 
-### Web installer (`/web/`)
-
 ```bash
-npm install
-npm run dev          # Dev server on localhost:3000
-npm run build        # Production build (runs prebuild first to copy profiles)
-npm run start        # Start standalone server bound to 0.0.0.0
-npm run lint         # ESLint
-npm test             # Vitest
+# Mac (from mac/)
+swift build                     # all targets; SwiftUI/CoreBluetooth code compiles only on macOS
+swift test                      # FlipDeckCoreTests (runs on Linux and macOS)
+swift test --filter InteropTests
+swift run flipdeck-headless --root ~/Developer --once --frames
+scripts/build-app.sh            # → build/FlipDeck.app (macOS only)
+
+# Flipper (repo root)
+make -C src/tests/host run      # protocol/state host tests (ASan/UBSan) + golden vectors
+ufbt                            # build dist/flipdeck.fap
+scripts/check_flipper_sdk.sh    # type-check vs real firmware headers + exported-symbol check
+python3 scripts/gen_protocol_vectors.py   # regenerate docs/protocol-vectors.txt
 ```
 
-Run a single test:
-```bash
-npx vitest run src/__tests__/specific.test.ts
-```
+In the cloud container there's no local Swift toolchain. Use the official image:
+`docker run --rm -v "$PWD":/w -w /w/mac mirror.gcr.io/library/swift:6.1-noble swift test`
+(`apt-get install lsof perl` inside it for the process tests). The uFBT SDK host is
+blocked there too. Use `scripts/check_flipper_sdk.sh` (clones firmware from GitHub), or
+`ufbt update --local <sdk.zip> --hw-target f7` with a Momentum SDK zip from GitHub releases.
 
-### Desktop helper (`/desktop_helper/`)
+## Architecture rules
 
-```bash
-npm install
-npm start            # Run CLI with ts-node (development)
-npm run build        # Compile TypeScript → dist/
-npm test             # Jest
-npm run format:profiles  # Prettier-format all SD card profile JSONs
-```
+- **FlipDeckCore stays platform-independent** (Foundation only). Every OS touchpoint
+  goes behind a protocol: `CommandRunner`, `SystemEffects`, `SecretStore`,
+  `MachineMetricsProvider`, `FlipperTransport`, `HTTPClient`, `MacNotifier`. macOS
+  implementations live in `FlipDeckMacPlatform`, with every file wrapped in `#if os(macOS)`.
+- **State in, events out.** Providers produce `EngineState`. `EventDiffer` derives events
+  from old→new state, and the first observation of any section is a silent baseline.
+  Every mutation goes through `FlipDeckEngine.apply`.
+- **Never fabricate state.** If something can't be detected reliably (agent success or
+  failure, test results), mark it unsupported (`AgentCapabilities`) instead of inferring it.
+- **Actions are an allowlist.** `ActionKind` is the complete set, and there is no "run
+  command". The Flipper sends only action ids from the Mac's current snapshot table.
+  `ActionExecutor` re-validates the target against live state (PID + start time for
+  processes, known URLs only) before acting. Destructive kinds require confirmation.
+- **Notification routing** is data (`NotificationRules.defaultTable`): Activity always,
+  plus Flipper and/or Mac per event type.
+- **Secrets** go only in the Keychain via `SecretStore`. Never put them in settings,
+  logs, errors (`Redact`), or anything sent to the Flipper. Git remote URLs are stripped
+  of credentials.
 
-Run a single test:
-```bash
-npx jest src/__tests__/specific.test.ts
-```
+## Protocol (FDP/1) rules
 
-### Flipper Zero app (`/src/`)
+- Change `docs/protocol.md`, Swift (`mac/Sources/FlipDeckCore/Protocol/`) and C
+  (`src/fd_proto.c`, `src/fd_state.c`) together. Add golden vectors via
+  `scripts/gen_protocol_vectors.py`. Both test suites must pass them.
+- Record limits and field lengths are mirrored in `FlipperLimits` (Swift) and
+  `src/fd_state.h` (C). Changing them is a protocol change.
+- Frames are ≤ 240 bytes, printable ASCII, and carry a CRC-16. Snapshots are staged
+  and committed atomically. Everything must be safe to deliver twice.
 
-```bash
-fbt                  # Build .fap using uFBT
-fbt test             # Run unit tests
-```
+## Flipper app rules
 
-## Architecture
+- The stack is 4 KB, and the GUI draw callback runs on the GUI thread, so large
+  buffers live on the heap (`FdApp`, `FdUi.rows`). Shared state is guarded by `FdApp.mutex`.
+- BLE: FlipDeck uses its **own** profile template (`fd_ble.c`). The stock
+  `ble_profile_serial` gets hijacked for RPC by the BT service on every connect. Keep
+  the startup/teardown order (disconnect → keys path → profile start; disconnect →
+  default keys → restore default).
+- `fd_proto.c` / `fd_state.c` must not include SDK headers, so they stay host-testable.
+- Firmware builds use `-Werror` with format-truncation checks. `check_flipper_sdk.sh`
+  compiles with `-Os`, as uFBT does, so those warnings surface locally.
 
-### Web installer data flow
+## Conventions
 
-Profiles are JSON files in `/web/public/profiles/` (copied from `/sd_card/apps_data/flipdeck/profiles/` during `prebuild`). The flow:
+- Swift: Swift 5 language mode (tools 5.10), macOS 14 deployment target, 4-space
+  indent. Match the surrounding comment density: comments explain *why*.
+- C: Flipper SDK style: `snake_case` functions, `PascalCase` types, `Fd` prefix.
+- UI copy: plain, specific, no fake data. Empty states explain what would appear and why.
 
-```
-/web/public/profiles/*.json
-  → lib/profiles.ts: loadAllProfiles() → normalizeProfile()  (v1 actions → v2 commands migration)
-  → lib/safety-check.ts: auditCommands()                     (regex-based command audit)
-  → API routes under app/api/                                 (serve JSON or ZIP)
-  → React components in app/page.tsx                         (ProfileSelector → CommandPreview → CommandAudit → SmartInstallButton)
-```
+## CI
 
-State lives entirely in `page.tsx` as `useState`/`useMemo` hooks. There is no global state manager — `selectedId` is passed as props/callbacks.
-
-`SmartInstallButton` always renders `SerialInstaller`, which drives a direct install over the **Web Serial API** (`lib/flipper-serial.ts`, `FlipperSerial` class — opens the Flipper's CLI serial port at 230400 baud and issues storage RPC commands to write `flipdeck.fap`, selected profiles via `getDeviceProfile()`, snippets, and `settings.json` directly to the SD card). `isWebSerialSupported()` gates whether this UI is shown; `SmartInstallButton` separately probes WebUSB (`navigator.usb.requestDevice`) just to show a "Flipper detected" hint, not for installs. Users without Web Serial support fall back to the ZIP download (`/api/pack`).
-
-API routes:
-- `GET /api/profiles` — JSON array of all profiles
-- `GET /api/profiles/download?profile=<id>` — single profile download
-- `GET /api/pack?profile=git&profile=node` — ZIP with selected profiles
-- `GET /api/install-bundle/download` — full install ZIP (all profiles + snippets + settings.json + README-FIRST.txt)
-- `GET /api/health` — liveness check, returns `{ ok, service, timestamp }`
-
-### Profile schema (v2 canonical, v1 still accepted)
-
-```json
-{
-  "name": "Git",
-  "id": "git",
-  "commands": [
-    {
-      "label": "Git Status",
-      "type": "text",
-      "value": "git status\n",
-      "delay_ms": 100,
-      "confirmation_required": true,
-      "target": "usb_hid"
-    }
-  ]
-}
-```
-
-v1 used `"actions"` (with `"confirm"` instead of `"confirmation_required"`). `normalizeProfile()` in `lib/profiles.ts` handles the migration transparently. The `extends` field enables profile inheritance (base profile commands are prepended). `getDeviceProfile()` returns the raw, normalized-but-unflattened profile written to the Flipper over serial — keep this in sync with what `profile_manager.c` expects to parse on-device.
-
-Each command has an optional `target` field (`"usb_hid"` | `"wifi_uart"`, default `"usb_hid"`) that selects whether the command is sent as a USB HID keystroke to the host computer or as a UART line to the Flipper WiFi Dev Board.
-
-Profile categories are derived from the profile `id` via `primaryCategory()` in `lib/profiles.ts`: `"wifi-devboard"` → "wifi"; `["aws", "docker"]` → "cloud"; `["system", "presentation"]` → "system"; everything else → "dev".
-
-### Flipper Zero app state machine
-
-The C app in `/src/` is a state machine with these states: `Idle`, `CategoryBrowser`, `ActionBrowser`, `NfcScan`, `SubghzScan`, `SendConfirm`, `LongSnippetWarning`, `Settings`. In `ActionBrowser`, long-pressing OK sends immediately (skipping `SendConfirm`) and the Right button toggles the selected action as a favorite. In `CategoryBrowser`, long-pressing OK on a category pins/unpins it as the startup category (opened automatically on the next launch, bypassing `CategoryBrowser`); a synthetic "Favorites" row appears at the top whenever any action is favorited (flattening favorited actions from every category into one list), a synthetic "NFC Scan" row is always present below it, and a synthetic "Sub-GHz Scan" row follows unless `FlipDeckApp.subghz_available` is false (the Sub-GHz bridge failed to initialize).
-
-`NfcScan` reads a tag's UID via `nfc_bridge.c` and looks it up in `nfc_tags.json` (`profile_manager_load_nfc_tags`/`find_nfc_tag`, mirroring the favorites data shape). A known tag jumps straight to `SendConfirm` — **NFC-triggered sends always require the confirm screen**, bypassing neither it nor going through quick-send, regardless of `confirm_before_send`, since a tag's UID is trivially cloneable and is a weaker signal of intent than a person holding OK on a chosen list item. `SubghzScan` works the same way one layer down the stack: it decodes a 433.92MHz OOK signal via `subghz_bridge.c` against the firmware's full Sub-GHz protocol registry, hashes the decoded protocol string (`profile_manager_hash_subghz_signature`, 64-bit FNV-1a) into a fixed-width fingerprint looked up in `subghz_remotes.json`, and **also always requires the confirm screen** — for an even stronger reason than NFC's, since RF is receivable from across a room with zero physical contact with the device. `subghz_bridge.c` is receive-only, structurally (no transmit call anywhere in it), so it cannot replay/attack garage doors, gates, or cars, and its exact-string-match fingerprint means fixed-code remotes bind reliably while rolling-code remotes (many modern car/garage keyfobs) simply never re-match after their first press, by design. An unknown tag or signal hands off into `CategoryBrowser`/`ActionBrowser` in "binding mode" — no separate state for either; the two browser states reuse their normal views with OK repurposed to write the new mapping instead of sending — via `FlipDeckUi.pending_bind`, a tagged union (`{kind: None|Nfc|Subghz, id_hex}`) that generalizes what was originally an NFC-only flag once a second trigger source needed the same "pick a target for this unknown token" flow. See `docs/nfc_trigger_spec.md` and `docs/subghz_trigger_spec.md` for the full designs.
-
-Key modules:
-- `flipdeck_app.c` — main loop, USB polling (50ms), state transitions
-- `flipdeck_ui.c` — 128×64 LCD rendering, button input handling, dispatches each action to USB HID or the UART bridge based on `action->target`
-- `profile_manager.c` — JSON parsing from SD card, safety validation before send
-- `usb_hid.c` — USB HID keyboard report generation
-- `uart_bridge.c` — UART bridge to the Flipper WiFi Dev Board (GPIO pins 13/14, 115200 baud) for `target: "wifi_uart"` commands
-- `nfc_bridge.c` — NFC tag scanning bridge (`nfc/nfc_scanner.h`/`nfc_poller.h`/`nfc_device.h`); no `fbt`/`ufbt` toolchain is available in this environment to actually build it, but its API usage was syntax/type-checked clean against the real headers fetched from `flipperdevices/flipperzero-firmware` — still needs a real build + hardware flash to confirm runtime behavior
-- `subghz_bridge.c` — Sub-GHz (433MHz) remote/keyfob RX bridge (`furi_hal_subghz.h`, `lib/subghz/{devices/cc1101_configs,environment,receiver,subghz_worker,protocols/base,subghz_protocol_registry}.h`); receive only, never transmits; syntax/type-checked clean against the full real header dependency chain (not just the top-level headers) — a stronger check than NFC's, since it required resolving two previously-open unknowns (the preset register symbol and protocol registry symbol) against real firmware source; `application.fam`'s linkage is still unconfirmed by an actual build, though lower-risk than originally expected — see `docs/subghz_trigger_spec.md`
-- `settings.c` — JSON settings serialization
-
-Memory constraint: 4096-byte stack limit. Use fixed-size buffers; avoid deep call stacks.
-
-### Desktop helper CLI
-
-Commander.js app with subcommands under `flipdeck profile <subcommand>`:
-`validate`, `new`, `edit`, `preview`, `audit`, `migrate`, `share`, `sync`
-
-Subcommands are registered via `registerProfileCommands()` in `src/lib/profile-tools.ts`; shared profile logic (loading, normalization, schema) lives in `src/lib/profile-tools.ts` and `src/lib/schema.ts`, while `src/validation.ts` holds `DANGEROUS_PATTERNS` and `validateProfile()`.
-
-Validation pipeline: JSON parse → Zod schema (`lib/schema.ts`) → normalize v1→v2 → resolve `extends` → audit against `DANGEROUS_PATTERNS`.
-
-## Safety Rules
-
-`safety-rules.json` at the repo root is the single canonical source of truth for command
-pattern severities. All three layers (web, desktop helper, Flipper C app) are expected to
-match it exactly — web and desktop each have a "safety-rules-parity" test that fails if
-their rule set drifts from the JSON. The C app's `profile_manager_is_value_safe` is checked
-against the same rules by hand (no JSON parser on-device); keep it in sync manually when the
-JSON changes.
-
-Matching is case-insensitive and regex-based (not literal substring matching), so real-world
-one-liners like `curl -fsSL https://x | bash` are caught regardless of spacing or case.
-
-**Critical (blocks install/send):** `rm -rf`, real `curl|wget … | sh|bash` pipes, `dd if=`,
-`mkfs`, fork bomb `:(){ :|:& };:`, raw disk redirect `> /dev/sd*`  
-**Warning only (flagged, not blocked):** `sudo`, `chmod 777`, `chown root`, credential
-assignments (`PASSWORD=`, `TOKEN=`, `API_KEY=`, `SECRET=`, `PRIVATE_KEY=`)
-
-Severity determines enforcement: critical risks block the web install/download (both in the
-UI and server-side in `/api/pack` and `/api/install-bundle/download`, which audit profiles
-*and* snippets before zipping) and fail desktop `validate`/`audit`/`new`/`edit`. Warnings are
-surfaced but never block.
-
-Safety logic lives in:
-- Canonical rules: `safety-rules.json` (repo root)
-- Web: `web/src/lib/safety-check.ts` (enforced both client-side and in the `/api/pack` and
-  `/api/install-bundle/download` routes)
-- Desktop helper: `desktop_helper/src/validation.ts`
-- Flipper app: `src/profile_manager.c` (`profile_manager_validate_action` /
-  `profile_manager_is_value_safe`)
-
-All commands require explicit OK confirmation on the Flipper before USB send.
-
-## Key Conventions
-
-- **Next.js version warning:** `web/AGENTS.md` notes this uses Next.js 16 with breaking API changes from training data — read `node_modules/next/dist/docs/` before writing Next.js code.
-- **TypeScript paths:** `@/*` maps to `web/src/*` (configured in `web/tsconfig.json`).
-- **Prettier config:** 100-char line width, no trailing commas (`desktop_helper/.prettierrc.json`).
-- **C naming:** PascalCase for types with `_t` suffix, `snake_case` for functions and variables (Flipper Zero SDK convention).
-- **Profile files live in two places:** `sd_card/apps_data/flipdeck/profiles/` is the source of truth for device profiles; `web/public/profiles/` is a copy populated at build time by `web/scripts/copy-profiles.mjs`.
-- **Repo-level docs:** `docs/flight_manual.md` (end-user guide) and `docs/ROADMAP.md` (planned work) live at the repo root; `scripts/prebuild-packs.js` pre-generates downloadable packs.
-
-## Deployment
-
-Vercel deploys the `web/` directory. The root directory in the Vercel project is set to `web`; Vercel runs `npm run build` and deploys the output as serverless functions. No `vercel.json` is required — configuration is managed in the Vercel dashboard.
+The session tokens used so far lack GitHub's `workflow` scope, so the intended
+workflows live in `ci/` (see `ci/README.md`). The existing `.github/workflows/test.yml`
+already runs `make -C src/tests/host run`, and `build-fap.yml` builds the new `.fap`
+on master.

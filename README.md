@@ -1,375 +1,127 @@
-# FlipDeck
+# FlipDeck Mission Control
 
-**A USB Command Deck for Flipper Zero** — Turn your Flipper into a safe, configurable USB keyboard for developers and power users.
+**Your Mac's development environment, on your Flipper Zero.**
 
-[![License](https://img.shields.io/github/license/mohabbis/flipdeck)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-blue)](https://flipperzero.one)
+FlipDeck is a Mac app plus a Flipper Zero app. The Mac watches what matters:
+projects and their Git state, dev servers, coding agents, deployments. The
+Flipper shows it, so you can walk away from your desk, glance at it, and see
+what's running, what failed, and what's waiting for you. A few vetted actions
+(Open on Mac, Open localhost, Open logs, Stop server) run on the Mac at the
+press of a button.
 
-## Why FlipDeck?
+The Mac does all the work. The Flipper gets a small, normalized state snapshot
+over Bluetooth LE. It can never run commands on the Mac, only ask for actions
+the Mac put on its screen.
 
-FlipDeck transforms your Flipper Zero into a programmable command deck. Store frequently-used commands, snippets, and shortcuts on your SD card, then send them to any connected computer over USB — no custom firmware or development boards required.
-
-**Perfect for:**
-- Git workflow automation
-- Dev environment shortcuts
-- Terminal snippet library
-- Presentation remote control
-- VSCode/Vim command palette
-
-## Features
-
-- ✅ **Profile Storage** — Save command profiles on the SD card
-- ✅ **USB HID Keyboard** — Send text, key presses, and shortcuts
-- ✅ **Favorites + quick-send** — Pin actions; long-press OK to skip confirm
-- ✅ **NFC tag triggers** — Bind a tag to an action's confirm screen
-- ✅ **Sub-GHz RF triggers** — RX-only 433MHz remote bind/fire (never transmits)
-- ✅ **WiFi Dev Board UART** — Optional `wifi_uart` command target
-- ✅ **Safe Mode** — Confirmation before sending; critical patterns blocked
-- ✅ **Settings** — Configurable delays, confirm, and USB auto-check
-
-## Installation for Flipper Zero users
-
-FlipDeck installs selected profiles to the Flipper Zero SD card in two ways. Both paths create the same on-device files; they only differ in how the files get onto the SD card.
-
-### Path A: direct install with Chrome or Edge
-
-Chrome and Edge support WebSerial, so the FlipDeck web installer can talk to the Flipper CLI directly.
-
-1. Plug in your Flipper Zero with the SD card inserted.
-2. Open the FlipDeck web app in Chrome or Edge.
-3. Select the profiles you want to install.
-4. Review the browser safety check. Critical matches are blocked before anything is written.
-5. Click **Connect Flipper & Stage Pack**.
-6. Pick your Flipper in the browser's OS-level device picker.
-7. Click **Stage N profiles to Flipper**.
-8. On the Flipper: **Apps → Tools → FlipDeck**, pick a profile, then press **OK**.
-
-Notes:
-
-- FlipDeck cannot select the Flipper automatically. The browser and OS control the device picker, because apparently letting websites silently grab USB devices would be frowned upon by civilization.
-- Direct install writes to the mounted SD path: `/ext/apps_data/flipdeck/`.
-- The installer creates `/ext/apps_data/flipdeck/profiles/` and `/ext/apps_data/flipdeck/snippets/` if needed.
-- If the **Connect Flipper** button is missing, your browser probably does not support WebSerial. Use Path B.
-
-### Path B: ZIP + qFlipper, any browser
-
-This works in any browser by downloading an install ZIP that mirrors the SD card layout.
-
-1. Select the profiles you want to install.
-2. Review the browser safety check. Critical matches are blocked before ZIP creation.
-3. Click **Download ZIP**.
-4. Extract the ZIP.
-5. Open qFlipper's SD card browser.
-6. Drag the extracted `apps_data/` folder onto the SD card root.
-7. Merge or replace if prompted.
-8. On the Flipper: **Apps → Tools → FlipDeck**, pick a profile, then press **OK**.
-
-The ZIP contains `apps_data/` at its root. Dragging that folder onto the SD card root produces `/ext/apps_data/flipdeck/` on the Flipper.
-
-### What gets written
-
-Final on-device layout:
-
-```text
-/ext/apps_data/flipdeck/
-├── settings.json
-├── profiles/
-│   └── <selected-profile>.json
-└── snippets/
+```
+FLIPDECK          ●        PROJECTS          ●        FLIPDECK          ●
+─────────────────          ─────────────────          ─────────────────
+! 1 Attention              flipdeck      ! ●          main
+Mac               ●        interlockd      ●          Git        Clean ✓
+Projects          4        website       * ○          Dev        :3000 ●
+Agents            1                                   Deploy      Live ✓
+Services          3                                   Open on Mac      >
 ```
 
-ZIP layout before copying:
+## What it does today (Phase 1)
 
-```text
-apps_data/
-└── flipdeck/
-    ├── settings.json
-    ├── profiles/
-    │   └── <selected-profile>.json
-    └── snippets/
+| Area | Detected from | Reported |
+|---|---|---|
+| **Projects** | Folders you choose (e.g. `~/Developer`), scanned up to 3 levels deep, skipping `node_modules`, build output, etc. | Name, path, branch, clean/dirty counts, ahead/behind, last commit, remote (credentials stripped), framework, runtime, package manager |
+| **Dev servers** | `lsof` listening TCP ports ≥ 1024 on processes you own that are a known dev runtime (Node, Bun, Deno, Python, Ruby, Docker, …) or run from inside a project | Port(s), process, PID, framework (Vite, Next.js, Django, …), project, uptime |
+| **Builds & tests** | `ps` (vitest, jest, pytest, cargo/swift/go test, next/vite build, tsc --watch, docker compose, …) | Running, project, elapsed |
+| **Agents** | `ps`: Claude Code and Codex | Running, elapsed, project. **Not** success/failure or "waiting for input": the process table can't tell, so FlipDeck says "finished" and doesn't guess. |
+| **Vercel** | `.vercel/project.json` (from `vercel link`) plus a token in the Keychain | Deployments: started / live / failed / canceled, logs link |
+| **Machine** | Mach, sysctl, IOKit, Network.framework | CPU, memory, battery, network, uptime |
+
+Everything becomes a normalized **event** (`server.started`, `agent.exited`,
+`git.changed`, `deployment.failed`, …) with a severity (`info`, `success`,
+`warning`, `error`, `action_required`). A deterministic rules table decides
+where each event goes: Activity only, or also a Flipper alert (vibrate), or
+also a Mac notification. For example, a failed deployment goes everywhere and
+a successful one goes to Activity.
+
+## Install
+
+**Mac app** (macOS 14+, Xcode 15+ command-line tools):
+
+```sh
+cd mac
+scripts/build-app.sh          # → mac/build/FlipDeck.app
+open build/FlipDeck.app
 ```
 
-Use `/ext/apps_data/...` when referring to the Flipper's mounted SD path. Use `apps_data/...` when referring to the folder inside the ZIP. This distinction exists because path naming was apparently not dramatic enough already.
+Then in **Settings**: add your project folders, pick your editor, and
+optionally paste a Vercel token (stored in the Keychain).
 
-### Safety gate
+**Flipper app:**
 
-Before anything is staged to the Flipper or packaged into a ZIP, FlipDeck screens the selected profiles in the browser.
-
-The browser safety check lives in:
-
-```text
-web/src/lib/safety-check.ts
+```sh
+pip install ufbt
+ufbt                           # → dist/flipdeck.fap
+ufbt launch                    # with the Flipper connected over USB
 ```
 
-It uses the shared rule set in:
+Or copy `dist/flipdeck.fap` to `/ext/apps/Tools/` on the SD card.
 
-```text
-safety-rules.json
+**Pairing:** open FlipDeck on the Flipper, then on the Mac. The Mac finds the
+Flipper (it advertises as `FlipDeck <name>`). On first connection macOS asks
+for a PIN, so enter the one shown on the Flipper. FlipDeck uses its own BLE profile
+and bonding keys, so it doesn't disturb the Flipper mobile app's pairing. The
+phone app works normally again once you quit FlipDeck.
+
+## Repository
+
 ```
-
-If a profile matches a critical safety pattern, installation is blocked for both direct install and ZIP download.
-
-See [`docs/security-model.md`](docs/security-model.md) for the broader enforcement model.
-
-### Deploying the web installer on Vercel
-
-The installer is a Next.js app in `web/`.
-
-Set these Vercel options:
-
-```text
-Root directory: web
-Build command: npm run build
-Output directory: .next
+mac/                 Swift package: FlipDeckCore (platform-independent engine),
+                     FlipDeckMacPlatform (CoreBluetooth, Keychain, IOKit, AppKit),
+                     FlipDeckApp (SwiftUI), flipdeck-headless (CLI)
+src/, application.fam  Flipper Zero app (C, uFBT)
+docs/protocol.md     FDP/1 wire protocol, the contract between the two
+docs/AUDIT.md        audit of the pre-pivot codebase and what was kept or removed
+ARCHITECTURE.md      architecture, key decisions, phased plan
+ci/                  proposed GitHub workflows (need a maintainer to install)
+web/, desktop_helper/, sd_card/   legacy keystroke-deck installer (see docs/AUDIT.md)
 ```
-
-## Getting Started
-
-### Creating Profiles
-
-Profiles are stored as JSON files in `/ext/apps_data/flipdeck/profiles/` on the Flipper SD card. Default profiles include:
-
-| Category | Location |
-|----------|----------|
-| Git | `profiles/git.json` |
-| Node.js | `profiles/node.json` |
-| Python | `profiles/python.json` |
-| Docker | `profiles/docker.json` |
-| System | `profiles/system.json` |
-| Snippets | `profiles/snippets.json` |
-| AWS | `profiles/aws.json` |
-| VSCode | `profiles/vscode.json` |
-| Presentation | `profiles/presentation.json` |
-
-### Profile JSON Format
-
-Profiles use a **commands** array with explicit action types. This is the canonical v2 format. Older profiles using `actions`/`confirm` are still read and migrated automatically.
-
-```json
-{
-  "name": "Node",
-  "id": "node",
-  "description": "Node.js development commands",
-  "commands": [
-    {
-      "label": "Run dev server",
-      "type": "text",
-      "value": "npm run dev\n",
-      "confirmation_required": true
-    },
-    {
-      "label": "Run tests",
-      "type": "text",
-      "value": "npm test\n",
-      "confirmation_required": true
-    }
-  ]
-}
-```
-
-#### Action Types
-
-| Type | Description | Example |
-|------|-------------|---------|
-| `text` | Sends text string | `"npm run dev\n"` |
-| `key` | Presses a single key | `"RIGHT"`, `"ENTER"`, `"ESCAPE"` |
-| `key_combo` | Modifier + key combination | `"CTRL+C"`, `"SHIFT+F5"` |
-
-#### Example Profiles
-
-**Git Profile:**
-
-```json
-{
-  "name": "Git",
-  "id": "git",
-  "commands": [
-    {"label": "Git Status", "type": "text", "value": "git status\n"},
-    {"label": "Git Push", "type": "text", "value": "git push origin\n"}
-  ]
-}
-```
-
-**VSCode Shortcuts:**
-
-```json
-{
-  "name": "VSCode",
-  "id": "vscode",
-  "commands": [
-    {"label": "Command Palette", "type": "key_combo", "value": "CTRL+SHIFT+P"},
-    {"label": "Terminal", "type": "key_combo", "value": "CTRL+`"}
-  ]
-}
-```
-
-### Using FlipDeck
-
-1. **Browse** categories with UP/DOWN buttons.
-2. **Select** a category, such as Git, Node, or Python.
-3. **Browse** actions within the category.
-4. **Press OK** to send, or confirm first if required.
-5. **Press MENU** for Settings.
-
-### SD Card Layout
-
-On the Flipper, the SD card is mounted under `/ext`, so the app reads from `/ext/apps_data/flipdeck/`.
-
-```text
-/ext/apps_data/flipdeck/
-├── profiles/
-│   ├── git.json          # Git commands
-│   ├── node.json         # Node.js commands
-│   ├── python.json       # Python commands
-│   ├── docker.json       # Docker commands
-│   ├── system.json       # System utilities
-│   ├── snippets.json     # Code templates
-│   ├── aws.json          # AWS CLI commands
-│   ├── vscode.json       # VSCode shortcuts
-│   └── presentation.json # Presentation remote
-├── snippets/             # Text snippet templates
-│   ├── typescript.txt    # TS code templates
-│   └── go.txt            # Go code templates
-├── nfc_tags.json         # NFC tag → action bindings (created on first bind)
-├── subghz_remotes.json   # Sub-GHz remote → action bindings (created on first bind)
-├── logs/                 # Session logs
-└── settings.json         # User preferences
-```
-
-Repository seed files live under `sd_card/apps_data/flipdeck/`, without the `/ext` prefix, because `/ext` only exists on the Flipper.
-
-### Command Format
-
-Each command supports three types:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `label` | string | Display name on Flipper |
-| `type` | enum | `text`, `key`, or `key_combo` |
-| `value` | string | The command/data to send |
-| `confirmation_required` | bool | Require confirmation before sending |
-| `target` | enum | `usb_hid` by default, or `wifi_uart` |
-
-## Safety
-
-FlipDeck is designed with safety as a priority:
-
-- ⚠️ **No stealth payloads** — All commands are visible before sending.
-- ⚠️ **No automatic execution** — Requires explicit confirmation by default.
-- ⚠️ **No credential storage** — The Flipper never stores GitHub tokens or passwords.
-- ⚠️ **No destructive defaults** — Example commands are safe.
-- ⚠️ **Blocked dangerous commands** — Destructive patterns are rejected outright; risky-but-common ones are flagged instead of blocked.
-
-The full rule set lives in [`safety-rules.json`](safety-rules.json) at the repo root and is shared across the web installer, desktop helper, and Flipper app.
-
-**Blocked (critical):** `rm -rf`, real `curl`/`wget … | sh`/`bash` pipes, `mkfs`, `dd if=`, fork bombs, raw disk redirects such as `> /dev/sd*`.
-
-**Flagged but allowed (warning):** `sudo`, `chmod 777`, `chown root`, and credential-looking assignments such as `PASSWORD=`, `TOKEN=`, `API_KEY=`, `SECRET=`, and `PRIVATE_KEY=`.
-
-**Always review your profiles in a text editor before storing them in FlipDeck.**
 
 ## Development
 
-### Prerequisites
+```sh
+# Mac core: builds and tests anywhere Swift runs (Linux too)
+cd mac && swift test
+swift run flipdeck-headless --root ~/Developer --once --frames   # see what the engine sees
 
-- Flipper Zero device
-- SD card, 8GB or larger
-- Computer with USB keyboard support
+# Flipper protocol + state: host tests (ASan/UBSan, shared golden vectors)
+make -C src/tests/host run
 
-### Building
-
-FlipDeck uses the uFBT build system. To compile:
-
-```bash
-git clone https://github.com/mohabbis/flipdeck.git
-cd flipdeck
-fbt
+# Flipper app against real firmware headers, without the uFBT SDK download
+scripts/check_flipper_sdk.sh
 ```
 
-### Project Structure
+`flipdeck-headless --frames` prints the exact FDP/1 frames a Flipper would
+receive, which is the fastest way to debug detection on a real machine.
 
-```text
-flipdeck/
-├── CMakeLists.txt           # uFBT build configuration
-├── assets/                  # Icons and resources
-├── desktop_helper/          # Companion desktop app
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── src/
-│       └── index.ts         # CLI tool for profile management
-├── sd_card/                 # Seed SD card content
-│   └── apps_data/flipdeck/
-│       ├── profiles/        # JSON command profiles
-│       ├── snippets/        # Text snippet templates
-│       ├── logs/            # Session logs
-│       └── settings.json    # User preferences
-├── src/                     # Flipper app source
-│   ├── flipdeck_app.c       # Main application logic
-│   ├── flipdeck_app.h
-│   ├── flipdeck_ui.c        # UI (browser, favorites, NFC/Sub-GHz scan, confirm)
-│   ├── flipdeck_ui.h
-│   ├── profile_manager.c    # Profiles, favorites, NFC + Sub-GHz mappings
-│   ├── profile_manager.h
-│   ├── usb_hid.c            # USB HID communication
-│   ├── usb_hid.h
-│   ├── uart_bridge.c        # UART bridge to the WiFi Dev Board
-│   ├── uart_bridge.h
-│   ├── nfc_bridge.c         # NFC tag scan bridge
-│   ├── nfc_bridge.h
-│   ├── subghz_bridge.c      # Sub-GHz RX-only remote scan bridge
-│   ├── subghz_bridge.h
-│   └── settings.c           # Settings management
-├── web/                     # Next.js web installer
-├── docs/
-│   ├── flight_manual.md     # Safety and usage guide
-│   ├── installer-flow.md    # Web Serial / ZIP installer walkthrough
-│   ├── nfc_trigger_spec.md  # NFC tag trigger design
-│   ├── subghz_trigger_spec.md # Sub-GHz remote trigger design
-│   ├── security-model.md    # Safety rules and confirmation model
-│   └── ROADMAP.md           # Development roadmap
-└── README.md
-```
+## Status and known gaps
 
-## Desktop Helper
+Be clear about what has and hasn't been proven:
 
-The `desktop_helper/` directory contains a companion Node.js/TypeScript CLI for:
+- **Verified in CI-like conditions:** the Swift core (71 tests, including real
+  `git` repos, real listening sockets and processes, an end-to-end engine run, and
+  the Swift session talking to the Flipper's C state machine over pipes); the C
+  protocol/state code (153 checks under sanitizers); the Flipper app type-checks
+  clean against current `flipperzero-firmware` headers, and a full uFBT build and
+  link passes against Momentum's SDK.
+- **Not yet verified:** the SwiftUI/CoreBluetooth/Keychain code compiles only on
+  macOS, and runs in the `mac-macos` job in `ci/test.yml` once that's installed.
+  Nothing has run on a real Flipper or over real Bluetooth yet. Pairing,
+  flow-control behavior under load, and reconnect timing need a hardware pass.
+- **By design, not available:** agent success/failure/waiting states, and test
+  pass/fail. These need a cooperating source (Phase 2: a local event-ingest socket
+  that Claude Code hooks and test wrappers can report to) rather than guessing
+  from process lifetimes.
 
-- Creating, validating, and auditing profiles
-- Previewing how a profile renders on the Flipper
-- Migrating legacy `actions` profiles to the v2 `commands` format
-- Importing/exporting profiles and syncing them via GitHub Gist
-
-```bash
-cd desktop_helper
-npm install
-npm start
-```
-
-## Roadmap
-
-See [docs/ROADMAP.md](docs/ROADMAP.md) for planned features.
-
-### Planned Features
-
-- [ ] Custom profile creation from Flipper UI
-- [ ] Profile import/export via SD card
-- [ ] Presentation remote mode
-- [ ] Desktop companion app for live profile sync
-- [ ] Momentum firmware integration, optional
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
+See `ARCHITECTURE.md` → Phases for what comes next.
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
-## Disclaimer
-
-FlipDeck is an open-source project for educational and productivity purposes. The developers are not responsible for any misuse of this software. Always use caution when sending commands to connected computers.
-
----
-
-Made with ❤️ for the Flipper Zero community.
-**Safely hacking, one keypress at a time.**
+MIT, see [LICENSE](LICENSE).

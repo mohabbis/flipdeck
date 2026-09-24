@@ -1,0 +1,31 @@
+# Replaces .github/workflows/build-fap.yml. Builds the .fap on pushes to
+# master and attaches it as an artifact. Unlike the old workflow, it does not
+# commit binaries back into the repository.
+name: Build .fap
+
+on:
+  push:
+    branches: [master]
+    paths: ["src/**", "application.fam", "assets/**"]
+  workflow_dispatch:
+
+jobs:
+  build-fap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Cache uFBT SDK
+        uses: actions/cache@v4
+        with:
+          path: ~/.ufbt
+          key: ufbt-sdk-${{ runner.os }}-${{ hashFiles('application.fam') }}
+          restore-keys: ufbt-sdk-${{ runner.os }}-
+      - name: Build .fap
+        run: pip install ufbt && ufbt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flipdeck.fap
+          path: dist/flipdeck.fap
