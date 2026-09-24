@@ -6,6 +6,18 @@ import FlipDeckMacPlatform
 
 // MARK: - Flipper
 
+extension FlipperLinkState {
+    var readyVersion: String? {
+        if case .ready(let version) = self { return version }
+        return nil
+    }
+
+    var incompatibleProtocol: Int? {
+        if case .incompatible(let proto) = self { return proto }
+        return nil
+    }
+}
+
 struct FlipperView: View {
     @EnvironmentObject private var model: AppModel
 
@@ -19,10 +31,10 @@ struct FlipperView: View {
                     HStack(spacing: 6) { StatusDot(color: described.0); Text(described.1) }
                 }
                 LabeledContent("Bluetooth", value: status.transport.label)
-                if case .ready(let version) = status.link {
+                if let version = status.link.readyVersion {
                     LabeledContent("FlipDeck on Flipper", value: version)
                 }
-                if case .incompatible(let proto) = status.link {
+                if let proto = status.link.incompatibleProtocol {
                     LabeledContent("Protocol") {
                         Text("Flipper speaks FDP/\(proto), this Mac speaks FDP/\(FDP.protocolVersion). Install matching versions.").foregroundStyle(.orange)
                     }

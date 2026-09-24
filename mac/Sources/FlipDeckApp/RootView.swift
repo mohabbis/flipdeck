@@ -7,7 +7,7 @@ struct RootView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(selection: Binding(get: { model.section }, set: { if let value = $0 { model.section = value } })) {
+            List(selection: Binding<SidebarItem?>(get: { model.section }, set: { if let value = $0 { model.section = value } })) {
                 ForEach(SidebarItem.allCases) { item in
                     Label(item.title, systemImage: item.symbol)
                         .badge(badge(for: item))
