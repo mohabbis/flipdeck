@@ -68,11 +68,11 @@ that is.
 | Component | Decision | Reason |
 |---|---|---|
 | `src/` Flipper keystroke app (UI, profile manager, HID, NFC, Sub-GHz, UART) | **Removed** (still in git history at `26b96bb`) | Obsolete product model; does not exit; HID path most likely non-functional. Nothing in it is the right shape for a state-mirroring BLE client. |
-| `src/tests/host/` harness pattern (stub headers + `make run`) | **Kept (pattern)** | Reused for `flipper/tests/`, which tests the new protocol and state store on the host. |
-| Root `application.fam` | **Replaced** by `flipper/application.fam` | New app, same `appid` (`flipdeck`). |
+| `src/tests/host/` harness (`make run`) | **Kept (pattern)** | Same location and entry point, now testing the new protocol and state store. |
+| Root `application.fam` + `src/` layout | **Kept (layout), contents replaced** | New app, same `appid` (`flipdeck`) and layout, so the existing CI jobs build and test the new app unchanged. |
 | `CMakeLists.txt` | **Removed** | Never a working build file. |
-| `.github/workflows/build-fap.yml` | **Replaced** | It committed binaries into `web/public` on master. It now builds `flipper/` on PRs and pushes, uploads the `.fap` as an artifact, and does not commit. |
-| `.github/workflows/test.yml` | **Refactored** | Adds Swift (macOS) and Flipper host-test jobs. The web and desktop_helper jobs stay while those packages exist. |
+| `.github/workflows/build-fap.yml` | **Replacement proposed** (`ci/build-fap.yml`) | It commits binaries into `web/public` on master. The replacement builds on PRs too, uploads the `.fap` as an artifact, and doesn't commit. The session couldn't push workflow files. |
+| `.github/workflows/test.yml` | **Replacement proposed** (`ci/test.yml`) | Adds Swift (macOS + Linux) jobs and a uFBT build on PRs. The existing file keeps working unchanged. |
 | `web/` installer | **Kept for now, legacy, removal recommended** | Vercel deploys it (root dir `web`). Deleting it would break a live deployment, which is the owner's call. It installs the *old* app and profiles, so it should be retired or rewritten as a download page for the Mac app and new `.fap`. |
 | `desktop_helper/` CLI | **Kept for now, legacy, removal recommended** | Only manages keystroke profiles. Its role is superseded by the Mac app. |
 | `sd_card/`, `safety-rules.json` | **Kept for now, legacy** | Only consumed by `web/` and `desktop_helper/`. Remove together with them. |
@@ -85,9 +85,10 @@ that is.
   `swift:6.1-noble` image pulls from `mirror.gcr.io`. The platform-independent core
   (`mac/Sources/FlipDeckCore`) is built and tested on Linux that way. The macOS-only
   targets (SwiftUI, CoreBluetooth, Keychain, IOKit) are compiled only by the
-  `macos` CI job.
-- The Flipper SDK host (`update.flipperzero.one`) is blocked, but
-  `github.com/flipperdevices/flipperzero-firmware` clones fine. `flipper/tools/check.sh`
-  type-checks every Flipper source against the real firmware headers with
-  `arm-none-eabi-gcc` and checks each SDK symbol used against `api_symbols.csv`.
-  The real uFBT build runs in CI.
+  macOS CI job in `ci/test.yml`.
+- The official Flipper SDK host (`update.flipperzero.one`) is blocked, but
+  `github.com/flipperdevices/flipperzero-firmware` clones fine.
+  `scripts/check_flipper_sdk.sh` type-checks every Flipper source against the real
+  firmware headers with the firmware's own `-Werror` flags, and checks each symbol
+  used against `api_symbols.csv`. A full uFBT build also works offline against
+  Momentum's SDK zip, which is published as a GitHub release asset.

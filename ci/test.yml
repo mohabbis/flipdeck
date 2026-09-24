@@ -1,0 +1,106 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  mac-macos:
+    name: Mac app (macOS build + tests)
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: mac
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: swift --version && xcodebuild -version
+      - name: Build (all targets, incl. SwiftUI app and CoreBluetooth transport)
+        run: swift build
+      - name: Test
+        run: swift test
+      - name: Build FlipDeck.app
+        run: scripts/build-app.sh release && ditto -c -k --keepParent build/FlipDeck.app build/FlipDeck.app.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FlipDeck.app
+          path: mac/build/FlipDeck.app.zip
+
+  mac-core-linux:
+    name: Mac core (Linux build + tests)
+    runs-on: ubuntu-latest
+    container: swift:6.1-noble
+    defaults:
+      run:
+        working-directory: mac
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test dependencies
+        run: apt-get update -qq && apt-get install -y -qq lsof perl git >/dev/null
+      - name: Test
+        run: swift test
+
+  flipper-host:
+    name: Flipper app (host tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Protocol + state tests (ASan/UBSan, golden vectors)
+        run: make -C src/tests/host run
+
+  flipper-fap:
+    name: Flipper app (uFBT build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Cache uFBT SDK
+        uses: actions/cache@v4
+        with:
+          path: ~/.ufbt
+          key: ufbt-sdk-${{ runner.os }}-${{ hashFiles('application.fam') }}
+          restore-keys: ufbt-sdk-${{ runner.os }}-
+      - name: Build flipdeck.fap (official release SDK)
+        run: pip install ufbt && ufbt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flipdeck.fap
+          path: dist/flipdeck.fap
+
+  # Legacy packages from the pre-pivot product (see docs/AUDIT.md). Kept green
+  # until they are retired.
+  web:
+    name: Legacy web installer (vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  desktop-helper:
+    name: Legacy desktop helper (jest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop_helper
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: desktop_helper/package-lock.json
+      - run: npm ci
+      - run: npm test

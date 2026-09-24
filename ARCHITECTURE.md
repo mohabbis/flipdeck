@@ -56,14 +56,17 @@ mac/                         Swift package (swift-tools 5.10, macOS 14+)
   Sources/FlipDeckApp/          SwiftUI app (sidebar: Overview … Settings)
   Sources/flipdeck-headless/    CLI that runs the engine and prints state/events (Linux + macOS)
   Tests/FlipDeckCoreTests/
-flipper/                     Flipper Zero .fap (uFBT project, appid "flipdeck")
-  fd_proto.[ch]              frame codec + CRC (no SDK deps, host-tested)
-  fd_state.[ch]              model store (no SDK deps, host-tested)
+application.fam              Flipper Zero .fap manifest (uFBT project root; appid "flipdeck")
+src/                         Flipper app (C)
+  fd_proto.[ch]              frame codec, CRC, line reassembly (no SDK deps, host-tested)
+  fd_state.[ch]              model store + FDP/1 session rules (no SDK deps, host-tested)
   fd_ble.[ch]                custom BLE profile + serial service transport
-  fd_ui.[ch]                 screens
-  flipdeck.c                 app entry, event loop
-  tests/                     host tests (make -C flipper/tests run)
-  tools/check.sh             type-check against real firmware headers + API symbol check
+  fd_ui.[ch]                 screens (row-based: info / navigate / action / dismiss)
+  flipdeck.c                 entry point, event loop, threading
+  tests/host/                host tests + fd_sim (C state machine as a process, for Swift interop tests)
+scripts/check_flipper_sdk.sh type-check against real firmware headers + API symbol check
+scripts/gen_protocol_vectors.py  regenerates docs/protocol-vectors.txt
+ci/                          proposed GitHub workflows (see ci/README.md)
 docs/protocol.md             FDP/1 wire protocol spec
 docs/AUDIT.md                pre-pivot audit
 ```
@@ -123,7 +126,7 @@ docs/AUDIT.md                pre-pivot audit
 
 **Phase 0: audit and plan** ✅ (`docs/AUDIT.md`, this file, `docs/protocol.md`)
 
-**Phase 1: reliable core pipeline (this milestone)**
+**Phase 1: reliable core pipeline (this milestone)** ✅ implemented. On-hardware validation is still pending; see README → Status.
 1. Core models, event model, severity, and action model.
 2. Project discovery with bounded scanning and Git state (branch, dirty, ahead/behind, last commit, remote).
 3. Process scan, dev-server detection (listening ports + cwd), project association.
@@ -133,7 +136,7 @@ docs/AUDIT.md                pre-pivot audit
 7. FDP/1 protocol and session (handshake, snapshot/commit, heartbeat, staleness, dedupe, versioning, action request/result).
 8. CoreBluetooth transport; SwiftUI app with all seven sections backed by real data or explicit empty states.
 9. Flipper app: BLE transport, protocol, state store, and Home / Projects / Project / Services / Agents / Activity / Alert / Confirm screens. Actions: Open on Mac, Open localhost, Open logs, Stop server (confirmed).
-10. CI: Swift build and tests on macOS, Swift core tests on Linux, Flipper host tests, and a real uFBT build.
+10. CI: Swift build and tests on macOS, Swift core tests on Linux, Flipper host tests, and a real uFBT build (proposed in `ci/`, because workflow files need a maintainer to install them).
 
 **Phase 2: depth**
 - Local event ingest (Unix socket plus a `flipdeck notify` CLI). This lets Claude Code
